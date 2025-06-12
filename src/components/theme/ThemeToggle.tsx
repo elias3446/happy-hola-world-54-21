@@ -13,26 +13,41 @@ type Theme = 'dark' | 'light' | 'system';
 
 export const ThemeToggle = () => {
   const [theme, setTheme] = useState<Theme>(() => {
+    // Verificar si estamos en el navegador
     if (typeof window !== 'undefined') {
-      return (localStorage.getItem('theme') as Theme) || 'system';
+      const savedTheme = localStorage.getItem('theme') as Theme;
+      return savedTheme || 'system';
     }
     return 'system';
   });
 
-  useEffect(() => {
+  // Función para aplicar el tema
+  const applyTheme = (currentTheme: Theme) => {
     const root = window.document.documentElement;
-
     root.classList.remove('light', 'dark');
 
-    if (theme === 'system') {
+    if (currentTheme === 'system') {
       const systemTheme = window.matchMedia('(prefers-color-scheme: dark)')
         .matches
         ? 'dark'
         : 'light';
-
       root.classList.add(systemTheme);
     } else {
-      root.classList.add(theme);
+      root.classList.add(currentTheme);
+    }
+  };
+
+  // Aplicar tema inicial al cargar el componente
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      applyTheme(theme);
+    }
+  }, []);
+
+  // Aplicar tema cuando cambia
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      applyTheme(theme);
     }
   }, [theme]);
 
@@ -48,10 +63,8 @@ export const ThemeToggle = () => {
       root.classList.add(e.matches ? 'dark' : 'light');
     };
 
-    // Agregar el listener
     mediaQuery.addEventListener('change', handleSystemThemeChange);
 
-    // Cleanup: remover el listener cuando el componente se desmonte o cambie el tema
     return () => {
       mediaQuery.removeEventListener('change', handleSystemThemeChange);
     };
