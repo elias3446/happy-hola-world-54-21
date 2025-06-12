@@ -1,0 +1,213 @@
+import { useState, useEffect, createContext, useContext } from 'react';
+import { User, Session } from '@supabase/supabase-js';
+import { supabase } from '@/integrations/supabase/client';
+
+interface AuthContextType {
+  user: User | null;
+  session: Session | null;
+  loading: boolean;
+  signIn: (email: string, password: string) => Promise<{ error: any }>;
+  signUp: (email: string, password: string, firstName: string, lastName: string, roleType?: 'admin' | 'user') => Promise<{ error: any }>;
+  signOut: () => Promise<void>;
+  hasUsers: boolean | null;
+  hasProfile: boolean | null;
+  checkHasUsers: () => Promise<void>;
+  checkUserProfile: () => Promise<void>;
+  isAdmin: () => boolean;
+}
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
+  const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [hasUsers, setHasUsers] = useState<boolean | null>(null);
+  const [hasProfile, setHasProfile] = useState<boolean | null>(null);
+  const [userProfile, setUserProfile] = useState<any>(null);
+
+  const checkHasUsers = async () => {
+    try {
+      console.log('Checking for existing users...');
+      const { data, error } = await supabase.rpc('has_users');
+      if (error) {
+        console.error('Error checking for users:', error);
+        return;
+      }
+      console.log('Has users result:', data);
+      setHasUsers(data);
+    } catch (error) {
+      console.error('Error checking for users:', error);
+    }
+  };
+
+  const checkUserProfile = async () => {
+    if (!user) {
+      setHasProfile(null);
+      setUserProfile(null);
+      return;
+    }
+
+    try {
+      console.log('Checking if user has profile...');
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+
+      if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
+        console.error('Error checking user profile:', error);
+        return;
+      }
+
+      const userHasProfile = !!data;
+      console.log('User has profile:', userHasProfile);
+      setHasProfile(userHasProfile);
+      setUserProfile(data);
+    } catch (error) {
+      console.error('Error checking user profile:', error);
+    }
+  };
+
+  // Función para verificar si el usuario actual es admin
+  const isAdmin = () => {
+    if (!userProfile || !userProfile.role) return false;
+    return userProfile.role.includes('admin');
+  };
+
+  useEffect(() => {
+    // Configurar listener de cambios de autenticación
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        console.log('Auth state changed:', event, session);
+        setSession(session);
+        setUser(session?.user ?? null);
+        
+        // Si se cierra sesión, limpiar estados inmediatamente
+        if (event === 'SIGNED_OUT' || !session) {
+          setHasProfile(null);
+          setUserProfile(null);
+          setLoading(false);
+          
+          setTimeout(() => {
+            checkHasUsers();
+          }, 0);
+          return;
+        }
+        
+        // Si se registra o inicia sesión exitosamente, verificar usuarios y perfil
+        if (event === 'SIGNED_IN' && session) {
+          setTimeout(() => {
+            checkHasUsers();
+            checkUserProfile();
+          }, 0);
+        }
+        
+        setLoading(false);
+      }
+    );
+
+    // Verificar sesión existente
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log('Initial session check:', session);
+      setSession(session);
+      setUser(session?.user ?? null);
+      setLoading(false);
+      
+      // Si hay sesión, verificar perfil
+      if (session?.user) {
+        checkUserProfile();
+      }
+    });
+
+    // Verificar si existen usuarios al cargar
+    checkHasUsers();
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  // Verificar perfil cuando cambie el usuario
+  useEffect(() => {
+    if (user) {
+      checkUserProfile();
+    }
+  }, [user]);
+
+  const signIn = async (email: string, password: string) => {
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      return { error };
+    } catch (error) {
+      return { error };
+    }
+  };
+
+  const signUp = async (email: string, password: string, firstName: string, lastName: string, roleType?: 'admin' | 'user') => {
+    try {
+      const redirectUrl = `${window.location.origin}/`;
+      
+      // Preparar metadatos del usuario con información de rol si se especifica
+      const userData: any = {
+        first_name: firstName,
+        last_name: lastName,
+      };
+
+      // Si se especifica un tipo de rol, incluirlo en los metadatos
+      if (roleType) {
+        userData.role = roleType === 'admin' ? ['admin', 'user'] : ['user'];
+      }
+      
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: redirectUrl,
+          data: userData
+        }
+      });
+      return { error };
+    } catch (error) {
+      return { error };
+    }
+  };
+
+  const signOut = async () => {
+    try {
+      console.log('Signing out user...');
+      await supabase.auth.signOut({ scope: 'global' });
+      console.log('User signed out successfully');
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
+  };
+
+  return (
+    <AuthContext.Provider value={{
+      user,
+      session,
+      loading,
+      signIn,
+      signUp,
+      signOut,
+      hasUsers,
+      hasProfile,
+      checkHasUsers,
+      checkUserProfile,
+      isAdmin
+    }}>
+      {children}
+    </AuthContext.Provider>
+  );
+};
+
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+};
