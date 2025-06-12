@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import {
   Dialog,
@@ -25,10 +26,12 @@ import {
   Search,
   UserCheck,
   UserX,
-  Ban
+  Ban,
+  Crown,
+  User as UserIcon
 } from 'lucide-react';
 
-export type BulkUserActionType = 'delete' | 'activate' | 'deactivate' | 'block' | 'change_roles';
+export type BulkUserActionType = 'delete' | 'activate' | 'deactivate' | 'block' | 'change_roles' | 'change_user_type';
 
 interface BulkUserActionsDialogProps {
   open: boolean;
@@ -51,6 +54,7 @@ export const BulkUserActionsDialog: React.FC<BulkUserActionsDialogProps> = ({
 }) => {
   const { roles } = useRoles();
   const [selectedRoleIds, setSelectedRoleIds] = useState<string[]>([]);
+  const [selectedUserTypes, setSelectedUserTypes] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
 
   // Filtrar roles activos
@@ -67,6 +71,12 @@ export const BulkUserActionsDialog: React.FC<BulkUserActionsDialogProps> = ({
     return nameMatch || descriptionMatch;
   });
 
+  // Opciones de tipo de usuario
+  const userTypeOptions = [
+    { value: 'admin', label: 'Administrador', icon: <Crown className="h-4 w-4" />, color: 'text-red-600' },
+    { value: 'user', label: 'Usuario', icon: <UserIcon className="h-4 w-4" />, color: 'text-blue-600' },
+  ];
+
   const handleRemoveUser = (userId: string) => {
     if (onRemoveUser) {
       onRemoveUser(userId);
@@ -82,6 +92,14 @@ export const BulkUserActionsDialog: React.FC<BulkUserActionsDialogProps> = ({
       prev.includes(roleId) 
         ? prev.filter(id => id !== roleId)
         : [...prev, roleId]
+    );
+  };
+
+  const handleUserTypeToggle = (userType: string) => {
+    setSelectedUserTypes(prev => 
+      prev.includes(userType) 
+        ? prev.filter(type => type !== userType)
+        : [...prev, userType]
     );
   };
 
@@ -127,6 +145,14 @@ export const BulkUserActionsDialog: React.FC<BulkUserActionsDialogProps> = ({
           confirmText: 'Cambiar Roles',
           variant: 'default' as const
         };
+      case 'change_user_type':
+        return {
+          title: 'Cambiar tipo de usuario',
+          icon: <Crown className="h-6 w-6 text-indigo-500" />,
+          description: `Cambiar el tipo de usuario de ${users.length} usuario${users.length !== 1 ? 's' : ''}.`,
+          confirmText: 'Cambiar Tipo',
+          variant: 'default' as const
+        };
       default:
         return {
           title: 'Acción masiva',
@@ -156,6 +182,9 @@ export const BulkUserActionsDialog: React.FC<BulkUserActionsDialogProps> = ({
       case 'change_roles':
         data.roleIds = selectedRoleIds;
         break;
+      case 'change_user_type':
+        data.userTypes = selectedUserTypes;
+        break;
     }
     
     onConfirm(data);
@@ -165,6 +194,8 @@ export const BulkUserActionsDialog: React.FC<BulkUserActionsDialogProps> = ({
     switch (actionType) {
       case 'change_roles':
         return selectedRoleIds.length > 0;
+      case 'change_user_type':
+        return selectedUserTypes.length > 0;
       default:
         return true;
     }
@@ -175,6 +206,21 @@ export const BulkUserActionsDialog: React.FC<BulkUserActionsDialogProps> = ({
     if (user.asset === null) return { text: 'Bloqueado', color: 'text-red-600' };
     if (user.asset === true) return { text: 'Activo', color: 'text-green-600' };
     return { text: 'Inactivo', color: 'text-gray-600' };
+  };
+
+  // Helper function to get user type display
+  const getUserTypeDisplay = (user: User) => {
+    const userRoles = user.role || ['user'];
+    const hasAdmin = userRoles.includes('admin');
+    const hasUser = userRoles.includes('user');
+    
+    if (hasAdmin && hasUser) {
+      return { text: 'Admin + Usuario', color: 'text-red-600', icon: <Crown className="h-3 w-3" /> };
+    } else if (hasAdmin) {
+      return { text: 'Administrador', color: 'text-red-600', icon: <Crown className="h-3 w-3" /> };
+    } else {
+      return { text: 'Usuario', color: 'text-blue-600', icon: <UserIcon className="h-3 w-3" /> };
+    }
   };
 
   return (
@@ -201,6 +247,7 @@ export const BulkUserActionsDialog: React.FC<BulkUserActionsDialogProps> = ({
               <div className="space-y-2">
                 {users.map((user) => {
                   const statusDisplay = getUserStatusDisplay(user);
+                  const typeDisplay = getUserTypeDisplay(user);
                   
                   return (
                     <div key={user.id} className="flex items-center justify-between gap-2 text-sm">
@@ -213,11 +260,10 @@ export const BulkUserActionsDialog: React.FC<BulkUserActionsDialogProps> = ({
                         <span className={`text-xs flex-shrink-0 ${statusDisplay.color}`}>
                           {statusDisplay.text}
                         </span>
-                        {user.user_roles && user.user_roles.length > 0 && (
-                          <Badge variant="outline" className="text-xs flex-shrink-0">
-                            {user.user_roles.length} rol{user.user_roles.length !== 1 ? 'es' : ''}
-                          </Badge>
-                        )}
+                        <div className={`flex items-center gap-1 text-xs flex-shrink-0 ${typeDisplay.color}`}>
+                          {typeDisplay.icon}
+                          <span>{typeDisplay.text}</span>
+                        </div>
                       </div>
                       {onRemoveUser && users.length > 1 && (
                         <Button
@@ -238,6 +284,72 @@ export const BulkUserActionsDialog: React.FC<BulkUserActionsDialogProps> = ({
           </div>
 
           {/* Formulario específico según la acción */}
+          {actionType === 'change_user_type' && (
+            <div className="flex-1 overflow-hidden">
+              <p className="text-sm font-medium mb-3">
+                Seleccionar tipos de usuario:
+              </p>
+              
+              <div className="space-y-3">
+                {userTypeOptions.map((option) => (
+                  <div key={option.value} className="flex items-center gap-3 p-3 rounded-lg border hover:bg-gray-50 transition-colors">
+                    <Checkbox
+                      id={`user-type-${option.value}`}
+                      checked={selectedUserTypes.includes(option.value)}
+                      onCheckedChange={() => handleUserTypeToggle(option.value)}
+                    />
+                    <label 
+                      htmlFor={`user-type-${option.value}`}
+                      className="flex items-center gap-2 cursor-pointer flex-1"
+                    >
+                      <div className={`flex items-center gap-2 ${option.color}`}>
+                        {option.icon}
+                        <span className="font-medium">{option.label}</span>
+                      </div>
+                    </label>
+                  </div>
+                ))}
+              </div>
+
+              {/* Tipos seleccionados */}
+              {selectedUserTypes.length > 0 && (
+                <div className="mt-4">
+                  <p className="text-sm font-medium mb-2">
+                    Tipos seleccionados ({selectedUserTypes.length}):
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedUserTypes.map((userType) => {
+                      const option = userTypeOptions.find(opt => opt.value === userType);
+                      return option ? (
+                        <Badge 
+                          key={userType} 
+                          variant="secondary"
+                          className="flex items-center gap-1 text-xs"
+                        >
+                          {option.icon}
+                          {option.label}
+                        </Badge>
+                      ) : null;
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Información sobre tipos de usuario */}
+              <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                <div className="text-sm text-blue-700">
+                  <p className="font-medium mb-2">Información sobre tipos de usuario:</p>
+                  <ul className="space-y-1 text-xs">
+                    <li><strong>Administrador:</strong> Acceso completo al sistema</li>
+                    <li><strong>Usuario:</strong> Acceso básico al sistema</li>
+                    <li><strong>Ambos:</strong> El usuario tendrá privilegios de administrador y usuario</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Formulario para cambio de roles (código existente) */}
           {actionType === 'change_roles' && (
             <div className="flex-1 overflow-hidden">
               <p className="text-sm font-medium mb-3">

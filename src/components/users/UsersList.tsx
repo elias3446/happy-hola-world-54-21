@@ -58,16 +58,18 @@ export const UsersList = ({ onCreateUser, onEditUser, onViewUser, onBulkUpload }
     deleteUser, 
     toggleUserStatus,
     updateUser,
+    bulkChangeUserType,
     isDeleting, 
     isToggling,
-    isUpdating
+    isUpdating,
+    isBulkChangingUserType
   } = useUsers();
   
   const isMobile = useIsMobile();
   const [filters, setFilters] = useDataTableFilters();
   const [filteredData, setFilteredData] = useState<any[]>([]);
   
-  // Estado para diálogo unificado - actualizado para incluir 'block'
+  // Estado para diálogo unificado - actualizado para incluir 'change_user_type'
   const [bulkActionDialog, setBulkActionDialog] = useState({
     open: false,
     type: 'delete' as BulkUserActionType,
@@ -194,7 +196,7 @@ export const UsersList = ({ onCreateUser, onEditUser, onViewUser, onBulkUpload }
     toggleUserStatus({ id: user.id, asset: newStatus });
   };
 
-  // Handlers para acciones masivas actualizados con bloqueo
+  // Handlers para acciones masivas actualizados con cambio de tipo de usuario
   const handleBulkDelete = () => {
     const selectedData = getSelectedData();
     setBulkActionDialog({
@@ -240,6 +242,15 @@ export const UsersList = ({ onCreateUser, onEditUser, onViewUser, onBulkUpload }
     });
   };
 
+  const handleBulkChangeUserType = () => {
+    const selectedData = getSelectedData();
+    setBulkActionDialog({
+      open: true,
+      type: 'change_user_type',
+      users: selectedData
+    });
+  };
+
   // Handle removing a user from bulk selection
   const handleRemoveFromBulkAction = (userId: string) => {
     handleSelectItem(userId); // This will deselect the item
@@ -250,7 +261,7 @@ export const UsersList = ({ onCreateUser, onEditUser, onViewUser, onBulkUpload }
     }));
   };
 
-  // Confirmación unificada de acciones - actualizada con bloqueo
+  // Confirmación unificada de acciones - actualizada con cambio de tipo de usuario
   const confirmBulkAction = (data: any) => {
     const { type, users: actionUsers } = bulkActionDialog;
     
@@ -280,6 +291,10 @@ export const UsersList = ({ onCreateUser, onEditUser, onViewUser, onBulkUpload }
             role_ids: data.roleIds
           });
         });
+        break;
+      case 'change_user_type':
+        const userIds = actionUsers.map(user => user.id);
+        bulkChangeUserType({ userIds, userTypes: data.userTypes });
         break;
     }
     
@@ -417,7 +432,7 @@ export const UsersList = ({ onCreateUser, onEditUser, onViewUser, onBulkUpload }
             onDataFilter={setFilteredData}
           />
 
-          {/* Bulk Actions Bar - actualizada con opción de bloqueo */}
+          {/* Bulk Actions Bar - actualizada con cambio de tipo de usuario */}
           <BulkActionsBar
             selectedCount={selectedCount}
             onClearSelection={clearSelection}
@@ -434,6 +449,18 @@ export const UsersList = ({ onCreateUser, onEditUser, onViewUser, onBulkUpload }
             isChangingRoles={isUpdating}
             showUserActions={true}
             showRoleChange={true}
+            customActions={
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleBulkChangeUserType}
+                disabled={isBulkChangingUserType}
+                className="h-8"
+              >
+                <Crown className="h-4 w-4" />
+                {isBulkChangingUserType ? 'Cambiando...' : 'Cambiar Tipo'}
+              </Button>
+            }
           />
 
           {/* Content */}
@@ -657,13 +684,13 @@ export const UsersList = ({ onCreateUser, onEditUser, onViewUser, onBulkUpload }
         </CardContent>
       </Card>
 
-      {/* Diálogo de acción masiva unificado - actualizado con bloqueo */}
+      {/* Diálogo de acción masiva unificado - actualizado con cambio de tipo de usuario */}
       <BulkUserActionsDialog
         open={bulkActionDialog.open}
         onOpenChange={(open) => setBulkActionDialog(prev => ({ ...prev, open }))}
         users={bulkActionDialog.users}
         actionType={bulkActionDialog.type}
-        isLoading={isDeleting || isToggling || isUpdating}
+        isLoading={isDeleting || isToggling || isUpdating || isBulkChangingUserType}
         onConfirm={confirmBulkAction}
         onRemoveUser={handleRemoveFromBulkAction}
       />

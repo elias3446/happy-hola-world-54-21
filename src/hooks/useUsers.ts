@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -430,6 +429,44 @@ export const useUsers = () => {
     },
   });
 
+  const bulkChangeUserTypeMutation = useMutation({
+    mutationFn: async ({ userIds, userTypes }: { userIds: string[], userTypes: string[] }) => {
+      console.log('Changing user types for users:', userIds, 'to types:', userTypes);
+      
+      const promises = userIds.map(async (userId) => {
+        const { error } = await supabase
+          .from('profiles')
+          .update({ role: userTypes })
+          .eq('id', userId);
+
+        if (error) {
+          throw new Error(`Error updating user ${userId}: ${error.message}`);
+        }
+        
+        return userId;
+      });
+
+      const results = await Promise.all(promises);
+      console.log('Bulk user type change completed for users:', results);
+      return results;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+      toast({
+        title: 'Éxito',
+        description: 'Tipos de usuario actualizados correctamente',
+      });
+    },
+    onError: (error: any) => {
+      console.error('Bulk change user type error:', error);
+      toast({
+        title: 'Error',
+        description: error.message || 'Error al cambiar los tipos de usuario',
+        variant: 'destructive',
+      });
+    },
+  });
+
   return {
     users,
     isLoading,
@@ -438,9 +475,11 @@ export const useUsers = () => {
     updateUser: updateUserMutation.mutate,
     deleteUser: deleteUserMutation.mutate,
     toggleUserStatus: toggleUserStatusMutation.mutate,
+    bulkChangeUserType: bulkChangeUserTypeMutation.mutate,
     isCreating: createUserMutation.isPending,
     isUpdating: updateUserMutation.isPending,
     isDeleting: deleteUserMutation.isPending,
     isToggling: toggleUserStatusMutation.isPending,
+    isBulkChangingUserType: bulkChangeUserTypeMutation.isPending,
   };
 };
