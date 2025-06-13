@@ -142,7 +142,7 @@ function CenterOnUserButton({ userPosition }: { userPosition: [number, number] }
       <div className="leaflet-control leaflet-bar">
         <button 
           onClick={handleCenterClick}
-          className="bg-white p-2 rounded-md shadow-md hover:bg-gray-100 focus:outline-none text-gray-700"
+          className="bg-card text-foreground p-2 rounded-md shadow-md hover:bg-accent focus:outline-none border border-border"
           title="Center on your location"
           type="button"
         >
@@ -199,7 +199,7 @@ const MapaBase: React.FC<MapaBaseProps> = ({
 
   return (
     <div className={cn(
-      "relative w-full rounded-lg overflow-hidden shadow-lg", 
+      "relative w-full rounded-lg overflow-hidden shadow-lg border border-border bg-card", 
       height, 
       className
     )}>

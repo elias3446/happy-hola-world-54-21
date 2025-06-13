@@ -86,8 +86,8 @@ const MapaReporteEspecifico: React.FC<MapaReporteEspecificoProps> = ({
   // Don't render if no location data
   if (!location?.latitud || !location?.longitud) {
     return (
-      <div className="p-4 bg-gray-100 rounded-md">
-        <p className="text-gray-500">No hay información de ubicación disponible</p>
+      <div className="p-4 bg-muted rounded-md">
+        <p className="text-muted-foreground">No hay información de ubicación disponible</p>
       </div>
     );
   }
@@ -109,7 +109,7 @@ const MapaReporteEspecifico: React.FC<MapaReporteEspecificoProps> = ({
           } as any)}
         >
           <Popup>
-            <div>
+            <div className="text-foreground">
               <h3 className="font-medium text-lg">{reporte.titulo || reporte.title}</h3>
               {(reporte.descripcion || reporte.description) && (
                 <p className="text-sm mt-1">{reporte.descripcion || reporte.description}</p>
@@ -120,16 +120,16 @@ const MapaReporteEspecifico: React.FC<MapaReporteEspecificoProps> = ({
       </MapaBase>
 
       {hasError && (
-        <Alert variant="default" className="border-amber-200 bg-amber-50">
-          <WifiOff className="h-4 w-4 text-amber-600" />
-          <AlertDescription className="text-amber-800">
+        <Alert variant="default" className="border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20">
+          <WifiOff className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+          <AlertDescription className="text-amber-800 dark:text-amber-200">
             No se pudo obtener información de ubicación desde los servicios de geocodificación. Mostrando solo coordenadas.
           </AlertDescription>
         </Alert>
       )}
 
       {reporte && (
-        <div className="p-4 bg-white rounded-md shadow-sm border border-gray-200">
+        <div className="p-4 bg-card text-foreground rounded-md shadow-sm border border-border">
           <div className="flex items-center gap-2 mb-2">
             <h3 className="text-lg font-medium">Ubicación del reporte</h3>
             {hasError && <AlertTriangle className="h-4 w-4 text-amber-500" />}
@@ -137,8 +137,8 @@ const MapaReporteEspecifico: React.FC<MapaReporteEspecificoProps> = ({
           
           {isLoadingAddress ? (
             <div className="animate-pulse space-y-2">
-              <div className="h-4 bg-gray-200 rounded"></div>
-              <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+              <div className="h-4 bg-muted rounded"></div>
+              <div className="h-4 bg-muted rounded w-3/4"></div>
             </div>
           ) : addressData ? (
             <div className="space-y-3">
@@ -147,22 +147,22 @@ const MapaReporteEspecifico: React.FC<MapaReporteEspecificoProps> = ({
                 return (
                   <>
                     <div>
-                      <p className="font-medium text-gray-700">Dirección:</p>
-                      <p className="text-gray-900 font-medium">
+                      <p className="font-medium text-muted-foreground">Dirección:</p>
+                      <p className="text-foreground font-medium">
                         {formattedAddress.mainAddress}
                       </p>
                     </div>
                     
                     {formattedAddress.reference && (
                       <div>
-                        <p className="font-medium text-gray-700">Referencia:</p>
-                        <p className="text-gray-700">
+                        <p className="font-medium text-muted-foreground">Referencia:</p>
+                        <p className="text-muted-foreground">
                           {formattedAddress.reference}
                         </p>
                       </div>
                     )}
                     
-                    <div className="text-sm text-gray-500">
+                    <div className="text-sm text-muted-foreground">
                       ({location.latitud.toFixed(6)}, {location.longitud.toFixed(6)})
                     </div>
                   </>
@@ -172,45 +172,45 @@ const MapaReporteEspecifico: React.FC<MapaReporteEspecificoProps> = ({
           ) : hasError ? (
             <div className="space-y-2">
               <div>
-                <p className="font-medium text-gray-700">Coordenadas:</p>
-                <p className="text-gray-700">
+                <p className="font-medium text-muted-foreground">Coordenadas:</p>
+                <p className="text-muted-foreground">
                   ({location.latitud.toFixed(6)}, {location.longitud.toFixed(6)})
                 </p>
               </div>
               {location.direccion && (
                 <div>
-                  <p className="font-medium text-gray-700">Dirección guardada:</p>
-                  <p className="text-gray-700">{location.direccion}</p>
+                  <p className="font-medium text-muted-foreground">Dirección guardada:</p>
+                  <p className="text-muted-foreground">{location.direccion}</p>
                 </div>
               )}
               {location.referencia && (
                 <div>
-                  <p className="font-medium text-gray-700">Referencia:</p>
-                  <p className="text-gray-700">{location.referencia}</p>
+                  <p className="font-medium text-muted-foreground">Referencia:</p>
+                  <p className="text-muted-foreground">{location.referencia}</p>
                 </div>
               )}
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-muted-foreground">
                 No se pudo obtener información adicional de dirección
               </p>
             </div>
           ) : (
             <div className="space-y-2">
               <div>
-                <p className="font-medium text-gray-700">Coordenadas:</p>
-                <p className="text-gray-700">
+                <p className="font-medium text-muted-foreground">Coordenadas:</p>
+                <p className="text-muted-foreground">
                   ({location.latitud.toFixed(6)}, {location.longitud.toFixed(6)})
                 </p>
               </div>
               {location.direccion && (
                 <div>
-                  <p className="font-medium text-gray-700">Dirección:</p>
-                  <p className="text-gray-700">{location.direccion}</p>
+                  <p className="font-medium text-muted-foreground">Dirección:</p>
+                  <p className="text-muted-foreground">{location.direccion}</p>
                 </div>
               )}
               {location.referencia && (
                 <div>
-                  <p className="font-medium text-gray-700">Referencia:</p>
-                  <p className="text-gray-700">{location.referencia}</p>
+                  <p className="font-medium text-muted-foreground">Referencia:</p>
+                  <p className="text-muted-foreground">{location.referencia}</p>
                 </div>
               )}
             </div>

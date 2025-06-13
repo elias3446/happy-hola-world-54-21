@@ -65,10 +65,10 @@ const EditableMarker: React.FC<{
       } as any)}
     >
       <Popup>
-        <div>
+        <div className="text-foreground">
           <h3 className="font-medium text-lg">{title}</h3>
           {description && <p className="text-sm mt-1">{description}</p>}
-          <p className="text-xs mt-2 text-gray-500">Arrastre el marcador o haga doble clic en el mapa para actualizar la posición</p>
+          <p className="text-xs mt-2 text-muted-foreground">Arrastre el marcador o haga doble clic en el mapa para actualizar la posición</p>
         </div>
       </Popup>
     </Marker>
@@ -156,8 +156,8 @@ const MapaReporteEditable: React.FC<MapaReporteEditableProps> = ({
   // Si no hay coordenadas válidas, mostrar mensaje
   if (initialPosition[0] === 0 && initialPosition[1] === 0) {
     return (
-      <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-md">
-        <p className="text-yellow-800">Este reporte no tiene coordenadas válidas para mostrar en el mapa.</p>
+      <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-md">
+        <p className="text-yellow-800 dark:text-yellow-200">Este reporte no tiene coordenadas válidas para mostrar en el mapa.</p>
       </div>
     );
   }
@@ -180,19 +180,19 @@ const MapaReporteEditable: React.FC<MapaReporteEditableProps> = ({
         />
       </MapaBase>
 
-      <div className="p-4 bg-white rounded-md shadow-sm border border-gray-200">
+      <div className="p-4 bg-card text-foreground rounded-md shadow-sm border border-border">
         <h3 className="text-lg font-medium mb-2">Ubicación del reporte</h3>
         
         {isLoadingAddress ? (
           <div className="animate-pulse space-y-2">
-            <div className="h-4 bg-gray-200 rounded"></div>
-            <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+            <div className="h-4 bg-muted rounded"></div>
+            <div className="h-4 bg-muted rounded w-3/4"></div>
           </div>
         ) : addressData ? (
           <div className="space-y-2">
             <div>
               <p className="font-medium">Dirección:</p>
-              <p className="text-gray-700">
+              <p className="text-muted-foreground">
                 {typeof formattedAddress === 'string' 
                   ? formattedAddress 
                   : (formattedAddress.mainAddress || "No disponible")}
@@ -200,18 +200,18 @@ const MapaReporteEditable: React.FC<MapaReporteEditableProps> = ({
             </div>
             <div>
               <p className="font-medium">Referencia:</p>
-              <p className="text-gray-700">
+              <p className="text-muted-foreground">
                 {typeof formattedAddress === 'string' 
                   ? "" 
                   : (formattedAddress.reference || "No disponible")}
               </p>
             </div>
-            <div className="mt-2 text-xs text-gray-500">
+            <div className="mt-2 text-xs text-muted-foreground">
               ({position[0].toFixed(6)}, {position[1].toFixed(6)})
             </div>
           </div>
         ) : (
-          <p className="text-gray-500">No se pudo obtener la información de la dirección</p>
+          <p className="text-muted-foreground">No se pudo obtener la información de la dirección</p>
         )}
       </div>
     </div>
