@@ -1,3 +1,4 @@
+
 import { useState, useEffect, createContext, useContext } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -77,9 +78,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   useEffect(() => {
+    let mounted = true;
+
     // Configurar listener de cambios de autenticación
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
+        if (!mounted) return;
+        
         console.log('Auth state changed:', event, session);
         setSession(session);
         setUser(session?.user ?? null);
@@ -91,7 +96,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           setLoading(false);
           
           setTimeout(() => {
-            checkHasUsers();
+            if (mounted) checkHasUsers();
           }, 0);
           return;
         }
@@ -99,8 +104,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         // Si se registra o inicia sesión exitosamente, verificar usuarios y perfil
         if (event === 'SIGNED_IN' && session) {
           setTimeout(() => {
-            checkHasUsers();
-            checkUserProfile();
+            if (mounted) {
+              checkHasUsers();
+              checkUserProfile();
+            }
+          }, 0);
+        }
+        
+        // Si hay token refresh, también verificar perfil
+        if (event === 'TOKEN_REFRESHED' && session) {
+          setTimeout(() => {
+            if (mounted) checkUserProfile();
           }, 0);
         }
         
@@ -108,23 +122,49 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
     );
 
-    // Verificar sesión existente
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log('Initial session check:', session);
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-      
-      // Si hay sesión, verificar perfil
-      if (session?.user) {
-        checkUserProfile();
+    // Verificar sesión existente al iniciar la aplicación
+    const initializeAuth = async () => {
+      try {
+        console.log('Initializing auth - checking for existing session...');
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('Error getting session:', error);
+          setLoading(false);
+          return;
+        }
+
+        console.log('Initial session check:', session);
+        
+        if (mounted) {
+          setSession(session);
+          setUser(session?.user ?? null);
+          
+          // Si hay sesión, verificar perfil
+          if (session?.user) {
+            setTimeout(() => {
+              if (mounted) checkUserProfile();
+            }, 0);
+          }
+          
+          setLoading(false);
+        }
+      } catch (error) {
+        console.error('Error initializing auth:', error);
+        if (mounted) setLoading(false);
       }
-    });
+    };
+
+    // Inicializar autenticación
+    initializeAuth();
 
     // Verificar si existen usuarios al cargar
     checkHasUsers();
 
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   // Verificar perfil cuando cambie el usuario
@@ -180,6 +220,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       console.log('Signing out user...');
       await supabase.auth.signOut({ scope: 'global' });
       console.log('User signed out successfully');
+      
+      // Limpiar estados locales inmediatamente
+      setSession(null);
+      setUser(null);
+      setHasProfile(null);
+      setUserProfile(null);
     } catch (error) {
       console.error('Error signing out:', error);
     }
