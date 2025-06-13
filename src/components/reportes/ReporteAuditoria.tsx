@@ -118,20 +118,20 @@ export const ReporteAuditoria: React.FC<ReporteAuditoriaProps> = ({ reporteId })
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <History className="h-5 w-5" />
-          Auditoría del Reporte
+          <History className="h-5 w-5 flex-shrink-0" />
+          <span className="truncate">Auditoría del Reporte</span>
         </CardTitle>
       </CardHeader>
       <CardContent>
         <Tabs defaultValue="actividades" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="actividades" className="flex items-center gap-2">
-              <Activity className="h-4 w-4" />
-              Actividades ({actividades.length})
+          <TabsList className="grid w-full grid-cols-2 h-auto">
+            <TabsTrigger value="actividades" className="flex items-center gap-1 px-2 py-2 text-xs sm:text-sm">
+              <Activity className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+              <span className="truncate">Actividades ({actividades.length})</span>
             </TabsTrigger>
-            <TabsTrigger value="cambios" className="flex items-center gap-2">
-              <History className="h-4 w-4" />
-              Historial de Cambios ({cambios.length})
+            <TabsTrigger value="cambios" className="flex items-center gap-1 px-2 py-2 text-xs sm:text-sm">
+              <History className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+              <span className="truncate">Cambios ({cambios.length})</span>
             </TabsTrigger>
           </TabsList>
 
@@ -146,50 +146,54 @@ export const ReporteAuditoria: React.FC<ReporteAuditoriaProps> = ({ reporteId })
                   No se encontraron actividades para este reporte
                 </div>
               ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Tipo</TableHead>
-                      <TableHead>Descripción</TableHead>
-                      <TableHead>Usuario</TableHead>
-                      <TableHead>Fecha</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {actividades.map((actividad) => (
-                      <TableRow key={actividad.id}>
-                        <TableCell>
-                          <Badge 
-                            variant="outline" 
-                            className={getActivityColor(actividad.activity_type)}
-                          >
-                            <div className="flex items-center gap-1">
-                              {getActivityIcon(actividad.activity_type)}
-                              <span className="text-xs">{actividad.activity_type}</span>
-                            </div>
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="max-w-md">
-                          <div className="truncate" title={actividad.descripcion}>
-                            {actividad.descripcion}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-1">
-                            <User className="h-3 w-3 text-muted-foreground" />
-                            <span className="text-sm">{actividad.user_email}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                            <Clock className="h-3 w-3" />
-                            {format(new Date(actividad.created_at), 'dd/MM/yyyy HH:mm', { locale: es })}
-                          </div>
-                        </TableCell>
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-[100px]">Tipo</TableHead>
+                        <TableHead className="min-w-[200px]">Descripción</TableHead>
+                        <TableHead className="w-[150px]">Usuario</TableHead>
+                        <TableHead className="w-[120px]">Fecha</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {actividades.map((actividad) => (
+                        <TableRow key={actividad.id}>
+                          <TableCell className="p-2">
+                            <Badge 
+                              variant="outline" 
+                              className={`${getActivityColor(actividad.activity_type)} text-xs`}
+                            >
+                              <div className="flex items-center gap-1">
+                                {getActivityIcon(actividad.activity_type)}
+                                <span className="hidden sm:inline">{actividad.activity_type}</span>
+                              </div>
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="p-2">
+                            <div className="max-w-[250px] truncate text-sm" title={actividad.descripcion}>
+                              {actividad.descripcion}
+                            </div>
+                          </TableCell>
+                          <TableCell className="p-2">
+                            <div className="flex items-center gap-1 max-w-[120px]">
+                              <User className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+                              <span className="text-xs truncate">{actividad.user_email}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell className="p-2">
+                            <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                              <Clock className="h-3 w-3 flex-shrink-0" />
+                              <span className="truncate">
+                                {format(new Date(actividad.created_at), 'dd/MM/yy HH:mm', { locale: es })}
+                              </span>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
               )}
             </ScrollArea>
           </TabsContent>
@@ -205,71 +209,75 @@ export const ReporteAuditoria: React.FC<ReporteAuditoriaProps> = ({ reporteId })
                   No se encontraron cambios registrados para este reporte
                 </div>
               ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Operación</TableHead>
-                      <TableHead>Descripción</TableHead>
-                      <TableHead>Campos Modificados</TableHead>
-                      <TableHead>Usuario</TableHead>
-                      <TableHead>Fecha</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {cambios.map((cambio) => (
-                      <TableRow key={cambio.id}>
-                        <TableCell>
-                          <Badge 
-                            variant="outline"
-                            className={
-                              cambio.operation_type === 'INSERT' ? 'bg-green-100 text-green-800 border-green-200' :
-                              cambio.operation_type === 'UPDATE' ? 'bg-orange-100 text-orange-800 border-orange-200' :
-                              cambio.operation_type === 'DELETE' ? 'bg-red-100 text-red-800 border-red-200' :
-                              'bg-blue-100 text-blue-800 border-blue-200'
-                            }
-                          >
-                            {cambio.operation_type}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="max-w-md">
-                          <div className="truncate" title={cambio.descripcion_cambio}>
-                            {cambio.descripcion_cambio}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          {cambio.campos_modificados && cambio.campos_modificados.length > 0 ? (
-                            <div className="flex flex-wrap gap-1">
-                              {cambio.campos_modificados.slice(0, 3).map((campo, index) => (
-                                <Badge key={index} variant="secondary" className="text-xs">
-                                  {campo}
-                                </Badge>
-                              ))}
-                              {cambio.campos_modificados.length > 3 && (
-                                <Badge variant="secondary" className="text-xs">
-                                  +{cambio.campos_modificados.length - 3} más
-                                </Badge>
-                              )}
-                            </div>
-                          ) : (
-                            <span className="text-muted-foreground">-</span>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-1">
-                            <User className="h-3 w-3 text-muted-foreground" />
-                            <span className="text-sm">{cambio.user_email}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                            <Clock className="h-3 w-3" />
-                            {format(new Date(cambio.created_at), 'dd/MM/yyyy HH:mm', { locale: es })}
-                          </div>
-                        </TableCell>
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-[100px]">Operación</TableHead>
+                        <TableHead className="min-w-[200px]">Descripción</TableHead>
+                        <TableHead className="w-[150px]">Campos</TableHead>
+                        <TableHead className="w-[120px]">Usuario</TableHead>
+                        <TableHead className="w-[120px]">Fecha</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {cambios.map((cambio) => (
+                        <TableRow key={cambio.id}>
+                          <TableCell className="p-2">
+                            <Badge 
+                              variant="outline"
+                              className={`text-xs ${
+                                cambio.operation_type === 'INSERT' ? 'bg-green-100 text-green-800 border-green-200' :
+                                cambio.operation_type === 'UPDATE' ? 'bg-orange-100 text-orange-800 border-orange-200' :
+                                cambio.operation_type === 'DELETE' ? 'bg-red-100 text-red-800 border-red-200' :
+                                'bg-blue-100 text-blue-800 border-blue-200'
+                              }`}
+                            >
+                              {cambio.operation_type}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="p-2">
+                            <div className="max-w-[250px] truncate text-sm" title={cambio.descripcion_cambio}>
+                              {cambio.descripcion_cambio}
+                            </div>
+                          </TableCell>
+                          <TableCell className="p-2">
+                            {cambio.campos_modificados && cambio.campos_modificados.length > 0 ? (
+                              <div className="flex flex-wrap gap-1 max-w-[120px]">
+                                {cambio.campos_modificados.slice(0, 2).map((campo, index) => (
+                                  <Badge key={index} variant="secondary" className="text-xs">
+                                    {campo}
+                                  </Badge>
+                                ))}
+                                {cambio.campos_modificados.length > 2 && (
+                                  <Badge variant="secondary" className="text-xs">
+                                    +{cambio.campos_modificados.length - 2}
+                                  </Badge>
+                                )}
+                              </div>
+                            ) : (
+                              <span className="text-muted-foreground text-xs">-</span>
+                            )}
+                          </TableCell>
+                          <TableCell className="p-2">
+                            <div className="flex items-center gap-1 max-w-[100px]">
+                              <User className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+                              <span className="text-xs truncate">{cambio.user_email}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell className="p-2">
+                            <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                              <Clock className="h-3 w-3 flex-shrink-0" />
+                              <span className="truncate">
+                                {format(new Date(cambio.created_at), 'dd/MM/yy HH:mm', { locale: es })}
+                              </span>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
               )}
             </ScrollArea>
           </TabsContent>
