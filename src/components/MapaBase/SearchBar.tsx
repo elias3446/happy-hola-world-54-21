@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -171,7 +172,7 @@ const SearchBar = ({ onSearch, userPosition }: SearchBarProps) => {
       </div>
 
       {showSuggestions && (searchQuery.trim() || userPosition) && (
-        <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-lg shadow-lg border w-full max-h-[60vh] z-[1001]">
+        <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-lg shadow-lg border w-full max-h-[60vh] z-20">
           {userPosition && userLocationLabel && (
             <div 
               className="flex items-center gap-2 p-2 border-b border-gray-100 cursor-pointer hover:bg-gray-50"
