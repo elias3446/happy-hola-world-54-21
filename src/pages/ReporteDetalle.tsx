@@ -80,7 +80,7 @@ export const ReporteDetalle = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
-      <div className="container mx-auto px-4 py-4">
+      <div className="container mx-auto px-4 py-4 max-w-7xl">
         {/* Header */}
         <div className="mb-6">
           <Button asChild variant="outline" className="mb-4 shadow-sm">
@@ -91,19 +91,19 @@ export const ReporteDetalle = () => {
           </Button>
           
           {/* Hero Section with Description */}
-          <div className="bg-white rounded-xl shadow-lg border border-slate-200 p-6 mb-6">
+          <div className="bg-white rounded-xl shadow-lg border border-slate-200 p-4 sm:p-6 mb-6">
             <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
-              <div className="flex-1">
-                <div className="flex items-center gap-3 mb-3">
+              <div className="flex-1 min-w-0">
+                <div className="flex flex-col sm:flex-row items-start gap-3 mb-3">
                   <div 
-                    className="w-12 h-12 rounded-full flex items-center justify-center text-white text-lg font-bold shadow-lg"
+                    className="w-12 h-12 sm:w-16 sm:h-16 rounded-full flex items-center justify-center text-white text-lg sm:text-xl font-bold shadow-lg flex-shrink-0"
                     style={{ backgroundColor: reporte.categoria?.color || '#3B82F6' }}
                   >
                     {reporte.categoria?.icono?.charAt(0) || 'R'}
                   </div>
-                  <div className="flex-1">
-                    <h1 className="text-2xl font-bold text-slate-800 mb-2">{reporte.nombre}</h1>
-                    <div className="flex flex-wrap items-center gap-2">
+                  <div className="flex-1 min-w-0">
+                    <h1 className="text-xl sm:text-2xl font-bold text-slate-800 mb-2 break-words">{reporte.nombre}</h1>
+                    <div className="flex flex-wrap items-center gap-2 mb-3">
                       <Badge
                         variant="secondary"
                         className="flex items-center gap-1 text-sm px-2 py-1 shadow-sm"
@@ -145,24 +145,21 @@ export const ReporteDetalle = () => {
                         </Badge>
                       )}
                     </div>
-                  </div>
-                </div>
-                
-                {/* Description moved here */}
-                <div className="mb-4">
-                  <p className="text-slate-700 leading-relaxed">
-                    {reporte.descripcion}
-                  </p>
-                </div>
-                
-                <div className="flex flex-wrap items-center gap-4 text-sm text-slate-600">
-                  <div className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4 text-slate-400" />
-                    <span>{formatDate(reporte.created_at)}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <User className="h-4 w-4 text-slate-400" />
-                    <span>Reportado por {getReporterName(reporte.created_by_profile)}</span>
+                    
+                    <p className="text-slate-700 leading-relaxed mb-3 break-words">
+                      {reporte.descripcion}
+                    </p>
+                    
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-sm text-slate-600">
+                      <div className="flex items-center gap-2">
+                        <Calendar className="h-4 w-4 text-slate-400 flex-shrink-0" />
+                        <span className="break-words">{formatDate(reporte.created_at)}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <User className="h-4 w-4 text-slate-400 flex-shrink-0" />
+                        <span className="break-words">Reportado por {getReporterName(reporte.created_by_profile)}</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -170,9 +167,9 @@ export const ReporteDetalle = () => {
           </div>
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-4">
-          {/* Main Content - Images and Map side by side */}
-          <div className="lg:col-span-3">
+        <div className="grid gap-6 xl:grid-cols-4">
+          {/* Main Content - Images and Map */}
+          <div className="xl:col-span-3">
             <div className="grid gap-6 lg:grid-cols-2">
               {/* Images Gallery */}
               {reporte.imagenes && reporte.imagenes.length > 0 && (
@@ -182,13 +179,13 @@ export const ReporteDetalle = () => {
                       <div className="p-2 bg-green-100 rounded-lg">
                         <Eye className="h-4 w-4 text-green-600" />
                       </div>
-                      Evidencia Fotográfica
+                      <span className="break-words">Evidencia Fotográfica</span>
                       <Badge variant="secondary" className="ml-auto">
                         {reporte.imagenes.length} imagen{reporte.imagenes.length !== 1 ? 'es' : ''}
                       </Badge>
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="p-6">
+                  <CardContent className="p-4 sm:p-6">
                     <div className="grid gap-4 sm:grid-cols-1">
                       {reporte.imagenes.map((imagen, index) => (
                         <div key={index} className="relative group">
@@ -221,14 +218,14 @@ export const ReporteDetalle = () => {
                       <div className="p-2 bg-red-100 rounded-lg">
                         <MapPin className="h-4 w-4 text-red-600" />
                       </div>
-                      Ubicación del Incidente
+                      <span className="break-words">Ubicación del Incidente</span>
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="p-6">
+                  <CardContent className="p-4 sm:p-6">
                     <div className="rounded-lg overflow-hidden shadow-md border border-slate-200">
                       <MapaReporteEspecifico
                         reporte={reporte}
-                        height="h-[400px]"
+                        height="h-[300px] sm:h-[400px]"
                       />
                     </div>
                   </CardContent>
@@ -252,14 +249,14 @@ export const ReporteDetalle = () => {
                 <div className="space-y-3">
                   <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
                     <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Creado</label>
-                    <p className="text-slate-800 font-medium mt-1 text-sm">
+                    <p className="text-slate-800 font-medium mt-1 text-sm break-words">
                       {formatDate(reporte.created_at)}
                     </p>
                   </div>
 
                   <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
                     <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Última Actualización</label>
-                    <p className="text-slate-800 font-medium mt-1 text-sm">
+                    <p className="text-slate-800 font-medium mt-1 text-sm break-words">
                       {formatDate(reporte.updated_at)}
                     </p>
                   </div>
