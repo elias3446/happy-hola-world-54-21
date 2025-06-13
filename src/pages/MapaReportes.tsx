@@ -58,7 +58,7 @@ export const MapaReportes = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-background">
         <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-8 max-w-7xl">
           <div className="flex items-center justify-center min-h-[400px]">
             <div className="text-center space-y-4">
@@ -72,13 +72,13 @@ export const MapaReportes = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-8 max-w-7xl">
         {/* Header */}
         <div className="mb-4 sm:mb-6">
           <div className="flex items-center justify-between mb-4">
             <div className="min-w-0 flex-1">
-              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold mb-2 break-words">Mapa de Reportes</h1>
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold mb-2 break-words text-foreground">Mapa de Reportes</h1>
               <p className="text-muted-foreground text-sm sm:text-base break-words">
                 Visualiza todos los reportes en el mapa interactivo
               </p>
@@ -101,7 +101,7 @@ export const MapaReportes = () => {
               <CardContent className="p-0">
                 {transformedReportes.length === 0 ? (
                   <div className="text-center py-8 sm:py-12 px-4">
-                    <h3 className="text-base sm:text-lg font-semibold mb-2">No hay reportes disponibles</h3>
+                    <h3 className="text-base sm:text-lg font-semibold mb-2 text-foreground">No hay reportes disponibles</h3>
                     <p className="text-muted-foreground text-sm sm:text-base mb-4 break-words">
                       Aún no se han enviado reportes para mostrar en el mapa
                     </p>
@@ -127,7 +127,7 @@ export const MapaReportes = () => {
               <Card className="h-fit overflow-hidden">
                 <CardHeader className="pb-3 sm:pb-4">
                   <div className="flex items-center justify-between gap-2">
-                    <CardTitle className="text-base sm:text-lg break-words min-w-0 flex-1">Detalles del Reporte</CardTitle>
+                    <CardTitle className="text-base sm:text-lg break-words min-w-0 flex-1 text-foreground">Detalles del Reporte</CardTitle>
                     <Button
                       variant="ghost"
                       size="sm"
@@ -141,7 +141,7 @@ export const MapaReportes = () => {
                 <CardContent className="space-y-3 sm:space-y-4">
                   {/* Título y Prioridad */}
                   <div>
-                    <h3 className="font-semibold text-base sm:text-lg mb-2 break-words">{selectedReporte.nombre}</h3>
+                    <h3 className="font-semibold text-base sm:text-lg mb-2 break-words text-foreground">{selectedReporte.nombre}</h3>
                     <Badge
                       variant="secondary"
                       className="flex items-center gap-1 w-fit text-xs"
@@ -159,7 +159,7 @@ export const MapaReportes = () => {
                   {/* Descripción */}
                   <div>
                     <label className="text-xs sm:text-sm font-medium text-muted-foreground">Descripción</label>
-                    <p className="text-xs sm:text-sm mt-1 break-words">{selectedReporte.descripcion}</p>
+                    <p className="text-xs sm:text-sm mt-1 break-words text-foreground">{selectedReporte.descripcion}</p>
                   </div>
 
                   {/* Categoría */}
@@ -171,7 +171,7 @@ export const MapaReportes = () => {
                           className="w-3 h-3 sm:w-4 sm:h-4 rounded-full flex-shrink-0"
                           style={{ backgroundColor: selectedReporte.categoria.color }}
                         />
-                        <span className="text-xs sm:text-sm break-words">{selectedReporte.categoria.nombre}</span>
+                        <span className="text-xs sm:text-sm break-words text-foreground">{selectedReporte.categoria.nombre}</span>
                       </div>
                     </div>
                   )}
@@ -185,7 +185,7 @@ export const MapaReportes = () => {
                           className="w-3 h-3 sm:w-4 sm:h-4 rounded-full flex-shrink-0"
                           style={{ backgroundColor: selectedReporte.estado.color }}
                         />
-                        <span className="text-xs sm:text-sm break-words">{selectedReporte.estado.nombre}</span>
+                        <span className="text-xs sm:text-sm break-words text-foreground">{selectedReporte.estado.nombre}</span>
                       </div>
                     </div>
                   )}
@@ -196,7 +196,7 @@ export const MapaReportes = () => {
                       <MapPin className="h-2 w-2 sm:h-3 sm:w-3" />
                       Ubicación
                     </label>
-                    <p className="text-xs sm:text-sm mt-1 break-all">
+                    <p className="text-xs sm:text-sm mt-1 break-all text-foreground">
                       {selectedReporte.direccion || `${selectedReporte.latitud?.toFixed(6)}, ${selectedReporte.longitud?.toFixed(6)}`}
                     </p>
                   </div>
@@ -207,7 +207,7 @@ export const MapaReportes = () => {
                       <Calendar className="h-2 w-2 sm:h-3 sm:w-3" />
                       Fecha de creación
                     </label>
-                    <p className="text-xs sm:text-sm mt-1 break-words">{formatDate(selectedReporte.created_at)}</p>
+                    <p className="text-xs sm:text-sm mt-1 break-words text-foreground">{formatDate(selectedReporte.created_at)}</p>
                   </div>
 
                   {/* Creado por */}
@@ -216,7 +216,7 @@ export const MapaReportes = () => {
                       <User className="h-2 w-2 sm:h-3 sm:w-3" />
                       Creado por
                     </label>
-                    <p className="text-xs sm:text-sm mt-1 break-words">
+                    <p className="text-xs sm:text-sm mt-1 break-words text-foreground">
                       {selectedReporte.created_by_profile 
                         ? `${selectedReporte.created_by_profile.first_name || ''} ${selectedReporte.created_by_profile.last_name || ''}`.trim() || selectedReporte.created_by_profile.email
                         : 'Usuario desconocido'
@@ -232,7 +232,7 @@ export const MapaReportes = () => {
                       </label>
                       <div className="grid grid-cols-2 gap-2 mt-2">
                         {selectedReporte.imagenes.slice(0, 4).map((imagen: string, index: number) => (
-                          <div key={index} className="aspect-square rounded-md overflow-hidden bg-gray-100">
+                          <div key={index} className="aspect-square rounded-md overflow-hidden bg-muted">
                             <img
                               src={imagen}
                               alt={`Imagen ${index + 1}`}
