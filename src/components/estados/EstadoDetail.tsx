@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { useEstados } from '@/hooks/useEstados';
 import type { Estado } from '@/types/estados';
+import { EstadoAuditoria } from './EstadoAuditoria';
 import { 
   ArrowLeft, 
   Edit, 
@@ -212,11 +213,6 @@ export const EstadoDetail = ({ estado: initialEstado, onEdit, onBack }: EstadoDe
                 })}
               </p>
             </div>
-
-            <div>
-              <label className="text-sm font-medium text-gray-700">ID del Estado</label>
-              <p className="text-gray-900 mt-1 font-mono text-xs break-all">{currentEstado.id}</p>
-            </div>
           </CardContent>
         </Card>
 
@@ -275,6 +271,11 @@ export const EstadoDetail = ({ estado: initialEstado, onEdit, onBack }: EstadoDe
             </div>
           </CardContent>
         </Card>
+
+        {/* Auditoría del Estado */}
+        <div className="lg:col-span-1">
+          <EstadoAuditoria estadoId={currentEstado.id} />
+        </div>
       </div>
     </div>
   );
