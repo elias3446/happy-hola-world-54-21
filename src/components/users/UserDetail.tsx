@@ -22,7 +22,9 @@ import {
   UserCheck,
   Ban,
   RefreshCw,
-  BarChart3
+  BarChart3,
+  Users,
+  Settings
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -31,6 +33,8 @@ import { UserReportesAsignados } from './UserReportesAsignados';
 import { UsuarioAuditoria } from './UsuarioAuditoria';
 import { UsuarioCambiosRecibidos } from './UsuarioCambiosRecibidos';
 import { UsuarioEstadisticasActividad } from './UsuarioEstadisticasActividad';
+import { UserRolesList } from './UserRolesList';
+import { UserPermissionsList } from './UserPermissionsList';
 import { useUsers } from '@/hooks/useUsers';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from '@/hooks/use-toast';
@@ -217,18 +221,18 @@ export const UserDetail = ({ user, onEdit, onBack }: UserDetailProps) => {
 
               <div>
                 <h4 className="font-medium mb-2 flex items-center gap-2">
-                  <Shield className="h-4 w-4 flex-shrink-0" />
-                  Roles
+                  <User className="h-4 w-4 flex-shrink-0" />
+                  Tipo de Usuario
                 </h4>
                 <div className="flex flex-wrap gap-2">
                   {currentUser.role && currentUser.role.length > 0 ? (
-                    currentUser.role.map((rol, index) => (
-                      <Badge key={index} variant="secondary" className="text-xs">
-                        {rol}
+                    currentUser.role.map((tipo, index) => (
+                      <Badge key={index} variant="outline" className="text-xs">
+                        {tipo === 'admin' ? 'Administrador' : tipo === 'user' ? 'Usuario' : tipo}
                       </Badge>
                     ))
                   ) : (
-                    <span className="text-sm text-muted-foreground">Sin roles asignados</span>
+                    <span className="text-sm text-muted-foreground">Sin tipo asignado</span>
                   )}
                 </div>
               </div>
@@ -318,11 +322,21 @@ export const UserDetail = ({ user, onEdit, onBack }: UserDetailProps) => {
         {/* Información Detallada - Responsive */}
         <div className="xl:col-span-2">
           <Tabs defaultValue="reportes" className="space-y-4">
-            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4">
+            <TabsList className="grid w-full grid-cols-3 sm:grid-cols-6">
               <TabsTrigger value="reportes" className="flex items-center gap-1 text-xs sm:text-sm">
                 <FileText className="h-3 w-3 sm:h-4 sm:w-4" />
                 <span className="hidden sm:inline">Reportes</span>
                 <span className="sm:hidden">Rep</span>
+              </TabsTrigger>
+              <TabsTrigger value="roles" className="flex items-center gap-1 text-xs sm:text-sm">
+                <Shield className="h-3 w-3 sm:h-4 sm:w-4" />
+                <span className="hidden sm:inline">Roles</span>
+                <span className="sm:hidden">Rol</span>
+              </TabsTrigger>
+              <TabsTrigger value="permisos" className="flex items-center gap-1 text-xs sm:text-sm">
+                <Settings className="h-3 w-3 sm:h-4 sm:w-4" />
+                <span className="hidden sm:inline">Permisos</span>
+                <span className="sm:hidden">Per</span>
               </TabsTrigger>
               <TabsTrigger value="auditoria" className="flex items-center gap-1 text-xs sm:text-sm">
                 <History className="h-3 w-3 sm:h-4 sm:w-4" />
@@ -346,6 +360,14 @@ export const UserDetail = ({ user, onEdit, onBack }: UserDetailProps) => {
                 userId={currentUser.id} 
                 userName={getFullName()} 
               />
+            </TabsContent>
+
+            <TabsContent value="roles">
+              <UserRolesList user={currentUser} />
+            </TabsContent>
+
+            <TabsContent value="permisos">
+              <UserPermissionsList user={currentUser} />
             </TabsContent>
 
             <TabsContent value="auditoria">
