@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -150,146 +149,118 @@ const SearchBar = ({ onSearch, userPosition }: SearchBarProps) => {
   };
 
   return (
-    <div className={`absolute z-10 ${
-      isMobile 
-        ? 'top-2 left-2 right-2' 
-        : 'top-4 left-1/2 transform -translate-x-1/2 w-full max-w-md px-4'
-    }`}>
-      <div className="relative">
-        <div className={`flex gap-2 ${isMobile ? 'w-full' : ''}`}>
-          <Input
-            type="text"
-            placeholder={isMobile ? "Buscar..." : "Buscar ubicación..."}
-            value={searchQuery}
-            onChange={(e) => handleInputChange(e.target.value)}
-            className={`flex-1 pr-10 bg-white shadow-lg ${isMobile ? 'text-sm' : ''}`}
-            autoComplete="off"
-          />
-          <Button 
-            type="button" 
-            size={isMobile ? "sm" : "icon"}
-            disabled={isSearching}
-            onClick={handleSubmit}
-            className="bg-white hover:bg-gray-100 shadow-lg shrink-0"
-          >
-            <Search className={`${isMobile ? 'h-3 w-3' : 'h-4 w-4'} text-gray-600`} />
-          </Button>
-        </div>
+    <div className="relative w-full">
+      <div className="flex gap-2 w-full">
+        <Input
+          type="text"
+          placeholder="Buscar ubicación..."
+          value={searchQuery}
+          onChange={(e) => handleInputChange(e.target.value)}
+          className="flex-1 bg-white shadow-lg text-sm"
+          autoComplete="off"
+        />
+        <Button 
+          type="button" 
+          size="sm"
+          disabled={isSearching}
+          onClick={handleSubmit}
+          className="bg-white hover:bg-gray-100 shadow-lg shrink-0 px-3"
+        >
+          <Search className="h-4 w-4 text-gray-600" />
+        </Button>
+      </div>
 
-        {showSuggestions && (searchQuery.trim() || userPosition) && (
-          <div className={`absolute top-full left-0 right-0 mt-2 bg-white rounded-lg shadow-lg border w-full ${
-            isMobile ? 'max-h-[60vh]' : 'max-h-[70vh]'
-          }`}>
-            {userPosition && userLocationLabel && (
-              <div 
-                className={`flex items-center gap-2 p-3 border-b border-gray-100 cursor-pointer hover:bg-gray-50 ${
-                  isMobile ? 'p-2' : ''
-                }`}
-                onClick={handleUseCurrentLocation}
-              >
-                <div className="flex-1">
-                  <div className={`font-medium ${isMobile ? 'text-sm' : ''}`}>
-                    Tu ubicación actual
-                  </div>
-                  <div className={`text-gray-500 ${isMobile ? 'text-xs' : 'text-sm'}`}>
-                    {userLocationLabel}
-                  </div>
+      {showSuggestions && (searchQuery.trim() || userPosition) && (
+        <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-lg shadow-lg border w-full max-h-[60vh] z-[1001]">
+          {userPosition && userLocationLabel && (
+            <div 
+              className="flex items-center gap-2 p-2 border-b border-gray-100 cursor-pointer hover:bg-gray-50"
+              onClick={handleUseCurrentLocation}
+            >
+              <div className="flex-1">
+                <div className="font-medium text-sm">
+                  Tu ubicación actual
+                </div>
+                <div className="text-gray-500 text-xs">
+                  {userLocationLabel}
                 </div>
               </div>
-            )}
+            </div>
+          )}
 
-            <ScrollArea className={isMobile ? 'max-h-[50vh]' : 'max-h-[60vh]'}>
-              <Command className="w-full">
-                <CommandList>
-                  <CommandEmpty>No hay resultados</CommandEmpty>
-                  <CommandGroup>
-                    {/* Predictive suggestions for place types */}
-                    {predictiveSuggestions.length > 0 && (
-                      <div className={`p-2 border-b border-gray-100 ${isMobile ? 'p-1' : ''}`}>
-                        <div className={`font-medium text-gray-500 px-2 py-1 ${
-                          isMobile ? 'text-xs px-1' : 'text-sm'
-                        }`}>
-                          Tipos de lugares
-                        </div>
-                        {predictiveSuggestions.map((suggestion, index) => (
-                          <CommandItem
-                            key={`predict-${index}`}
-                            onSelect={() => handleSelectSuggestion(suggestion)}
-                            className={`cursor-pointer hover:bg-gray-50 ${
-                              isMobile ? 'py-1 px-2 text-sm' : 'py-2 px-4'
-                            }`}
-                          >
-                            <Search className={`mr-2 text-gray-400 ${
-                              isMobile ? 'h-3 w-3' : 'h-4 w-4'
-                            }`} />
-                            <span className={isMobile ? 'text-sm' : ''}>{suggestion}</span>
-                          </CommandItem>
-                        ))}
+          <ScrollArea className="max-h-[50vh]">
+            <Command className="w-full">
+              <CommandList>
+                <CommandEmpty>No hay resultados</CommandEmpty>
+                <CommandGroup>
+                  {/* Predictive suggestions for place types */}
+                  {predictiveSuggestions.length > 0 && (
+                    <div className="p-1 border-b border-gray-100">
+                      <div className="font-medium text-gray-500 px-1 py-1 text-xs">
+                        Tipos de lugares
                       </div>
-                    )}
+                      {predictiveSuggestions.map((suggestion, index) => (
+                        <CommandItem
+                          key={`predict-${index}`}
+                          onSelect={() => handleSelectSuggestion(suggestion)}
+                          className="cursor-pointer hover:bg-gray-50 py-1 px-2 text-sm"
+                        >
+                          <Search className="mr-2 text-gray-400 h-3 w-3" />
+                          <span className="text-sm">{suggestion}</span>
+                        </CommandItem>
+                      ))}
+                    </div>
+                  )}
 
-                    {/* Popular locations that match the search */}
-                    {popularSuggestions.length > 0 && (
-                      <div className={`p-2 border-b border-gray-100 ${isMobile ? 'p-1' : ''}`}>
-                        <div className={`font-medium text-gray-500 px-2 py-1 ${
-                          isMobile ? 'text-xs px-1' : 'text-sm'
-                        }`}>
-                          Lugares populares
-                        </div>
-                        {popularSuggestions.map((suggestion, index) => (
-                          <CommandItem
-                            key={`popular-${index}`}
-                            onSelect={() => handleSelectSuggestion(suggestion)}
-                            className={`cursor-pointer hover:bg-gray-50 ${
-                              isMobile ? 'py-1 px-2 text-sm' : 'py-2 px-4'
-                            }`}
-                          >
-                            <Search className={`mr-2 text-gray-400 ${
-                              isMobile ? 'h-3 w-3' : 'h-4 w-4'
-                            }`} />
-                            <span className={isMobile ? 'text-sm' : ''}>{suggestion}</span>
-                          </CommandItem>
-                        ))}
+                  {/* Popular locations that match the search */}
+                  {popularSuggestions.length > 0 && (
+                    <div className="p-1 border-b border-gray-100">
+                      <div className="font-medium text-gray-500 px-1 py-1 text-xs">
+                        Lugares populares
                       </div>
-                    )}
+                      {popularSuggestions.map((suggestion, index) => (
+                        <CommandItem
+                          key={`popular-${index}`}
+                          onSelect={() => handleSelectSuggestion(suggestion)}
+                          className="cursor-pointer hover:bg-gray-50 py-1 px-2 text-sm"
+                        >
+                          <Search className="mr-2 text-gray-400 h-3 w-3" />
+                          <span className="text-sm">{suggestion}</span>
+                        </CommandItem>
+                      ))}
+                    </div>
+                  )}
 
-                    {/* API results */}
-                    {suggestions.length > 0 && (
-                      <div className={`p-2 ${isMobile ? 'p-1' : ''}`}>
-                        <div className={`font-medium text-gray-500 px-2 py-1 ${
-                          isMobile ? 'text-xs px-1' : 'text-sm'
-                        }`}>
-                          Resultados de búsqueda
-                        </div>
-                        {suggestions.map((suggestion, index) => (
-                          <CommandItem
-                            key={`result-${index}`}
-                            onSelect={() => handleSelectLocation(suggestion)}
-                            className={`cursor-pointer hover:bg-gray-50 ${
-                              isMobile ? 'py-2 px-2' : 'py-3 px-4'
-                            }`}
-                          >
-                            <div className="flex flex-col w-full">
-                              <span className={`font-medium ${isMobile ? 'text-sm' : ''}`}>
-                                {suggestion.display_name.split(',')[0]}
-                              </span>
-                              <span className={`text-gray-500 truncate ${
-                                isMobile ? 'text-xs' : 'text-sm'
-                              }`}>
-                                {suggestion.display_name.split(',').slice(1, 4).join(',')}
-                              </span>
-                            </div>
-                          </CommandItem>
-                        ))}
+                  {/* API results */}
+                  {suggestions.length > 0 && (
+                    <div className="p-1">
+                      <div className="font-medium text-gray-500 px-1 py-1 text-xs">
+                        Resultados de búsqueda
                       </div>
-                    )}
-                  </CommandGroup>
-                </CommandList>
-              </Command>
-            </ScrollArea>
-          </div>
-        )}
-      </div>
+                      {suggestions.map((suggestion, index) => (
+                        <CommandItem
+                          key={`result-${index}`}
+                          onSelect={() => handleSelectLocation(suggestion)}
+                          className="cursor-pointer hover:bg-gray-50 py-2 px-2"
+                        >
+                          <div className="flex flex-col w-full">
+                            <span className="font-medium text-sm">
+                              {suggestion.display_name.split(',')[0]}
+                            </span>
+                            <span className="text-gray-500 truncate text-xs">
+                              {suggestion.display_name.split(',').slice(1, 4).join(',')}
+                            </span>
+                          </div>
+                        </CommandItem>
+                      ))}
+                    </div>
+                  )}
+                </CommandGroup>
+              </CommandList>
+            </Command>
+          </ScrollArea>
+        </div>
+      )}
     </div>
   );
 };

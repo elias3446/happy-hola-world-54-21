@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, useMap, useMapEvents, CircleMarker, Circle } from 'react-leaflet';
 import L from 'leaflet';
@@ -203,7 +202,7 @@ const MapaBase: React.FC<MapaBaseProps> = ({
       height, 
       className
     )}>
-      <div className="w-full h-full min-h-0">
+      <div className="w-full h-full">
         <MapContainer
           {...({ 
             center: initialCenter, 
@@ -212,10 +211,9 @@ const MapaBase: React.FC<MapaBaseProps> = ({
           } as any)}
           style={{ 
             height: '100%', 
-            width: '100%', 
-            minHeight: '300px',
+            width: '100%',
             position: 'relative', 
-            zIndex: 10 
+            zIndex: 0 
           }}
           ref={mapRef}
         >
@@ -234,15 +232,14 @@ const MapaBase: React.FC<MapaBaseProps> = ({
         </MapContainer>
       </div>
       
-      {/* Search bar positioned to not overlap with map controls */}
+      {/* Search bar positioned below map controls on mobile, side by side on desktop */}
       {!hideSearchBar && (
-        <div className="absolute top-2 left-2 right-16 sm:top-4 sm:left-4 sm:right-20 z-20">
-          <div className="w-full max-w-xs sm:max-w-md">
-            <SearchBar 
-              onSearch={handleSearchLocation} 
-              userPosition={!isDefaultPosition(userPosition) ? userPosition : null} 
-            />
-          </div>
+        <div className="absolute top-2 left-2 right-2 z-[1000] 
+                        sm:top-4 sm:left-4 sm:right-auto sm:w-80">
+          <SearchBar 
+            onSearch={handleSearchLocation} 
+            userPosition={!isDefaultPosition(userPosition) ? userPosition : null} 
+          />
         </div>
       )}
     </div>
