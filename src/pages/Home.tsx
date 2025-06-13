@@ -35,7 +35,7 @@ const Home = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Button asChild className="w-full">
+              <Button asChild variant="secondary" className="w-full">
                 <Link to="/mapa-reportes">Ver Mapa</Link>
               </Button>
             </CardContent>
