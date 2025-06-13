@@ -21,7 +21,8 @@ import {
   UserCheck,
   UserX,
   ChevronDown,
-  Ban
+  Ban,
+  Mail
 } from 'lucide-react';
 
 interface BulkActionsBarProps {
@@ -36,6 +37,7 @@ interface BulkActionsBarProps {
   onBulkChangeCategory?: () => void;
   onBulkChangeEstado?: () => void;
   onBulkChangeAssignment?: () => void;
+  onBulkResendConfirmation?: () => void;
   onBulkExport?: () => void;
   isDeleting?: boolean;
   isToggling?: boolean;
@@ -46,12 +48,14 @@ interface BulkActionsBarProps {
   isChangingCategory?: boolean;
   isChangingEstado?: boolean;
   isChangingAssignment?: boolean;
+  isResendingConfirmation?: boolean;
   showStatusToggle?: boolean;
   showUserActions?: boolean;
   showRoleChange?: boolean;
   showCategoryChange?: boolean;
   showEstadoChange?: boolean;
   showAssignmentChange?: boolean;
+  showResendConfirmation?: boolean;
   customActions?: React.ReactNode;
 }
 
@@ -67,6 +71,7 @@ export const BulkActionsBar: React.FC<BulkActionsBarProps> = ({
   onBulkChangeCategory,
   onBulkChangeEstado,
   onBulkChangeAssignment,
+  onBulkResendConfirmation,
   onBulkExport,
   isDeleting = false,
   isToggling = false,
@@ -77,12 +82,14 @@ export const BulkActionsBar: React.FC<BulkActionsBarProps> = ({
   isChangingCategory = false,
   isChangingEstado = false,
   isChangingAssignment = false,
+  isResendingConfirmation = false,
   showStatusToggle = true,
   showUserActions = false,
   showRoleChange = false,
   showCategoryChange = false,
   showEstadoChange = false,
   showAssignmentChange = false,
+  showResendConfirmation = false,
   customActions,
 }) => {
   if (selectedCount === 0) return null;
@@ -119,6 +126,19 @@ export const BulkActionsBar: React.FC<BulkActionsBarProps> = ({
             >
               <Download className="h-4 w-4" />
               Exportar
+            </Button>
+          )}
+
+          {showResendConfirmation && onBulkResendConfirmation && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onBulkResendConfirmation}
+              disabled={isResendingConfirmation}
+              className="h-8"
+            >
+              <Mail className="h-4 w-4" />
+              {isResendingConfirmation ? 'Enviando...' : 'Reenviar Confirmación'}
             </Button>
           )}
 

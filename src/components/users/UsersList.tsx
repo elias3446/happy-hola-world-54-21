@@ -73,6 +73,7 @@ export const UsersList = ({ onCreateUser, onEditUser, onViewUser, onBulkUpload }
   const [filters, setFilters] = useDataTableFilters();
   const [filteredData, setFilteredData] = useState<any[]>([]);
   const [resendingEmails, setResendingEmails] = useState<Set<string>>(new Set());
+  const [isBulkResendingConfirmation, setIsBulkResendingConfirmation] = useState(false);
   
   // Estado para diálogo unificado - actualizado para incluir 'change_user_type'
   const [bulkActionDialog, setBulkActionDialog] = useState({
@@ -250,6 +251,63 @@ export const UsersList = ({ onCreateUser, onEditUser, onViewUser, onBulkUpload }
     }
   };
 
+  // Nueva función para reenvío masivo de confirmación
+  const handleBulkResendConfirmation = async () => {
+    const selectedData = getSelectedData();
+    const unconfirmedUsers = selectedData.filter(user => !user.confirmed);
+    
+    if (unconfirmedUsers.length === 0) {
+      toast({
+        title: 'Aviso',
+        description: 'No hay usuarios sin confirmar entre los seleccionados',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    setIsBulkResendingConfirmation(true);
+    let successCount = 0;
+    let errorCount = 0;
+    
+    try {
+      for (const user of unconfirmedUsers) {
+        try {
+          const { error } = await resendConfirmation(user.email);
+          if (error) {
+            errorCount++;
+            console.error(`Error sending to ${user.email}:`, error);
+          } else {
+            successCount++;
+          }
+          // Pequeña pausa entre emails para evitar spam
+          await new Promise(resolve => setTimeout(resolve, 500));
+        } catch (error) {
+          errorCount++;
+          console.error(`Error sending to ${user.email}:`, error);
+        }
+      }
+      
+      if (successCount > 0) {
+        toast({
+          title: 'Confirmaciones enviadas',
+          description: `Se enviaron ${successCount} emails de confirmación correctamente${errorCount > 0 ? ` (${errorCount} fallaron)` : ''}`,
+        });
+      }
+      
+      if (errorCount > 0 && successCount === 0) {
+        toast({
+          title: 'Error',
+          description: `No se pudo enviar ningún email de confirmación (${errorCount} fallaron)`,
+          variant: 'destructive',
+        });
+      }
+      
+      clearSelection();
+    } finally {
+      setIsBulkResendingConfirmation(false);
+    }
+  };
+
   // Handlers para acciones masivas actualizados con cambio de tipo de usuario
   const handleBulkDelete = () => {
     const selectedData = getSelectedData();
@@ -400,6 +458,12 @@ export const UsersList = ({ onCreateUser, onEditUser, onViewUser, onBulkUpload }
     document.body.removeChild(link);
   };
 
+  // Filter unconfirmed users for bulk resend confirmation
+  const selectedUnconfirmedCount = useMemo(() => {
+    const selectedData = getSelectedData();
+    return selectedData.filter(user => !user.confirmed).length;
+  }, [getSelectedData]);
+
   if (isLoading) {
     return (
       <Card>
@@ -458,7 +522,7 @@ export const UsersList = ({ onCreateUser, onEditUser, onViewUser, onBulkUpload }
             onDataFilter={setFilteredData}
           />
 
-          {/* Bulk Actions Bar - actualizada con cambio de tipo de usuario */}
+          {/* Bulk Actions Bar - actualizada con reenvío masivo de confirmación */}
           <BulkActionsBar
             selectedCount={selectedCount}
             onClearSelection={clearSelection}
@@ -467,14 +531,17 @@ export const UsersList = ({ onCreateUser, onEditUser, onViewUser, onBulkUpload }
             onBulkDeactivate={handleBulkDeactivate}
             onBulkBlock={handleBulkBlock}
             onBulkChangeRoles={handleBulkChangeRoles}
+            onBulkResendConfirmation={handleBulkResendConfirmation}
             onBulkExport={handleBulkExport}
             isDeleting={isDeleting}
             isActivating={isToggling}
             isDeactivating={isToggling}
             isBlocking={isToggling}
             isChangingRoles={isUpdating}
+            isResendingConfirmation={isBulkResendingConfirmation}
             showUserActions={true}
             showRoleChange={true}
+            showResendConfirmation={selectedUnconfirmedCount > 0}
             customActions={
               <Button
                 variant="outline"
