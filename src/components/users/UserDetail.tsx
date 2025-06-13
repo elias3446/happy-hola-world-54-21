@@ -1,4 +1,3 @@
-
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
@@ -9,6 +8,7 @@ import { useUsers, type User } from '@/hooks/useUsers';
 import { useAuth } from '@/hooks/useAuth';
 import { PERMISSION_LABELS, PERMISSION_GROUPS } from '@/types/roles';
 import { UsuarioAuditoria } from './UsuarioAuditoria';
+import { UserReportesAsignados } from './UserReportesAsignados';
 import { 
   ArrowLeft, 
   Edit, 
@@ -450,6 +450,14 @@ export const UserDetail = ({ user: initialUser, onEdit, onBack }: UserDetailProp
             )}
           </CardContent>
         </Card>
+
+        {/* Reportes Asignados */}
+        <div className="lg:col-span-2">
+          <UserReportesAsignados 
+            userId={currentUser.id} 
+            userName={fullName || currentUser.email} 
+          />
+        </div>
 
         {/* Auditoría del Usuario */}
         <div className="lg:col-span-1">
