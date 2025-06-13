@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -41,9 +42,12 @@ interface UserDetailProps {
 }
 
 export const UserDetail = ({ user, onEdit, onBack }: UserDetailProps) => {
-  const { toggleUserStatus, isToggling } = useUsers();
+  const { toggleUserStatus, isToggling, users } = useUsers();
   const { resendConfirmation } = useAuth();
   const [isResendingConfirmation, setIsResendingConfirmation] = useState(false);
+
+  // Obtener el usuario actualizado de la lista de usuarios
+  const currentUser = users.find(u => u.id === user.id) || user;
 
   const getInitials = (firstName?: string, lastName?: string, email?: string) => {
     if (firstName && lastName) {
@@ -59,27 +63,27 @@ export const UserDetail = ({ user, onEdit, onBack }: UserDetailProps) => {
   };
 
   const getFullName = () => {
-    const parts = [user.first_name, user.last_name].filter(Boolean);
+    const parts = [currentUser.first_name, currentUser.last_name].filter(Boolean);
     return parts.length > 0 ? parts.join(' ') : 'Sin nombre';
   };
 
   const handleToggleStatus = () => {
-    toggleUserStatus({ id: user.id, asset: !user.asset });
+    toggleUserStatus({ id: currentUser.id, asset: !currentUser.asset });
   };
 
   const handleActivateUser = () => {
-    toggleUserStatus({ id: user.id, asset: true });
+    toggleUserStatus({ id: currentUser.id, asset: true });
   };
 
   const handleBlockUser = () => {
-    toggleUserStatus({ id: user.id, asset: null });
+    toggleUserStatus({ id: currentUser.id, asset: null });
   };
 
   const handleResendConfirmation = async () => {
     setIsResendingConfirmation(true);
     
     try {
-      const { error } = await resendConfirmation(user.email);
+      const { error } = await resendConfirmation(currentUser.email);
       
       if (error) {
         toast({
@@ -90,7 +94,7 @@ export const UserDetail = ({ user, onEdit, onBack }: UserDetailProps) => {
       } else {
         toast({
           title: 'Éxito',
-          description: `Email de confirmación reenviado correctamente a ${user.email}`,
+          description: `Email de confirmación reenviado correctamente a ${currentUser.email}`,
         });
       }
     } catch (error) {
@@ -105,13 +109,13 @@ export const UserDetail = ({ user, onEdit, onBack }: UserDetailProps) => {
   };
 
   const getStatusBadge = () => {
-    if (user.asset === null) {
+    if (currentUser.asset === null) {
       return {
         variant: "destructive" as const,
         icon: <XCircle className="h-3 w-3" />,
         text: "Bloqueado"
       };
-    } else if (user.asset) {
+    } else if (currentUser.asset) {
       return {
         variant: "default" as const,
         icon: <CheckCircle className="h-3 w-3" />,
@@ -129,77 +133,82 @@ export const UserDetail = ({ user, onEdit, onBack }: UserDetailProps) => {
   const statusBadge = getStatusBadge();
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
+    <div className="space-y-4 sm:space-y-6 p-2 sm:p-4">
+      {/* Header - Responsive */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
           <Button 
             variant="outline" 
             size="sm" 
             onClick={onBack}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 w-fit"
           >
             <ArrowLeft className="h-4 w-4" />
-            Volver
+            <span className="hidden sm:inline">Volver</span>
           </Button>
           <div>
-            <h1 className="text-2xl font-bold">Detalle del Usuario</h1>
-            <p className="text-muted-foreground">Información completa del usuario</p>
+            <h1 className="text-xl sm:text-2xl font-bold">Detalle del Usuario</h1>
+            <p className="text-sm text-muted-foreground">Información completa del usuario</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Button onClick={() => onEdit(user)} className="flex items-center gap-2">
+          <Button 
+            onClick={() => onEdit(currentUser)} 
+            className="flex items-center gap-2 text-sm"
+            size="sm"
+          >
             <Edit className="h-4 w-4" />
-            Editar Usuario
+            <span className="hidden sm:inline">Editar Usuario</span>
+            <span className="sm:hidden">Editar</span>
           </Button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Información Principal */}
-        <div className="lg:col-span-1">
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 sm:gap-6">
+        {/* Información Principal - Responsive */}
+        <div className="xl:col-span-1">
           <Card>
-            <CardHeader className="text-center">
+            <CardHeader className="text-center pb-4">
               <div className="flex justify-center mb-4">
-                <Avatar className="h-24 w-24">
-                  <AvatarImage src={user.avatar || ''} alt={getFullName()} />
-                  <AvatarFallback className="text-xl">
-                    {getInitials(user.first_name, user.last_name, user.email)}
+                <Avatar className="h-16 w-16 sm:h-24 sm:w-24">
+                  <AvatarImage src={currentUser.avatar || ''} alt={getFullName()} />
+                  <AvatarFallback className="text-lg sm:text-xl">
+                    {getInitials(currentUser.first_name, currentUser.last_name, currentUser.email)}
                   </AvatarFallback>
                 </Avatar>
               </div>
-              <CardTitle className="text-xl">{getFullName()}</CardTitle>
-              <p className="text-muted-foreground">{user.email}</p>
+              <CardTitle className="text-lg sm:text-xl">{getFullName()}</CardTitle>
+              <p className="text-sm text-muted-foreground break-all">{currentUser.email}</p>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-3">
-                <div className="flex items-center gap-2">
-                  <Mail className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm">{user.email}</span>
+                <div className="flex items-start gap-2">
+                  <Mail className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                  <span className="text-sm break-all">{currentUser.email}</span>
                 </div>
                 
-                <div className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4 text-muted-foreground" />
+                <div className="flex items-start gap-2">
+                  <Calendar className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
                   <span className="text-sm">
-                    Registrado: {format(new Date(user.created_at), 'dd/MM/yyyy', { locale: es })}
+                    Registrado: {format(new Date(currentUser.created_at), 'dd/MM/yyyy', { locale: es })}
                   </span>
                 </div>
                 
-                <div className="flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-muted-foreground" />
+                <div className="flex items-start gap-2">
+                  <Clock className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
                   <span className="text-sm">
-                    Actualizado: {format(new Date(user.updated_at), 'dd/MM/yyyy', { locale: es })}
+                    Actualizado: {format(new Date(currentUser.updated_at), 'dd/MM/yyyy', { locale: es })}
                   </span>
                 </div>
 
-                <div className="flex items-center gap-2">
-                  {user.confirmed ? (
-                    <CheckCircle className="h-4 w-4 text-green-600" />
+                <div className="flex items-start gap-2">
+                  {currentUser.confirmed ? (
+                    <CheckCircle className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
                   ) : (
-                    <XCircle className="h-4 w-4 text-red-600" />
+                    <XCircle className="h-4 w-4 text-red-600 mt-0.5 flex-shrink-0" />
                   )}
                   <span className="text-sm">
-                    {user.confirmed ? 'Email confirmado' : 'Email no confirmado'}
+                    {currentUser.confirmed ? 'Email confirmado' : 'Email no confirmado'}
                   </span>
                 </div>
               </div>
@@ -208,13 +217,13 @@ export const UserDetail = ({ user, onEdit, onBack }: UserDetailProps) => {
 
               <div>
                 <h4 className="font-medium mb-2 flex items-center gap-2">
-                  <Shield className="h-4 w-4" />
+                  <Shield className="h-4 w-4 flex-shrink-0" />
                   Roles
                 </h4>
                 <div className="flex flex-wrap gap-2">
-                  {user.role && user.role.length > 0 ? (
-                    user.role.map((rol, index) => (
-                      <Badge key={index} variant="secondary">
+                  {currentUser.role && currentUser.role.length > 0 ? (
+                    currentUser.role.map((rol, index) => (
+                      <Badge key={index} variant="secondary" className="text-xs">
                         {rol}
                       </Badge>
                     ))
@@ -241,9 +250,9 @@ export const UserDetail = ({ user, onEdit, onBack }: UserDetailProps) => {
                     </Badge>
                   </div>
                   
-                  {user.asset !== null && (
+                  {currentUser.asset !== null && (
                     <Switch
-                      checked={user.asset}
+                      checked={currentUser.asset}
                       onCheckedChange={handleToggleStatus}
                       disabled={isToggling}
                     />
@@ -251,7 +260,7 @@ export const UserDetail = ({ user, onEdit, onBack }: UserDetailProps) => {
                 </div>
 
                 <div className="flex flex-col gap-2">
-                  {user.asset === null && (
+                  {currentUser.asset === null && (
                     <Button
                       variant="outline"
                       size="sm"
@@ -264,7 +273,7 @@ export const UserDetail = ({ user, onEdit, onBack }: UserDetailProps) => {
                     </Button>
                   )}
                   
-                  {user.asset !== null && (
+                  {currentUser.asset !== null && (
                     <Button
                       variant="destructive"
                       size="sm"
@@ -280,7 +289,7 @@ export const UserDetail = ({ user, onEdit, onBack }: UserDetailProps) => {
               </div>
 
               {/* Reenvío de Confirmación */}
-              {!user.confirmed && (
+              {!currentUser.confirmed && (
                 <>
                   <Separator />
                   <div className="space-y-2">
@@ -306,53 +315,57 @@ export const UserDetail = ({ user, onEdit, onBack }: UserDetailProps) => {
           </Card>
         </div>
 
-        {/* Información Detallada */}
-        <div className="lg:col-span-2">
+        {/* Información Detallada - Responsive */}
+        <div className="xl:col-span-2">
           <Tabs defaultValue="reportes" className="space-y-4">
-            <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="reportes" className="flex items-center gap-1">
-                <FileText className="h-4 w-4" />
+            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4">
+              <TabsTrigger value="reportes" className="flex items-center gap-1 text-xs sm:text-sm">
+                <FileText className="h-3 w-3 sm:h-4 sm:w-4" />
                 <span className="hidden sm:inline">Reportes</span>
+                <span className="sm:hidden">Rep</span>
               </TabsTrigger>
-              <TabsTrigger value="auditoria" className="flex items-center gap-1">
-                <History className="h-4 w-4" />
+              <TabsTrigger value="auditoria" className="flex items-center gap-1 text-xs sm:text-sm">
+                <History className="h-3 w-3 sm:h-4 sm:w-4" />
                 <span className="hidden sm:inline">Auditoría</span>
+                <span className="sm:hidden">Aud</span>
               </TabsTrigger>
-              <TabsTrigger value="cambios" className="flex items-center gap-1">
-                <UserCheck className="h-4 w-4" />
+              <TabsTrigger value="cambios" className="flex items-center gap-1 text-xs sm:text-sm">
+                <UserCheck className="h-3 w-3 sm:h-4 sm:w-4" />
                 <span className="hidden sm:inline">Cambios</span>
+                <span className="sm:hidden">Cam</span>
               </TabsTrigger>
-              <TabsTrigger value="actividad" className="flex items-center gap-1">
-                <BarChart3 className="h-4 w-4" />
+              <TabsTrigger value="actividad" className="flex items-center gap-1 text-xs sm:text-sm">
+                <BarChart3 className="h-3 w-3 sm:h-4 sm:w-4" />
                 <span className="hidden sm:inline">Actividad</span>
+                <span className="sm:hidden">Act</span>
               </TabsTrigger>
             </TabsList>
 
             <TabsContent value="reportes">
               <UserReportesAsignados 
-                userId={user.id} 
+                userId={currentUser.id} 
                 userName={getFullName()} 
               />
             </TabsContent>
 
             <TabsContent value="auditoria">
               <UsuarioAuditoria 
-                usuarioId={user.id} 
-                usuarioEmail={user.email}
+                usuarioId={currentUser.id} 
+                usuarioEmail={currentUser.email}
               />
             </TabsContent>
 
             <TabsContent value="cambios">
               <UsuarioCambiosRecibidos 
-                usuarioId={user.id} 
-                usuarioEmail={user.email}
+                usuarioId={currentUser.id} 
+                usuarioEmail={currentUser.email}
               />
             </TabsContent>
 
             <TabsContent value="actividad">
               <UsuarioEstadisticasActividad 
-                usuarioId={user.id} 
-                usuarioEmail={user.email}
+                usuarioId={currentUser.id} 
+                usuarioEmail={currentUser.email}
               />
             </TabsContent>
           </Tabs>
