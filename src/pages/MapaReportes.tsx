@@ -69,7 +69,7 @@ export const MapaReportes = () => {
         </div>
       </div>
     );
-  }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -138,7 +138,7 @@ export const MapaReportes = () => {
                     </Button>
                   </div>
                 </CardHeader>
-                <CardContent className="space-y-3 sm:space-y-4 max-h-[70vh] overflow-y-auto">
+                <CardContent className="space-y-3 sm:space-y-4">
                   {/* Título y Prioridad */}
                   <div>
                     <h3 className="font-semibold text-base sm:text-lg mb-2 break-words">{selectedReporte.nombre}</h3>

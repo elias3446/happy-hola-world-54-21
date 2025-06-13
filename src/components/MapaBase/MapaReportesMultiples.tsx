@@ -105,10 +105,16 @@ const MapaReportesMultiples = <T extends { id: string | number; ubicacion: { lat
               }
             } as any)}
           >
-            <Popup>
-              <div>
-                <h3 className="font-medium text-lg">{reporte.titulo}</h3>
-                {reporte.descripcion && <p className="text-sm mt-1">{reporte.descripcion}</p>}
+            <Popup
+              className="custom-popup"
+              maxWidth={280}
+              minWidth={200}
+            >
+              <div className="p-2 max-w-xs">
+                <h3 className="font-medium text-sm mb-1 break-words line-clamp-2">{reporte.titulo}</h3>
+                {reporte.descripcion && (
+                  <p className="text-xs text-gray-600 break-words line-clamp-3">{reporte.descripcion}</p>
+                )}
               </div>
             </Popup>
           </Marker>
