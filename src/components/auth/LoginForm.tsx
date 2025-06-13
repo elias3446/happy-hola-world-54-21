@@ -129,11 +129,11 @@ export const LoginForm = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <div className="mx-auto w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mb-4">
-            <LogIn className="h-6 w-6 text-blue-600" />
+          <div className="mx-auto w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-4">
+            <LogIn className="h-6 w-6 text-primary" />
           </div>
           <CardTitle className="text-2xl">Iniciar Sesión</CardTitle>
           <CardDescription>
@@ -182,7 +182,7 @@ export const LoginForm = () => {
             <button
               type="button"
               onClick={() => setShowPasswordRecovery(true)}
-              className="text-sm text-blue-600 hover:text-blue-800 underline"
+              className="text-sm text-primary hover:text-primary/80 underline"
             >
               ¿Olvidaste tu contraseña?
             </button>
