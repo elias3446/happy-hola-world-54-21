@@ -36,6 +36,12 @@ export const ReporteDetalle = () => {
     });
   };
 
+  const getReporterName = (profile: any) => {
+    if (!profile) return 'Usuario desconocido';
+    const fullName = `${profile.first_name || ''} ${profile.last_name || ''}`.trim();
+    return fullName || profile.email || 'Usuario desconocido';
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
@@ -131,7 +137,7 @@ export const ReporteDetalle = () => {
                   </div>
                   <div className="flex items-center gap-2">
                     <User className="h-4 w-4 text-slate-400" />
-                    <span>Reportado por Ciudadano</span>
+                    <span>Reportado por {getReporterName(reporte.created_by_profile)}</span>
                   </div>
                   {reporte.latitud && reporte.longitud && (
                     <div className="flex items-center gap-2">
