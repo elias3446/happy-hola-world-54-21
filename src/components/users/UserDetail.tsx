@@ -1,11 +1,12 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Switch } from '@/components/ui/switch';
 import { 
   User, 
   Mail, 
@@ -18,7 +19,9 @@ import {
   Clock,
   FileText,
   History,
-  UserCheck
+  UserCheck,
+  Ban,
+  RefreshCw
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -26,6 +29,9 @@ import type { User as UserType } from '@/types/users';
 import { UserReportesAsignados } from './UserReportesAsignados';
 import { UsuarioAuditoria } from './UsuarioAuditoria';
 import { UsuarioCambiosRecibidos } from './UsuarioCambiosRecibidos';
+import { useUsers } from '@/hooks/useUsers';
+import { useAuth } from '@/hooks/useAuth';
+import { toast } from '@/hooks/use-toast';
 
 interface UserDetailProps {
   user: UserType;
@@ -34,6 +40,10 @@ interface UserDetailProps {
 }
 
 export const UserDetail = ({ user, onEdit, onBack }: UserDetailProps) => {
+  const { toggleUserStatus, isToggling } = useUsers();
+  const { resendConfirmation } = useAuth();
+  const [isResendingConfirmation, setIsResendingConfirmation] = useState(false);
+
   const getInitials = (firstName?: string, lastName?: string, email?: string) => {
     if (firstName && lastName) {
       return `${firstName[0]}${lastName[0]}`.toUpperCase();
@@ -51,6 +61,71 @@ export const UserDetail = ({ user, onEdit, onBack }: UserDetailProps) => {
     const parts = [user.first_name, user.last_name].filter(Boolean);
     return parts.length > 0 ? parts.join(' ') : 'Sin nombre';
   };
+
+  const handleToggleStatus = () => {
+    toggleUserStatus({ id: user.id, asset: !user.asset });
+  };
+
+  const handleActivateUser = () => {
+    toggleUserStatus({ id: user.id, asset: true });
+  };
+
+  const handleBlockUser = () => {
+    toggleUserStatus({ id: user.id, asset: null });
+  };
+
+  const handleResendConfirmation = async () => {
+    setIsResendingConfirmation(true);
+    
+    try {
+      const { error } = await resendConfirmation(user.email);
+      
+      if (error) {
+        toast({
+          title: 'Error',
+          description: `Error al reenviar confirmación: ${error.message}`,
+          variant: 'destructive',
+        });
+      } else {
+        toast({
+          title: 'Éxito',
+          description: `Email de confirmación reenviado correctamente a ${user.email}`,
+        });
+      }
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: `Error inesperado al reenviar confirmación`,
+        variant: 'destructive',
+      });
+    } finally {
+      setIsResendingConfirmation(false);
+    }
+  };
+
+  const getStatusBadge = () => {
+    if (user.asset === null) {
+      return {
+        variant: "destructive" as const,
+        icon: <XCircle className="h-3 w-3" />,
+        text: "Bloqueado"
+      };
+    } else if (user.asset) {
+      return {
+        variant: "default" as const,
+        icon: <CheckCircle className="h-3 w-3" />,
+        text: "Activo"
+      };
+    } else {
+      return {
+        variant: "secondary" as const,
+        icon: <XCircle className="h-3 w-3" />,
+        text: "Inactivo"
+      };
+    }
+  };
+
+  const statusBadge = getStatusBadge();
 
   return (
     <div className="space-y-6">
@@ -71,10 +146,12 @@ export const UserDetail = ({ user, onEdit, onBack }: UserDetailProps) => {
             <p className="text-muted-foreground">Información completa del usuario</p>
           </div>
         </div>
-        <Button onClick={() => onEdit(user)} className="flex items-center gap-2">
-          <Edit className="h-4 w-4" />
-          Editar Usuario
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button onClick={() => onEdit(user)} className="flex items-center gap-2">
+            <Edit className="h-4 w-4" />
+            Editar Usuario
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -146,14 +223,81 @@ export const UserDetail = ({ user, onEdit, onBack }: UserDetailProps) => {
                 </div>
               </div>
 
-              {user.asset !== undefined && (
+              <Separator />
+
+              {/* Control de Estado del Usuario */}
+              <div className="space-y-3">
+                <h4 className="font-medium">Estado del Usuario</h4>
+                
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Badge 
+                      variant={statusBadge.variant} 
+                      className="flex items-center gap-1"
+                    >
+                      {statusBadge.icon}
+                      {statusBadge.text}
+                    </Badge>
+                  </div>
+                  
+                  {user.asset !== null && (
+                    <Switch
+                      checked={user.asset}
+                      onCheckedChange={handleToggleStatus}
+                      disabled={isToggling}
+                    />
+                  )}
+                </div>
+
+                <div className="flex flex-col gap-2">
+                  {user.asset === null && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleActivateUser}
+                      disabled={isToggling}
+                      className="w-full"
+                    >
+                      <UserCheck className="h-4 w-4 mr-2" />
+                      {isToggling ? 'Desbloqueando...' : 'Desbloquear Usuario'}
+                    </Button>
+                  )}
+                  
+                  {user.asset !== null && (
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={handleBlockUser}
+                      disabled={isToggling}
+                      className="w-full"
+                    >
+                      <Ban className="h-4 w-4 mr-2" />
+                      {isToggling ? 'Bloqueando...' : 'Bloquear Usuario'}
+                    </Button>
+                  )}
+                </div>
+              </div>
+
+              {/* Reenvío de Confirmación */}
+              {!user.confirmed && (
                 <>
                   <Separator />
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium">Estado:</span>
-                    <Badge variant={user.asset ? "default" : "secondary"}>
-                      {user.asset ? 'Activo' : 'Inactivo'}
-                    </Badge>
+                  <div className="space-y-2">
+                    <h4 className="font-medium">Email no confirmado</h4>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleResendConfirmation}
+                      disabled={isResendingConfirmation}
+                      className="w-full"
+                    >
+                      {isResendingConfirmation ? (
+                        <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                      ) : (
+                        <Mail className="h-4 w-4 mr-2" />
+                      )}
+                      {isResendingConfirmation ? 'Enviando...' : 'Reenviar Confirmación'}
+                    </Button>
                   </div>
                 </>
               )}
