@@ -1,5 +1,5 @@
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, useMap, useMapEvents, CircleMarker, Circle } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -156,7 +156,6 @@ function CenterOnUserButton({ userPosition }: { userPosition: [number, number] }
   );
 }
 
-
 export interface MapaBaseProps {
   className?: string;
   height?: string;
@@ -199,34 +198,51 @@ const MapaBase: React.FC<MapaBaseProps> = ({
   };
 
   return (
-    <div className={cn("relative rounded-lg overflow-hidden shadow-lg", height, className)}>
-      <MapContainer
-        {...({ 
-          center: initialCenter, 
-          zoom, 
-          scrollWheelZoom: true 
-        } as any)}
-        style={{ height: '100%', width: '100%', position: 'relative', zIndex: 10 }}
-        ref={mapRef}
-      >
-        <TileLayer
+    <div className={cn(
+      "relative w-full rounded-lg overflow-hidden shadow-lg", 
+      height, 
+      className
+    )}>
+      <div className="w-full h-full min-h-0">
+        <MapContainer
           {...({ 
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-            url: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            center: initialCenter, 
+            zoom, 
+            scrollWheelZoom: true 
           } as any)}
-        />
-        <LocationMarker setUserPosition={setUserPosition} />
-        {!isDefaultPosition(userPosition) && (
-          <UserLocationMarker position={userPosition} accuracy={accuracy} />
-        )}
-        <CenterOnUserButton userPosition={userPosition} />
-        {children}
-      </MapContainer>
+          style={{ 
+            height: '100%', 
+            width: '100%', 
+            minHeight: '300px',
+            position: 'relative', 
+            zIndex: 10 
+          }}
+          ref={mapRef}
+        >
+          <TileLayer
+            {...({ 
+              attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+              url: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            } as any)}
+          />
+          <LocationMarker setUserPosition={setUserPosition} />
+          {!isDefaultPosition(userPosition) && (
+            <UserLocationMarker position={userPosition} accuracy={accuracy} />
+          )}
+          <CenterOnUserButton userPosition={userPosition} />
+          {children}
+        </MapContainer>
+      </div>
       
-      {/* Movemos la barra de búsqueda después del mapa y aumentamos su z-index */}
+      {/* Search bar with proper responsive positioning */}
       {!hideSearchBar && (
-        <div className="absolute top-0 left-0 right-0 z-20">
-          <SearchBar onSearch={handleSearchLocation} userPosition={!isDefaultPosition(userPosition) ? userPosition : null} />
+        <div className="absolute top-2 left-2 right-2 sm:top-4 sm:left-4 sm:right-4 z-20">
+          <div className="w-full max-w-md">
+            <SearchBar 
+              onSearch={handleSearchLocation} 
+              userPosition={!isDefaultPosition(userPosition) ? userPosition : null} 
+            />
+          </div>
         </div>
       )}
     </div>
