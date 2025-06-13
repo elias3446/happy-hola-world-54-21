@@ -52,7 +52,7 @@ const Home = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Button asChild variant="outline" className="w-full">
+              <Button asChild variant="secondary" className="w-full">
                 <Link to="/reportes-publicos">Ver Reportes</Link>
               </Button>
             </CardContent>
