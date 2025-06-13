@@ -9,6 +9,7 @@ import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious
 import { useReporteHistorial } from '@/hooks/useReporteHistorial';
 import { useReportes } from '@/hooks/useReportes';
 import { MapaReporteEspecifico } from '@/components/MapaBase';
+import { ReporteAuditoria } from './ReporteAuditoria';
 import type { Reporte } from '@/types/reportes';
 import { useState } from 'react';
 import { 
@@ -99,7 +100,6 @@ export const ReporteDetail = ({ reporte, onEdit, onBack }: ReporteDetailProps) =
                   {priorityConfig[reporte.priority]?.label || 'Urgente'}
                 </Badge>
               </div>
-              <p className="text-gray-600">ID: {reporte.id}</p>
             </div>
           </div>
           
@@ -282,6 +282,9 @@ export const ReporteDetail = ({ reporte, onEdit, onBack }: ReporteDetailProps) =
               </CardContent>
             </Card>
           )}
+
+          {/* Componente de Auditoría */}
+          <ReporteAuditoria reporteId={reporte.id} />
         </div>
 
         {/* Información Adicional y Historial */}
@@ -319,11 +322,6 @@ export const ReporteDetail = ({ reporte, onEdit, onBack }: ReporteDetailProps) =
                     minute: '2-digit'
                   })}
                 </p>
-              </div>
-
-              <div>
-                <label className="text-sm font-medium text-gray-700">ID del Reporte</label>
-                <p className="text-gray-900 mt-1 font-mono text-xs break-all">{reporte.id}</p>
               </div>
             </CardContent>
           </Card>
