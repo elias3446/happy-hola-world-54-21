@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
@@ -42,12 +42,24 @@ export const MainNavigation = () => {
   const { user, signOut, isAdmin } = useAuth();
   const location = useLocation();
   const [isOpen, setIsOpen] = useState(false);
+  const [userDropdownOpen, setUserDropdownOpen] = useState(false);
 
   const isActive = (path: string) => location.pathname === path;
 
   const handleSignOut = async () => {
     await signOut();
   };
+
+  // Hook to detect screen size changes and close dropdowns
+  useEffect(() => {
+    const handleResize = () => {
+      // Close user dropdown when screen size changes
+      setUserDropdownOpen(false);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const publicNavItems = [
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -237,7 +249,7 @@ export const MainNavigation = () => {
             <ThemeToggle />
             
             {user ? (
-              <DropdownMenu>
+              <DropdownMenu open={userDropdownOpen} onOpenChange={setUserDropdownOpen}>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="sm" className="flex items-center space-x-2 max-w-[200px]">
                     <User className="h-4 w-4 shrink-0" />
