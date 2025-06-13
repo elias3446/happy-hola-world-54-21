@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useReportes } from '@/hooks/useReportes';
 import { MapaReporteEspecifico } from '@/components/MapaBase';
-import { ArrowLeft, Calendar, User, FileText, AlertTriangle, MapPin, Eye, Clock } from 'lucide-react';
+import { ArrowLeft, Calendar, User, FileText, AlertTriangle, MapPin, Eye } from 'lucide-react';
 
 const priorityConfig = {
   urgente: { color: '#DC2626', label: 'Urgente' },
@@ -81,7 +81,7 @@ export const ReporteDetalle = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
       <div className="container mx-auto px-4 py-4">
-        {/* Header with improved styling */}
+        {/* Header */}
         <div className="mb-6">
           <Button asChild variant="outline" className="mb-4 shadow-sm">
             <Link to="/reportes-publicos">
@@ -90,7 +90,7 @@ export const ReporteDetalle = () => {
             </Link>
           </Button>
           
-          {/* Hero Section - Reduced size */}
+          {/* Hero Section */}
           <div className="bg-white rounded-xl shadow-lg border border-slate-200 p-6 mb-6">
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
               <div className="flex-1">
@@ -157,22 +157,16 @@ export const ReporteDetalle = () => {
                     <User className="h-4 w-4 text-slate-400" />
                     <span>Reportado por {getReporterName(reporte.created_by_profile)}</span>
                   </div>
-                  {reporte.latitud && reporte.longitud && (
-                    <div className="flex items-center gap-2">
-                      <MapPin className="h-4 w-4 text-slate-400" />
-                      <span>Ubicación registrada</span>
-                    </div>
-                  )}
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-3">
-          {/* Main Content */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Description Card - Reduced size */}
+        <div className="grid gap-6 lg:grid-cols-4">
+          {/* Main Content - Now takes more space */}
+          <div className="lg:col-span-3 space-y-6">
+            {/* Description Card */}
             <Card className="shadow-lg border-slate-200 bg-white">
               <CardHeader className="bg-gradient-to-r from-slate-50 to-slate-100 rounded-t-lg border-b border-slate-200 py-4">
                 <CardTitle className="flex items-center gap-2 text-slate-800 text-lg">
@@ -189,7 +183,7 @@ export const ReporteDetalle = () => {
               </CardContent>
             </Card>
 
-            {/* Images Gallery - Reduced size */}
+            {/* Images Gallery */}
             {reporte.imagenes && reporte.imagenes.length > 0 && (
               <Card className="shadow-lg border-slate-200 bg-white">
                 <CardHeader className="bg-gradient-to-r from-slate-50 to-slate-100 rounded-t-lg border-b border-slate-200 py-4">
@@ -228,7 +222,7 @@ export const ReporteDetalle = () => {
               </Card>
             )}
 
-            {/* Map Section - Reduced size */}
+            {/* Map Section */}
             {reporte.latitud && reporte.longitud && (
               <Card className="shadow-lg border-slate-200 bg-white">
                 <CardHeader className="bg-gradient-to-r from-slate-50 to-slate-100 rounded-t-lg border-b border-slate-200 py-4">
@@ -243,7 +237,7 @@ export const ReporteDetalle = () => {
                   <div className="rounded-lg overflow-hidden shadow-md border border-slate-200">
                     <MapaReporteEspecifico
                       reporte={reporte}
-                      height="h-[300px]"
+                      height="h-[400px]"
                     />
                   </div>
                 </CardContent>
@@ -251,20 +245,27 @@ export const ReporteDetalle = () => {
             )}
           </div>
 
-          {/* Sidebar - Reduced size and removed redundancy */}
+          {/* Sidebar - Now smaller and more focused */}
           <div className="space-y-6">
-            {/* Quick Info Card - Only unique information */}
+            {/* Fechas Card */}
             <Card className="shadow-lg border-slate-200 bg-white">
               <CardHeader className="bg-gradient-to-r from-slate-50 to-slate-100 rounded-t-lg border-b border-slate-200 py-4">
                 <CardTitle className="flex items-center gap-2 text-slate-800 text-lg">
                   <div className="p-2 bg-purple-100 rounded-lg">
-                    <Clock className="h-4 w-4 text-purple-600" />
+                    <Calendar className="h-4 w-4 text-purple-600" />
                   </div>
-                  Información Adicional
+                  Fechas
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-4 space-y-4">
                 <div className="space-y-3">
+                  <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
+                    <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Creado</label>
+                    <p className="text-slate-800 font-medium mt-1 text-sm">
+                      {formatDate(reporte.created_at)}
+                    </p>
+                  </div>
+
                   <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
                     <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Última Actualización</label>
                     <p className="text-slate-800 font-medium mt-1 text-sm">
