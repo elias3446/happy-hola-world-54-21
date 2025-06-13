@@ -233,9 +233,9 @@ const MapaBase: React.FC<MapaBaseProps> = ({
         </MapContainer>
       </div>
       
-      {/* Search bar positioned at the top with more margin to avoid controls */}
+      {/* Search bar positioned at the top with smaller width to avoid controls */}
       {!hideSearchBar && (
-        <div className="absolute top-16 left-1/2 transform -translate-x-1/2 z-[1000] w-full max-w-md px-4">
+        <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-[1000] w-full max-w-xs px-4">
           <SearchBar 
             onSearch={handleSearchLocation} 
             userPosition={!isDefaultPosition(userPosition) ? userPosition : null} 
