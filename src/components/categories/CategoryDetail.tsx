@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { useCategories } from '@/hooks/useCategories';
 import type { Category } from '@/types/categories';
+import { CategoriaAuditoria } from './CategoriaAuditoria';
 import { 
   ArrowLeft, 
   Edit, 
@@ -209,11 +210,6 @@ export const CategoryDetail = ({ category: initialCategory, onEdit, onBack }: Ca
               </p>
             </div>
 
-            <div>
-              <label className="text-sm font-medium text-gray-700">ID de la Categoría</label>
-              <p className="text-gray-900 mt-1 font-mono text-xs break-all">{currentCategory.id}</p>
-            </div>
-
             {isSystemCategoryItem && (
               <>
                 <Separator />
@@ -228,6 +224,11 @@ export const CategoryDetail = ({ category: initialCategory, onEdit, onBack }: Ca
             )}
           </CardContent>
         </Card>
+
+        {/* Auditoría de la Categoría */}
+        <div className="lg:col-span-1">
+          <CategoriaAuditoria categoriaId={currentCategory.id} />
+        </div>
       </div>
     </div>
   );
