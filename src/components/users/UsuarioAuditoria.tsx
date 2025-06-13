@@ -13,6 +13,7 @@ import { es } from 'date-fns/locale';
 
 interface UsuarioAuditoriaProps {
   usuarioId: string;
+  usuarioEmail: string;
 }
 
 interface ActividadUsuario {
@@ -69,11 +70,13 @@ const getActivityColor = (type: ActividadUsuario['activity_type']) => {
   }
 };
 
-export const UsuarioAuditoria: React.FC<UsuarioAuditoriaProps> = ({ usuarioId }) => {
+export const UsuarioAuditoria: React.FC<UsuarioAuditoriaProps> = ({ usuarioId, usuarioEmail }) => {
   // Hook para obtener actividades del usuario
   const { data: actividades = [], isLoading: isLoadingActividades } = useQuery({
     queryKey: ['usuario-actividades', usuarioId],
     queryFn: async () => {
+      console.log('Fetching activities for user:', usuarioId);
+      
       const { data, error } = await supabase.rpc('get_user_activities', {
         p_user_id: usuarioId,
         p_limit: 100,
@@ -85,14 +88,18 @@ export const UsuarioAuditoria: React.FC<UsuarioAuditoriaProps> = ({ usuarioId })
         throw error;
       }
 
-      return data as ActividadUsuario[];
-    }
+      console.log('Fetched activities:', data);
+      return (data || []) as ActividadUsuario[];
+    },
+    enabled: !!usuarioId,
   });
 
-  // Hook para obtener historial de cambios del usuario
-  const { data: cambios = [], isLoading: isLoadingCambios } = useQuery({
-    queryKey: ['usuario-cambios', usuarioId],
+  // Hook para obtener historial de cambios realizados POR el usuario
+  const { data: cambiosRealizados = [], isLoading: isLoadingCambiosRealizados } = useQuery({
+    queryKey: ['usuario-cambios-realizados', usuarioId],
     queryFn: async () => {
+      console.log('Fetching changes made by user:', usuarioId);
+      
       const { data, error } = await supabase.rpc('get_change_history', {
         p_tabla_nombre: null,
         p_registro_id: null,
@@ -102,12 +109,14 @@ export const UsuarioAuditoria: React.FC<UsuarioAuditoriaProps> = ({ usuarioId })
       });
 
       if (error) {
-        console.error('Error fetching usuario cambios:', error);
+        console.error('Error fetching usuario cambios realizados:', error);
         throw error;
       }
 
-      return data as CambioUsuario[];
-    }
+      console.log('Fetched changes made by user:', data);
+      return (data || []) as CambioUsuario[];
+    },
+    enabled: !!usuarioId,
   });
 
   return (
@@ -115,7 +124,7 @@ export const UsuarioAuditoria: React.FC<UsuarioAuditoriaProps> = ({ usuarioId })
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <History className="h-5 w-5 flex-shrink-0" />
-          <span className="truncate">Auditoría del Usuario</span>
+          <span className="truncate">Auditoría de {usuarioEmail}</span>
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -127,7 +136,7 @@ export const UsuarioAuditoria: React.FC<UsuarioAuditoriaProps> = ({ usuarioId })
             </TabsTrigger>
             <TabsTrigger value="cambios" className="flex items-center gap-1 px-2 py-2 text-xs sm:text-sm">
               <History className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
-              <span className="truncate">Cambios ({cambios.length})</span>
+              <span className="truncate">Cambios ({cambiosRealizados.length})</span>
             </TabsTrigger>
           </TabsList>
 
@@ -195,13 +204,13 @@ export const UsuarioAuditoria: React.FC<UsuarioAuditoriaProps> = ({ usuarioId })
 
           <TabsContent value="cambios" className="mt-4">
             <ScrollArea className="h-[300px]">
-              {isLoadingCambios ? (
+              {isLoadingCambiosRealizados ? (
                 <div className="flex items-center justify-center p-8">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
                 </div>
-              ) : cambios.length === 0 ? (
+              ) : cambiosRealizados.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
-                  No se encontraron cambios registrados para este usuario
+                  No se encontraron cambios registrados realizados por este usuario
                 </div>
               ) : (
                 <div className="overflow-x-auto">
@@ -216,7 +225,7 @@ export const UsuarioAuditoria: React.FC<UsuarioAuditoriaProps> = ({ usuarioId })
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {cambios.map((cambio) => (
+                      {cambiosRealizados.map((cambio) => (
                         <TableRow key={cambio.id}>
                           <TableCell className="p-2">
                             <Badge 

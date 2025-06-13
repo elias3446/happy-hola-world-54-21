@@ -1,467 +1,223 @@
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Switch } from '@/components/ui/switch';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { useUsers, type User } from '@/hooks/useUsers';
-import { useAuth } from '@/hooks/useAuth';
-import { PERMISSION_LABELS, PERMISSION_GROUPS } from '@/types/roles';
-import { UsuarioAuditoria } from './UsuarioAuditoria';
-import { UserReportesAsignados } from './UserReportesAsignados';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { 
-  ArrowLeft, 
-  Edit, 
-  Users, 
-  Calendar,
-  Shield,
+  User, 
+  Mail, 
+  Calendar, 
+  Shield, 
+  ArrowLeft,
+  Edit,
   CheckCircle,
   XCircle,
-  Mail,
-  UserCheck,
-  Lock,
-  Crown,
-  User as UserIcon,
-  RefreshCw
+  Clock,
+  FileText,
+  History,
+  UserCheck
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
-import { toast } from '@/hooks/use-toast';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
+import type { User as UserType } from '@/types/users';
+import { UserReportesAsignados } from './UserReportesAsignados';
+import { UsuarioAuditoria } from './UsuarioAuditoria';
+import { UsuarioCambiosRecibidos } from './UsuarioCambiosRecibidos';
 
 interface UserDetailProps {
-  user: User;
-  onEdit: (user: User) => void;
+  user: UserType;
+  onEdit: (user: UserType) => void;
   onBack: () => void;
 }
 
-export const UserDetail = ({ user: initialUser, onEdit, onBack }: UserDetailProps) => {
-  const { toggleUserStatus, isToggling, users } = useUsers();
-  const { resendConfirmation } = useAuth();
-  const [currentUser, setCurrentUser] = useState(initialUser);
-  const [isResendingConfirmation, setIsResendingConfirmation] = useState(false);
-
-  // Update currentUser when users data changes
-  useEffect(() => {
-    const updatedUser = users.find(u => u.id === initialUser.id);
-    if (updatedUser) {
-      setCurrentUser(updatedUser);
+export const UserDetail = ({ user, onEdit, onBack }: UserDetailProps) => {
+  const getInitials = (firstName?: string, lastName?: string, email?: string) => {
+    if (firstName && lastName) {
+      return `${firstName[0]}${lastName[0]}`.toUpperCase();
     }
-  }, [users, initialUser.id]);
-
-  // Helper function to get status badge variant and icon
-  const getStatusBadge = (user: User) => {
-    if (user.asset === null) {
-      return {
-        variant: "destructive" as const,
-        icon: <Lock className="h-3 w-3" />,
-        text: "Bloqueado"
-      };
-    } else if (user.asset) {
-      return {
-        variant: "default" as const,
-        icon: <CheckCircle className="h-3 w-3" />,
-        text: "Activo"
-      };
-    } else {
-      return {
-        variant: "secondary" as const,
-        icon: <XCircle className="h-3 w-3" />,
-        text: "Inactivo"
-      };
+    if (firstName) {
+      return firstName[0].toUpperCase();
     }
-  };
-
-  // Helper function to get user type display from profile role
-  const getUserTypeDisplay = (userRoles: string[]) => {
-    const hasAdmin = userRoles.includes('admin');
-    const hasUser = userRoles.includes('user');
-    
-    if (hasAdmin && hasUser) {
-      return 'Administrador y Usuario';
-    } else if (hasAdmin) {
-      return 'Administrador';
-    } else if (hasUser) {
-      return 'Usuario';
+    if (email) {
+      return email[0].toUpperCase();
     }
-    return 'Usuario'; // Default
+    return 'U';
   };
 
-  // Helper function to get user type badge variant from profile role
-  const getUserTypeBadge = (userRoles: string[]) => {
-    const hasAdmin = userRoles.includes('admin');
-    const hasUser = userRoles.includes('user');
-    
-    if (hasAdmin && hasUser) {
-      return {
-        variant: "default" as const,
-        icon: <Crown className="h-3 w-3" />,
-        text: "Admin + Usuario"
-      };
-    } else if (hasAdmin) {
-      return {
-        variant: "destructive" as const,
-        icon: <Crown className="h-3 w-3" />,
-        text: "Administrador"
-      };
-    } else {
-      return {
-        variant: "secondary" as const,
-        icon: <UserIcon className="h-3 w-3" />,
-        text: "Usuario"
-      };
-    }
+  const getFullName = () => {
+    const parts = [user.first_name, user.last_name].filter(Boolean);
+    return parts.length > 0 ? parts.join(' ') : 'Sin nombre';
   };
-
-  const handleStatusToggle = (checked: boolean) => {
-    // Solo permitir cambio entre activo/inactivo, no a bloqueado
-    toggleUserStatus({ id: currentUser.id, asset: checked });
-  };
-
-  const handleResendConfirmation = async () => {
-    setIsResendingConfirmation(true);
-    try {
-      const { error } = await resendConfirmation(currentUser.email);
-      
-      if (error) {
-        toast({
-          title: 'Error',
-          description: `Error al reenviar confirmación: ${error.message}`,
-          variant: 'destructive',
-        });
-      } else {
-        toast({
-          title: 'Éxito',
-          description: 'Email de confirmación reenviado correctamente',
-        });
-      }
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Error inesperado al reenviar confirmación',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsResendingConfirmation(false);
-    }
-  };
-
-  // Helper function to get all user permissions
-  const getAllUserPermissions = () => {
-    const allPermissions = new Set<string>();
-    currentUser.user_roles?.forEach(userRole => {
-      userRole.roles.permisos.forEach(permission => {
-        allPermissions.add(permission);
-      });
-    });
-    return Array.from(allPermissions);
-  };
-
-  // Helper function to get user permissions grouped by role
-  const getPermissionsByGroup = () => {
-    const userPermissions = getAllUserPermissions();
-    const permissionsByGroup: Record<string, string[]> = {};
-    
-    Object.entries(PERMISSION_GROUPS).forEach(([groupName, permissions]) => {
-      const groupPermissions = permissions.filter(permission => 
-        userPermissions.includes(permission)
-      );
-      
-      if (groupPermissions.length > 0) {
-        permissionsByGroup[groupName] = groupPermissions.map(p => PERMISSION_LABELS[p]);
-      }
-    });
-    
-    return permissionsByGroup;
-  };
-
-  const permissionsByGroup = getPermissionsByGroup();
-  const fullName = `${currentUser.first_name || ''} ${currentUser.last_name || ''}`.trim();
-  const statusBadge = getStatusBadge(currentUser);
-  const isBlocked = currentUser.asset === null;
-  const profileTypeBadge = getUserTypeBadge(currentUser.role || ['user']);
 
   return (
-    <div className="container mx-auto px-4 py-6">
-      <div className="mb-6">
-        <Button 
-          variant="ghost" 
-          onClick={onBack}
-          className="mb-4 flex items-center gap-2"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Volver a Usuarios
-        </Button>
-        
-        <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Avatar className="w-16 h-16">
-              <AvatarImage src={currentUser.avatar || undefined} />
-              <AvatarFallback className="text-lg">
-                {((currentUser.first_name || '').charAt(0) + (currentUser.last_name || '').charAt(0)).toUpperCase() || 
-                 currentUser.email.charAt(0).toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
-            <div>
-              <h1 className="text-2xl font-bold">{fullName || currentUser.email}</h1>
-              <p className="text-gray-600 flex items-center gap-2">
-                <Mail className="h-4 w-4" />
-                {currentUser.email}
-              </p>
-            </div>
-          </div>
-          
-          <div className="flex flex-col gap-2">
-            <Button onClick={() => onEdit(currentUser)} className="flex items-center gap-2">
-              <Edit className="h-4 w-4" />
-              Editar Usuario
-            </Button>
-            
-            {!currentUser.confirmed && (
-              <Button 
-                onClick={handleResendConfirmation}
-                disabled={isResendingConfirmation}
-                variant="outline"
-                className="flex items-center gap-2"
-              >
-                {isResendingConfirmation ? (
-                  <RefreshCw className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Mail className="h-4 w-4" />
-                )}
-                {isResendingConfirmation ? 'Enviando...' : 'Reenviar Confirmación'}
-              </Button>
-            )}
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={onBack}
+            className="flex items-center gap-2"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Volver
+          </Button>
+          <div>
+            <h1 className="text-2xl font-bold">Detalle del Usuario</h1>
+            <p className="text-muted-foreground">Información completa del usuario</p>
           </div>
         </div>
+        <Button onClick={() => onEdit(user)} className="flex items-center gap-2">
+          <Edit className="h-4 w-4" />
+          Editar Usuario
+        </Button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Información Principal */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Información General */}
+        <div className="lg:col-span-1">
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="h-5 w-5" />
-                Información General
-              </CardTitle>
+            <CardHeader className="text-center">
+              <div className="flex justify-center mb-4">
+                <Avatar className="h-24 w-24">
+                  <AvatarImage src={user.avatar || ''} alt={getFullName()} />
+                  <AvatarFallback className="text-xl">
+                    {getInitials(user.first_name, user.last_name, user.email)}
+                  </AvatarFallback>
+                </Avatar>
+              </div>
+              <CardTitle className="text-xl">{getFullName()}</CardTitle>
+              <p className="text-muted-foreground">{user.email}</p>
             </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="text-sm font-medium text-gray-700">Nombre Completo</label>
-                  <p className="text-lg font-semibold mt-1">{fullName || 'No especificado'}</p>
+            <CardContent className="space-y-4">
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <Mail className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm">{user.email}</span>
                 </div>
                 
-                <div>
-                  <label className="text-sm font-medium text-gray-700">Email</label>
-                  <p className="text-lg mt-1">{currentUser.email}</p>
+                <div className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm">
+                    Registrado: {format(new Date(user.created_at), 'dd/MM/yyyy', { locale: es })}
+                  </span>
+                </div>
+                
+                <div className="flex items-center gap-2">
+                  <Clock className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm">
+                    Actualizado: {format(new Date(user.updated_at), 'dd/MM/yyyy', { locale: es })}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  {user.confirmed ? (
+                    <CheckCircle className="h-4 w-4 text-green-600" />
+                  ) : (
+                    <XCircle className="h-4 w-4 text-red-600" />
+                  )}
+                  <span className="text-sm">
+                    {user.confirmed ? 'Email confirmado' : 'Email no confirmado'}
+                  </span>
                 </div>
               </div>
 
               <Separator />
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="text-sm font-medium text-gray-700">Tipo de Usuario (Perfil)</label>
-                  <div className="flex items-center gap-3 mt-2">
-                    <Badge variant={profileTypeBadge.variant} className="flex items-center gap-1">
-                      {profileTypeBadge.icon}
-                      {profileTypeBadge.text}
-                    </Badge>
-                  </div>
-                  <div className="mt-2 text-sm text-gray-600">
-                    Roles básicos asignados en el perfil: {currentUser.role?.join(', ') || 'Ninguno'}
-                  </div>
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium text-gray-700">Estado del Usuario</label>
-                  <div className="flex items-center gap-3 mt-2">
-                    <Badge variant={statusBadge.variant} className="flex items-center gap-1">
-                      {statusBadge.icon}
-                      {statusBadge.text}
-                    </Badge>
-                    
-                    {!isBlocked && (
-                      <div className="flex items-center space-x-2">
-                        <Switch
-                          checked={currentUser.asset === true}
-                          onCheckedChange={handleStatusToggle}
-                          disabled={isToggling}
-                        />
-                        <span className="text-sm text-gray-600">
-                          {isToggling ? 'Cambiando...' : (currentUser.asset ? 'Activo' : 'Inactivo')}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                  <div className="mt-2 text-sm text-gray-600">
-                    {isBlocked && "Usuario bloqueado - No se puede cambiar el estado"}
-                    {!isBlocked && currentUser.asset === true && "El usuario puede acceder al sistema"}
-                    {!isBlocked && currentUser.asset === false && "El usuario no puede acceder pero sigue visible"}
-                  </div>
-                </div>
-              </div>
-
-              <Separator />
-              
               <div>
-                <label className="text-sm font-medium text-gray-700">Estado de Confirmación</label>
-                <div className="mt-2 flex items-center gap-3">
-                  <Badge variant={currentUser.confirmed ? "default" : "secondary"} className="flex items-center gap-1">
-                    {currentUser.confirmed ? (
-                      <UserCheck className="h-3 w-3" />
-                    ) : (
-                      <XCircle className="h-3 w-3" />
-                    )}
-                    {currentUser.confirmed ? 'Email Confirmado' : 'Pendiente de Confirmación'}
-                  </Badge>
-                  
-                  {!currentUser.confirmed && (
-                    <div className="text-sm text-amber-600">
-                      El usuario debe confirmar su email para poder acceder
-                    </div>
+                <h4 className="font-medium mb-2 flex items-center gap-2">
+                  <Shield className="h-4 w-4" />
+                  Roles
+                </h4>
+                <div className="flex flex-wrap gap-2">
+                  {user.role && user.role.length > 0 ? (
+                    user.role.map((rol, index) => (
+                      <Badge key={index} variant="secondary">
+                        {rol}
+                      </Badge>
+                    ))
+                  ) : (
+                    <span className="text-sm text-muted-foreground">Sin roles asignados</span>
                   )}
                 </div>
               </div>
-            </CardContent>
-          </Card>
-        </div>
 
-        {/* Información Adicional */}
-        <div className="space-y-6">
-          {/* Fechas */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Calendar className="h-5 w-5" />
-                Información de Fechas
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <label className="text-sm font-medium text-gray-700">Fecha de Registro</label>
-                <p className="text-gray-900 mt-1">
-                  {new Date(currentUser.created_at).toLocaleDateString('es-ES', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                  })}
-                </p>
-              </div>
-              
-              <div>
-                <label className="text-sm font-medium text-gray-700">Última Actualización</label>
-                <p className="text-gray-900 mt-1">
-                  {new Date(currentUser.updated_at).toLocaleDateString('es-ES', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                  })}
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Roles Asignados */}
-        <Card className="lg:col-span-3">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Shield className="h-5 w-5" />
-              Roles Asignados ({currentUser.user_roles?.length || 0})
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {!currentUser.user_roles || currentUser.user_roles.length === 0 ? (
-              <div className="text-center py-8">
-                <Shield className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-500">Este usuario no tiene roles asignados</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {currentUser.user_roles.map((userRole) => (
-                  <Card key={userRole.id} className="border">
-                    <CardContent className="p-4">
-                      <div className="flex items-center gap-3 mb-3">
-                        <div 
-                          className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-medium flex-shrink-0"
-                          style={{ backgroundColor: userRole.roles.color }}
-                        >
-                          {userRole.roles.icono.charAt(0)}
-                        </div>
-                        <div>
-                          <h4 className="font-medium">{userRole.roles.nombre}</h4>
-                          <p className="text-sm text-gray-600">{userRole.roles.descripcion}</p>
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <p className="text-xs text-gray-500">
-                          Asignado el {new Date(userRole.assigned_at).toLocaleDateString('es-ES')}
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          {userRole.roles.permisos.length} permisos incluidos
-                        </p>
-                        <Badge variant={userRole.roles.activo ? "default" : "secondary"} className="text-xs">
-                          {userRole.roles.activo ? 'Activo' : 'Inactivo'}
-                        </Badge>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Permisos Efectivos */}
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <UserCheck className="h-5 w-5" />
-              Permisos Efectivos ({getAllUserPermissions().length})
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {Object.keys(permissionsByGroup).length === 0 ? (
-              <div className="text-center py-8">
-                <Shield className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-500">Este usuario no tiene permisos asignados</p>
-              </div>
-            ) : (
-              <div className="space-y-6">
-                {Object.entries(permissionsByGroup).map(([groupName, permissions]) => (
-                  <div key={groupName}>
-                    <h4 className="font-medium text-gray-900 mb-3">{groupName}</h4>
-                    <div className="flex flex-wrap gap-2">
-                      {permissions.map((permission) => (
-                        <Badge key={permission} variant="secondary">
-                          {permission}
-                        </Badge>
-                      ))}
-                    </div>
+              {user.asset !== undefined && (
+                <>
+                  <Separator />
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium">Estado:</span>
+                    <Badge variant={user.asset ? "default" : "secondary"}>
+                      {user.asset ? 'Activo' : 'Inactivo'}
+                    </Badge>
                   </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Reportes Asignados */}
-        <div className="lg:col-span-2">
-          <UserReportesAsignados 
-            userId={currentUser.id} 
-            userName={fullName || currentUser.email} 
-          />
+                </>
+              )}
+            </CardContent>
+          </Card>
         </div>
 
-        {/* Auditoría del Usuario */}
-        <div className="lg:col-span-1">
-          <UsuarioAuditoria usuarioId={currentUser.id} />
+        {/* Información Detallada */}
+        <div className="lg:col-span-2">
+          <Tabs defaultValue="reportes" className="space-y-4">
+            <TabsList className="grid w-full grid-cols-4">
+              <TabsTrigger value="reportes" className="flex items-center gap-1">
+                <FileText className="h-4 w-4" />
+                <span className="hidden sm:inline">Reportes</span>
+              </TabsTrigger>
+              <TabsTrigger value="auditoria" className="flex items-center gap-1">
+                <History className="h-4 w-4" />
+                <span className="hidden sm:inline">Auditoría</span>
+              </TabsTrigger>
+              <TabsTrigger value="cambios" className="flex items-center gap-1">
+                <UserCheck className="h-4 w-4" />
+                <span className="hidden sm:inline">Cambios</span>
+              </TabsTrigger>
+              <TabsTrigger value="actividad" className="flex items-center gap-1">
+                <User className="h-4 w-4" />
+                <span className="hidden sm:inline">Actividad</span>
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="reportes">
+              <UserReportesAsignados 
+                userId={user.id} 
+                userName={getFullName()} 
+              />
+            </TabsContent>
+
+            <TabsContent value="auditoria">
+              <UsuarioAuditoria 
+                usuarioId={user.id} 
+                usuarioEmail={user.email}
+              />
+            </TabsContent>
+
+            <TabsContent value="cambios">
+              <UsuarioCambiosRecibidos 
+                usuarioId={user.id} 
+                usuarioEmail={user.email}
+              />
+            </TabsContent>
+
+            <TabsContent value="actividad">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Estadísticas de Actividad</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-center py-8 text-muted-foreground">
+                    <User className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>Próximamente: Estadísticas detalladas de actividad del usuario</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
     </div>
