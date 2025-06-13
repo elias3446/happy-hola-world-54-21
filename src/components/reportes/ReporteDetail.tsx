@@ -84,12 +84,12 @@ export const ReporteDetail = ({ reporte, onEdit, onBack }: ReporteDetailProps) =
             >
               {reporte.categoria?.icono?.charAt(0) || 'R'}
             </div>
-            <div>
-              <div className="flex items-center gap-3 mb-2">
-                <h1 className="text-2xl font-bold">{reporte.nombre}</h1>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-3 mb-2 flex-wrap">
+                <h1 className="text-2xl font-bold break-words">{reporte.nombre}</h1>
                 <Badge
                   variant="secondary"
-                  className="flex items-center gap-1"
+                  className="flex items-center gap-1 flex-shrink-0"
                   style={{ 
                     backgroundColor: `${priorityConfig[reporte.priority]?.color || priorityConfig.urgente.color}20`,
                     color: priorityConfig[reporte.priority]?.color || priorityConfig.urgente.color,
@@ -103,7 +103,7 @@ export const ReporteDetail = ({ reporte, onEdit, onBack }: ReporteDetailProps) =
             </div>
           </div>
           
-          <Button onClick={() => onEdit(reporte)} className="flex items-center gap-2">
+          <Button onClick={() => onEdit(reporte)} className="flex items-center gap-2 flex-shrink-0">
             <Edit className="h-4 w-4" />
             Editar Reporte
           </Button>
@@ -124,7 +124,7 @@ export const ReporteDetail = ({ reporte, onEdit, onBack }: ReporteDetailProps) =
             <CardContent className="space-y-6">
               <div>
                 <label className="text-sm font-medium text-gray-700">Descripción</label>
-                <p className="text-gray-900 mt-1">{reporte.descripcion}</p>
+                <p className="text-gray-900 mt-1 break-words whitespace-pre-wrap">{reporte.descripcion}</p>
               </div>
 
               <Separator />
@@ -134,13 +134,13 @@ export const ReporteDetail = ({ reporte, onEdit, onBack }: ReporteDetailProps) =
                   <label className="text-sm font-medium text-gray-700">Categoría</label>
                   <div className="flex items-center gap-3 mt-1">
                     <div 
-                      className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-medium"
+                      className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-medium flex-shrink-0"
                       style={{ backgroundColor: reporte.categoria?.color || '#3B82F6' }}
                     >
                       {reporte.categoria?.icono?.charAt(0)}
                     </div>
-                    <div>
-                      <p className="font-medium text-gray-900">{reporte.categoria?.nombre}</p>
+                    <div className="min-w-0">
+                      <p className="font-medium text-gray-900 break-words">{reporte.categoria?.nombre}</p>
                     </div>
                   </div>
                 </div>
@@ -149,13 +149,13 @@ export const ReporteDetail = ({ reporte, onEdit, onBack }: ReporteDetailProps) =
                   <label className="text-sm font-medium text-gray-700">Estado</label>
                   <div className="flex items-center gap-3 mt-1">
                     <div 
-                      className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-medium"
+                      className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-medium flex-shrink-0"
                       style={{ backgroundColor: reporte.estado?.color || '#10B981' }}
                     >
                       {reporte.estado?.icono?.charAt(0)}
                     </div>
-                    <div>
-                      <p className="font-medium text-gray-900">{reporte.estado?.nombre}</p>
+                    <div className="min-w-0">
+                      <p className="font-medium text-gray-900 break-words">{reporte.estado?.nombre}</p>
                     </div>
                   </div>
                 </div>
@@ -200,16 +200,16 @@ export const ReporteDetail = ({ reporte, onEdit, onBack }: ReporteDetailProps) =
                 <div>
                   <label className="text-sm font-medium text-gray-700">Creado por</label>
                   <div className="flex items-center gap-2 mt-1">
-                    <User className="h-4 w-4 text-gray-400" />
-                    <span className="text-gray-900">{getProfileName(reporte.created_by_profile)}</span>
+                    <User className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                    <span className="text-gray-900 break-words">{getProfileName(reporte.created_by_profile)}</span>
                   </div>
                 </div>
 
                 <div>
                   <label className="text-sm font-medium text-gray-700">Asignado a</label>
                   <div className="flex items-center gap-2 mt-1">
-                    <User className="h-4 w-4 text-gray-400" />
-                    <span className="text-gray-900">
+                    <User className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                    <span className="text-gray-900 break-words">
                       {reporte.assigned_to_profile ? getProfileName(reporte.assigned_to_profile) : 'Sin asignar'}
                     </span>
                   </div>
@@ -282,9 +282,6 @@ export const ReporteDetail = ({ reporte, onEdit, onBack }: ReporteDetailProps) =
               </CardContent>
             </Card>
           )}
-
-          {/* Componente de Auditoría */}
-          <ReporteAuditoria reporteId={reporte.id} />
         </div>
 
         {/* Información Adicional y Historial */}
@@ -300,7 +297,7 @@ export const ReporteDetail = ({ reporte, onEdit, onBack }: ReporteDetailProps) =
             <CardContent className="space-y-4">
               <div>
                 <label className="text-sm font-medium text-gray-700">Fecha de Creación</label>
-                <p className="text-gray-900 mt-1 text-sm">
+                <p className="text-gray-900 mt-1 text-sm break-words">
                   {new Date(reporte.created_at).toLocaleDateString('es-ES', {
                     year: 'numeric',
                     month: 'long',
@@ -313,7 +310,7 @@ export const ReporteDetail = ({ reporte, onEdit, onBack }: ReporteDetailProps) =
               
               <div>
                 <label className="text-sm font-medium text-gray-700">Última Actualización</label>
-                <p className="text-gray-900 mt-1 text-sm">
+                <p className="text-gray-900 mt-1 text-sm break-words">
                   {new Date(reporte.updated_at).toLocaleDateString('es-ES', {
                     year: 'numeric',
                     month: 'long',
@@ -346,16 +343,16 @@ export const ReporteDetail = ({ reporte, onEdit, onBack }: ReporteDetailProps) =
                 <div className="space-y-4 max-h-60 overflow-y-auto">
                   {historial.map((entry) => (
                     <div key={entry.id} className="border-l-2 border-gray-200 pl-4 pb-4 last:pb-0">
-                      <div className="text-sm font-medium text-gray-900">
+                      <div className="text-sm font-medium text-gray-900 break-words">
                         {entry.comentario}
                       </div>
                       <div className="text-xs text-gray-600 mt-1 space-y-1">
-                        <div>Por: {getProfileName(entry.assigned_by_profile)}</div>
+                        <div className="break-words">Por: {getProfileName(entry.assigned_by_profile)}</div>
                         {entry.assigned_from_profile && (
-                          <div>De: {getProfileName(entry.assigned_from_profile)}</div>
+                          <div className="break-words">De: {getProfileName(entry.assigned_from_profile)}</div>
                         )}
                         {entry.assigned_to_profile && (
-                          <div>A: {getProfileName(entry.assigned_to_profile)}</div>
+                          <div className="break-words">A: {getProfileName(entry.assigned_to_profile)}</div>
                         )}
                         <div className="text-gray-500">
                           {new Date(entry.fecha_asignacion).toLocaleDateString('es-ES', {
@@ -373,6 +370,9 @@ export const ReporteDetail = ({ reporte, onEdit, onBack }: ReporteDetailProps) =
               )}
             </CardContent>
           </Card>
+
+          {/* Componente de Auditoría - Movido aquí */}
+          <ReporteAuditoria reporteId={reporte.id} />
         </div>
       </div>
 
@@ -381,12 +381,12 @@ export const ReporteDetail = ({ reporte, onEdit, onBack }: ReporteDetailProps) =
         <DialogContent className="max-w-4xl max-h-[90vh] p-0">
           <DialogHeader className="p-6 pb-0">
             <DialogTitle className="flex items-center justify-between">
-              <span>Imágenes del Reporte - {reporte.nombre}</span>
+              <span className="break-words">Imágenes del Reporte - {reporte.nombre}</span>
               <Button 
                 variant="ghost" 
                 size="sm" 
                 onClick={closeImageCarousel}
-                className="h-8 w-8 p-0"
+                className="h-8 w-8 p-0 flex-shrink-0"
               >
                 <X className="h-4 w-4" />
               </Button>
