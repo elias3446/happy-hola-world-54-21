@@ -1,3 +1,4 @@
+
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
@@ -7,6 +8,7 @@ import { Separator } from '@/components/ui/separator';
 import { useUsers, type User } from '@/hooks/useUsers';
 import { useAuth } from '@/hooks/useAuth';
 import { PERMISSION_LABELS, PERMISSION_GROUPS } from '@/types/roles';
+import { UsuarioAuditoria } from './UsuarioAuditoria';
 import { 
   ArrowLeft, 
   Edit, 
@@ -233,137 +235,138 @@ export const UserDetail = ({ user: initialUser, onEdit, onBack }: UserDetailProp
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Información General */}
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5" />
-              Información General
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="text-sm font-medium text-gray-700">Nombre Completo</label>
-                <p className="text-lg font-semibold mt-1">{fullName || 'No especificado'}</p>
+        {/* Información Principal */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* Información General */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5" />
+                Información General
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="text-sm font-medium text-gray-700">Nombre Completo</label>
+                  <p className="text-lg font-semibold mt-1">{fullName || 'No especificado'}</p>
+                </div>
+                
+                <div>
+                  <label className="text-sm font-medium text-gray-700">Email</label>
+                  <p className="text-lg mt-1">{currentUser.email}</p>
+                </div>
               </div>
+
+              <Separator />
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="text-sm font-medium text-gray-700">Tipo de Usuario (Perfil)</label>
+                  <div className="flex items-center gap-3 mt-2">
+                    <Badge variant={profileTypeBadge.variant} className="flex items-center gap-1">
+                      {profileTypeBadge.icon}
+                      {profileTypeBadge.text}
+                    </Badge>
+                  </div>
+                  <div className="mt-2 text-sm text-gray-600">
+                    Roles básicos asignados en el perfil: {currentUser.role?.join(', ') || 'Ninguno'}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium text-gray-700">Estado del Usuario</label>
+                  <div className="flex items-center gap-3 mt-2">
+                    <Badge variant={statusBadge.variant} className="flex items-center gap-1">
+                      {statusBadge.icon}
+                      {statusBadge.text}
+                    </Badge>
+                    
+                    {!isBlocked && (
+                      <div className="flex items-center space-x-2">
+                        <Switch
+                          checked={currentUser.asset === true}
+                          onCheckedChange={handleStatusToggle}
+                          disabled={isToggling}
+                        />
+                        <span className="text-sm text-gray-600">
+                          {isToggling ? 'Cambiando...' : (currentUser.asset ? 'Activo' : 'Inactivo')}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="mt-2 text-sm text-gray-600">
+                    {isBlocked && "Usuario bloqueado - No se puede cambiar el estado"}
+                    {!isBlocked && currentUser.asset === true && "El usuario puede acceder al sistema"}
+                    {!isBlocked && currentUser.asset === false && "El usuario no puede acceder pero sigue visible"}
+                  </div>
+                </div>
+              </div>
+
+              <Separator />
               
               <div>
-                <label className="text-sm font-medium text-gray-700">Email</label>
-                <p className="text-lg mt-1">{currentUser.email}</p>
-              </div>
-            </div>
-
-            <Separator />
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="text-sm font-medium text-gray-700">Tipo de Usuario (Perfil)</label>
-                <div className="flex items-center gap-3 mt-2">
-                  <Badge variant={profileTypeBadge.variant} className="flex items-center gap-1">
-                    {profileTypeBadge.icon}
-                    {profileTypeBadge.text}
-                  </Badge>
-                </div>
-                <div className="mt-2 text-sm text-gray-600">
-                  Roles básicos asignados en el perfil: {currentUser.role?.join(', ') || 'Ninguno'}
-                </div>
-              </div>
-
-              <div>
-                <label className="text-sm font-medium text-gray-700">Estado del Usuario</label>
-                <div className="flex items-center gap-3 mt-2">
-                  <Badge variant={statusBadge.variant} className="flex items-center gap-1">
-                    {statusBadge.icon}
-                    {statusBadge.text}
+                <label className="text-sm font-medium text-gray-700">Estado de Confirmación</label>
+                <div className="mt-2 flex items-center gap-3">
+                  <Badge variant={currentUser.confirmed ? "default" : "secondary"} className="flex items-center gap-1">
+                    {currentUser.confirmed ? (
+                      <UserCheck className="h-3 w-3" />
+                    ) : (
+                      <XCircle className="h-3 w-3" />
+                    )}
+                    {currentUser.confirmed ? 'Email Confirmado' : 'Pendiente de Confirmación'}
                   </Badge>
                   
-                  {!isBlocked && (
-                    <div className="flex items-center space-x-2">
-                      <Switch
-                        checked={currentUser.asset === true}
-                        onCheckedChange={handleStatusToggle}
-                        disabled={isToggling}
-                      />
-                      <span className="text-sm text-gray-600">
-                        {isToggling ? 'Cambiando...' : (currentUser.asset ? 'Activo' : 'Inactivo')}
-                      </span>
+                  {!currentUser.confirmed && (
+                    <div className="text-sm text-amber-600">
+                      El usuario debe confirmar su email para poder acceder
                     </div>
                   )}
                 </div>
-                <div className="mt-2 text-sm text-gray-600">
-                  {isBlocked && "Usuario bloqueado - No se puede cambiar el estado"}
-                  {!isBlocked && currentUser.asset === true && "El usuario puede acceder al sistema"}
-                  {!isBlocked && currentUser.asset === false && "El usuario no puede acceder pero sigue visible"}
-                </div>
               </div>
-            </div>
-
-            <Separator />
-            
-            <div>
-              <label className="text-sm font-medium text-gray-700">Estado de Confirmación</label>
-              <div className="mt-2 flex items-center gap-3">
-                <Badge variant={currentUser.confirmed ? "default" : "secondary"} className="flex items-center gap-1">
-                  {currentUser.confirmed ? (
-                    <UserCheck className="h-3 w-3" />
-                  ) : (
-                    <XCircle className="h-3 w-3" />
-                  )}
-                  {currentUser.confirmed ? 'Email Confirmado' : 'Pendiente de Confirmación'}
-                </Badge>
-                
-                {!currentUser.confirmed && (
-                  <div className="text-sm text-amber-600">
-                    El usuario debe confirmar su email para poder acceder
-                  </div>
-                )}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </div>
 
         {/* Información Adicional */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Calendar className="h-5 w-5" />
-              Información Adicional
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <label className="text-sm font-medium text-gray-700">Fecha de Registro</label>
-              <p className="text-gray-900 mt-1">
-                {new Date(currentUser.created_at).toLocaleDateString('es-ES', {
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric',
-                  hour: '2-digit',
-                  minute: '2-digit'
-                })}
-              </p>
-            </div>
-            
-            <div>
-              <label className="text-sm font-medium text-gray-700">Última Actualización</label>
-              <p className="text-gray-900 mt-1">
-                {new Date(currentUser.updated_at).toLocaleDateString('es-ES', {
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric',
-                  hour: '2-digit',
-                  minute: '2-digit'
-                })}
-              </p>
-            </div>
-
-            <div>
-              <label className="text-sm font-medium text-gray-700">ID del Usuario</label>
-              <p className="text-gray-900 mt-1 font-mono text-xs break-all">{currentUser.id}</p>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="space-y-6">
+          {/* Fechas */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Calendar className="h-5 w-5" />
+                Información de Fechas
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <label className="text-sm font-medium text-gray-700">Fecha de Registro</label>
+                <p className="text-gray-900 mt-1">
+                  {new Date(currentUser.created_at).toLocaleDateString('es-ES', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  })}
+                </p>
+              </div>
+              
+              <div>
+                <label className="text-sm font-medium text-gray-700">Última Actualización</label>
+                <p className="text-gray-900 mt-1">
+                  {new Date(currentUser.updated_at).toLocaleDateString('es-ES', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  })}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
         {/* Roles Asignados */}
         <Card className="lg:col-span-3">
@@ -386,7 +389,7 @@ export const UserDetail = ({ user: initialUser, onEdit, onBack }: UserDetailProp
                     <CardContent className="p-4">
                       <div className="flex items-center gap-3 mb-3">
                         <div 
-                          className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-medium"
+                          className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-medium flex-shrink-0"
                           style={{ backgroundColor: userRole.roles.color }}
                         >
                           {userRole.roles.icono.charAt(0)}
@@ -416,7 +419,7 @@ export const UserDetail = ({ user: initialUser, onEdit, onBack }: UserDetailProp
         </Card>
 
         {/* Permisos Efectivos */}
-        <Card className="lg:col-span-3">
+        <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <UserCheck className="h-5 w-5" />
@@ -447,6 +450,11 @@ export const UserDetail = ({ user: initialUser, onEdit, onBack }: UserDetailProp
             )}
           </CardContent>
         </Card>
+
+        {/* Auditoría del Usuario */}
+        <div className="lg:col-span-1">
+          <UsuarioAuditoria usuarioId={currentUser.id} />
+        </div>
       </div>
     </div>
   );
