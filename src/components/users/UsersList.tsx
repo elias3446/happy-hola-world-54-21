@@ -24,8 +24,10 @@ import { DataTableToolbar, useDataTableFilters, type DataTableColumn } from '@/c
 import { BulkActionsBar } from '@/components/ui/bulk-actions-bar';
 import { BulkUserActionsDialog, type BulkUserActionType } from './dialogs/BulkUserActionsDialog';
 import { useUsers, type User } from '@/hooks/useUsers';
+import { useAuth } from '@/hooks/useAuth';
 import { useBulkSelection } from '@/hooks/useBulkSelection';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { toast } from '@/hooks/use-toast';
 import { 
   Plus, 
   MoreHorizontal, 
@@ -41,7 +43,8 @@ import {
   Calendar,
   Mail,
   Crown,
-  User as UserIcon
+  User as UserIcon,
+  RefreshCw
 } from 'lucide-react';
 
 interface UsersListProps {
@@ -65,9 +68,11 @@ export const UsersList = ({ onCreateUser, onEditUser, onViewUser, onBulkUpload }
     isBulkChangingUserType
   } = useUsers();
   
+  const { resendConfirmation } = useAuth();
   const isMobile = useIsMobile();
   const [filters, setFilters] = useDataTableFilters();
   const [filteredData, setFilteredData] = useState<any[]>([]);
+  const [resendingEmails, setResendingEmails] = useState<Set<string>>(new Set());
   
   // Estado para diálogo unificado - actualizado para incluir 'change_user_type'
   const [bulkActionDialog, setBulkActionDialog] = useState({
@@ -166,34 +171,66 @@ export const UsersList = ({ onCreateUser, onEditUser, onViewUser, onBulkUpload }
     setFilteredData(transformedUsers);
   }, [transformedUsers]);
 
-  const handleDeleteUser = (user: User) => {
-    setBulkActionDialog({
-      open: true,
-      type: 'delete',
-      users: [user]
-    });
+  // Helper function to get user display name
+  const getUserDisplayName = (user: User) => {
+    return `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.email;
   };
 
-  const handleBlockUser = (user: User) => {
-    setBulkActionDialog({
-      open: true,
-      type: 'block',
-      users: [user]
-    });
+  // Helper function to get status badge variant and icon
+  const getStatusBadge = (user: User) => {
+    if (user.asset === null) {
+      return {
+        variant: "destructive" as const,
+        icon: <XCircle className="h-3 w-3" />,
+        text: "Bloqueado"
+      };
+    } else if (user.asset) {
+      return {
+        variant: "default" as const,
+        icon: <CheckCircle className="h-3 w-3" />,
+        text: "Activo"
+      };
+    } else {
+      return {
+        variant: "secondary" as const,
+        icon: <XCircle className="h-3 w-3" />,
+        text: "Inactivo"
+      };
+    }
   };
 
-  const handleActivateUser = (user: User) => {
-    setBulkActionDialog({
-      open: true,
-      type: 'activate',
-      users: [user]
-    });
-  };
-
-  const handleToggleStatus = (user: User) => {
-    // Cambiar solo entre activo (true) e inactivo (false)
-    const newStatus = !user.asset;
-    toggleUserStatus({ id: user.id, asset: newStatus });
+  // Nueva función para reenviar confirmación
+  const handleResendConfirmation = async (user: User) => {
+    setResendingEmails(prev => new Set(prev).add(user.id));
+    
+    try {
+      const { error } = await resendConfirmation(user.email);
+      
+      if (error) {
+        toast({
+          title: 'Error',
+          description: `Error al reenviar confirmación a ${user.email}: ${error.message}`,
+          variant: 'destructive',
+        });
+      } else {
+        toast({
+          title: 'Éxito',
+          description: `Email de confirmación reenviado correctamente a ${user.email}`,
+        });
+      }
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: `Error inesperado al reenviar confirmación a ${user.email}`,
+        variant: 'destructive',
+      });
+    } finally {
+      setResendingEmails(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(user.id);
+        return newSet;
+      });
+    }
   };
 
   // Handlers para acciones masivas actualizados con cambio de tipo de usuario
@@ -346,34 +383,6 @@ export const UsersList = ({ onCreateUser, onEditUser, onViewUser, onBulkUpload }
     document.body.removeChild(link);
   };
 
-  // Helper function to get user display name
-  const getUserDisplayName = (user: User) => {
-    return `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.email;
-  };
-
-  // Helper function to get status badge variant and icon
-  const getStatusBadge = (user: User) => {
-    if (user.asset === null) {
-      return {
-        variant: "destructive" as const,
-        icon: <XCircle className="h-3 w-3" />,
-        text: "Bloqueado"
-      };
-    } else if (user.asset) {
-      return {
-        variant: "default" as const,
-        icon: <CheckCircle className="h-3 w-3" />,
-        text: "Activo"
-      };
-    } else {
-      return {
-        variant: "secondary" as const,
-        icon: <XCircle className="h-3 w-3" />,
-        text: "Inactivo"
-      };
-    }
-  };
-
   if (isLoading) {
     return (
       <Card>
@@ -507,6 +516,7 @@ export const UsersList = ({ onCreateUser, onEditUser, onViewUser, onBulkUpload }
                     const statusBadge = getStatusBadge(user);
                     const typeBadge = getUserTypeBadge(user.role || ['user']);
                     const isBlocked = user.asset === null;
+                    const isResending = resendingEmails.has(user.id);
 
                     return (
                       <TableRow key={user.id}>
@@ -613,19 +623,37 @@ export const UsersList = ({ onCreateUser, onEditUser, onViewUser, onBulkUpload }
                         
                         {!isMobile && (
                           <TableCell>
-                            <Badge variant={user.confirmed ? "default" : "secondary"} className="text-xs">
-                              {user.confirmed ? (
-                                <>
-                                  <CheckCircle className="h-3 w-3 mr-1" />
-                                  Confirmado
-                                </>
-                              ) : (
-                                <>
-                                  <XCircle className="h-3 w-3 mr-1" />
-                                  Pendiente
-                                </>
+                            <div className="flex items-center gap-2">
+                              <Badge variant={user.confirmed ? "default" : "secondary"} className="text-xs">
+                                {user.confirmed ? (
+                                  <>
+                                    <CheckCircle className="h-3 w-3 mr-1" />
+                                    Confirmado
+                                  </>
+                                ) : (
+                                  <>
+                                    <XCircle className="h-3 w-3 mr-1" />
+                                    Pendiente
+                                  </>
+                                )}
+                              </Badge>
+                              {!user.confirmed && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleResendConfirmation(user)}
+                                  disabled={isResending}
+                                  className="h-6 px-2 text-xs"
+                                  title="Reenviar confirmación"
+                                >
+                                  {isResending ? (
+                                    <RefreshCw className="h-3 w-3 animate-spin" />
+                                  ) : (
+                                    <Mail className="h-3 w-3" />
+                                  )}
+                                </Button>
                               )}
-                            </Badge>
+                            </div>
                           </TableCell>
                         )}
                         
@@ -650,6 +678,22 @@ export const UsersList = ({ onCreateUser, onEditUser, onViewUser, onBulkUpload }
                                 <Edit className="h-4 w-4 mr-2" />
                                 Editar
                               </DropdownMenuItem>
+                              {!user.confirmed && (
+                                <>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem 
+                                    onClick={() => handleResendConfirmation(user)}
+                                    disabled={isResending}
+                                  >
+                                    {isResending ? (
+                                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                                    ) : (
+                                      <Mail className="h-4 w-4 mr-2" />
+                                    )}
+                                    {isResending ? 'Enviando...' : 'Reenviar Confirmación'}
+                                  </DropdownMenuItem>
+                                </>
+                              )}
                               <DropdownMenuSeparator />
                               {user.asset === null && (
                                 <DropdownMenuItem onClick={() => handleActivateUser(user)}>
