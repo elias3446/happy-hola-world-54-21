@@ -47,7 +47,7 @@ export const ReporteDetalle = () => {
         </div>
       </div>
     );
-  }
+  };
 
   if (!reporte) {
     return (
@@ -180,51 +180,9 @@ export const ReporteDetalle = () => {
           )}
         </div>
 
-        {/* Sidebar */}
+        {/* Sidebar - Now empty */}
         <div className="space-y-6">
-          {/* Priority */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <AlertTriangle className="h-5 w-5" />
-                Prioridad
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Badge
-                variant="secondary"
-                className="flex items-center gap-2 w-fit text-sm px-3 py-2"
-                style={{ 
-                  backgroundColor: `${priorityConfig[reporte.priority]?.color || priorityConfig.urgente.color}20`,
-                  color: priorityConfig[reporte.priority]?.color || priorityConfig.urgente.color,
-                  borderColor: priorityConfig[reporte.priority]?.color || priorityConfig.urgente.color
-                }}
-              >
-                <AlertTriangle className="h-4 w-4" />
-                {priorityConfig[reporte.priority]?.label || 'Urgente'}
-              </Badge>
-            </CardContent>
-          </Card>
-
-          {/* Category */}
-          {reporte.categoria && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Categoría</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center gap-3">
-                  <div 
-                    className="w-4 h-4 rounded-full flex-shrink-0"
-                    style={{ backgroundColor: reporte.categoria.color }}
-                  />
-                  <div>
-                    <p className="font-medium">{reporte.categoria.nombre}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
+          {/* Sidebar is now empty after removing Priority and Category cards */}
         </div>
       </div>
     </div>
