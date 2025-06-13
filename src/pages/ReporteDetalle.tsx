@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useReportes } from '@/hooks/useReportes';
 import { MapaReporteEspecifico } from '@/components/MapaBase';
-import { ArrowLeft, Calendar, User, FileText, AlertTriangle, MapPin, Eye } from 'lucide-react';
+import { ArrowLeft, Calendar, User, AlertTriangle, MapPin, Eye } from 'lucide-react';
 
 const priorityConfig = {
   urgente: { color: '#DC2626', label: 'Urgente' },
@@ -90,9 +90,9 @@ export const ReporteDetalle = () => {
             </Link>
           </Button>
           
-          {/* Hero Section */}
+          {/* Hero Section with Description */}
           <div className="bg-white rounded-xl shadow-lg border border-slate-200 p-6 mb-6">
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
               <div className="flex-1">
                 <div className="flex items-center gap-3 mb-3">
                   <div 
@@ -101,7 +101,7 @@ export const ReporteDetalle = () => {
                   >
                     {reporte.categoria?.icono?.charAt(0) || 'R'}
                   </div>
-                  <div>
+                  <div className="flex-1">
                     <h1 className="text-2xl font-bold text-slate-800 mb-2">{reporte.nombre}</h1>
                     <div className="flex flex-wrap items-center gap-2">
                       <Badge
@@ -148,6 +148,13 @@ export const ReporteDetalle = () => {
                   </div>
                 </div>
                 
+                {/* Description moved here */}
+                <div className="mb-4">
+                  <p className="text-slate-700 leading-relaxed">
+                    {reporte.descripcion}
+                  </p>
+                </div>
+                
                 <div className="flex flex-wrap items-center gap-4 text-sm text-slate-600">
                   <div className="flex items-center gap-2">
                     <Calendar className="h-4 w-4 text-slate-400" />
@@ -164,90 +171,74 @@ export const ReporteDetalle = () => {
         </div>
 
         <div className="grid gap-6 lg:grid-cols-4">
-          {/* Main Content - Now takes more space */}
-          <div className="lg:col-span-3 space-y-6">
-            {/* Description Card */}
-            <Card className="shadow-lg border-slate-200 bg-white">
-              <CardHeader className="bg-gradient-to-r from-slate-50 to-slate-100 rounded-t-lg border-b border-slate-200 py-4">
-                <CardTitle className="flex items-center gap-2 text-slate-800 text-lg">
-                  <div className="p-2 bg-blue-100 rounded-lg">
-                    <FileText className="h-4 w-4 text-blue-600" />
-                  </div>
-                  Descripción del Reporte
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-6">
-                <p className="text-slate-700 leading-relaxed">
-                  {reporte.descripcion}
-                </p>
-              </CardContent>
-            </Card>
-
-            {/* Images Gallery */}
-            {reporte.imagenes && reporte.imagenes.length > 0 && (
-              <Card className="shadow-lg border-slate-200 bg-white">
-                <CardHeader className="bg-gradient-to-r from-slate-50 to-slate-100 rounded-t-lg border-b border-slate-200 py-4">
-                  <CardTitle className="flex items-center gap-2 text-slate-800 text-lg">
-                    <div className="p-2 bg-green-100 rounded-lg">
-                      <Eye className="h-4 w-4 text-green-600" />
-                    </div>
-                    Evidencia Fotográfica
-                    <Badge variant="secondary" className="ml-auto">
-                      {reporte.imagenes.length} imagen{reporte.imagenes.length !== 1 ? 'es' : ''}
-                    </Badge>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="p-6">
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    {reporte.imagenes.map((imagen, index) => (
-                      <div key={index} className="relative group">
-                        <div className="aspect-video rounded-lg overflow-hidden bg-slate-100 shadow-md border border-slate-200">
-                          <img
-                            src={imagen}
-                            alt={`Imagen ${index + 1} del reporte`}
-                            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                          />
-                        </div>
-                        <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-all rounded-lg flex items-center justify-center">
-                          <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-                            <Badge variant="secondary" className="shadow-lg">
-                              Imagen {index + 1}
-                            </Badge>
+          {/* Main Content - Images and Map side by side */}
+          <div className="lg:col-span-3">
+            <div className="grid gap-6 lg:grid-cols-2">
+              {/* Images Gallery */}
+              {reporte.imagenes && reporte.imagenes.length > 0 && (
+                <Card className="shadow-lg border-slate-200 bg-white">
+                  <CardHeader className="bg-gradient-to-r from-slate-50 to-slate-100 rounded-t-lg border-b border-slate-200 py-4">
+                    <CardTitle className="flex items-center gap-2 text-slate-800 text-lg">
+                      <div className="p-2 bg-green-100 rounded-lg">
+                        <Eye className="h-4 w-4 text-green-600" />
+                      </div>
+                      Evidencia Fotográfica
+                      <Badge variant="secondary" className="ml-auto">
+                        {reporte.imagenes.length} imagen{reporte.imagenes.length !== 1 ? 'es' : ''}
+                      </Badge>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-6">
+                    <div className="grid gap-4 sm:grid-cols-1">
+                      {reporte.imagenes.map((imagen, index) => (
+                        <div key={index} className="relative group">
+                          <div className="aspect-video rounded-lg overflow-hidden bg-slate-100 shadow-md border border-slate-200">
+                            <img
+                              src={imagen}
+                              alt={`Imagen ${index + 1} del reporte`}
+                              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                            />
+                          </div>
+                          <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-all rounded-lg flex items-center justify-center">
+                            <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                              <Badge variant="secondary" className="shadow-lg">
+                                Imagen {index + 1}
+                              </Badge>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Map Section */}
-            {reporte.latitud && reporte.longitud && (
-              <Card className="shadow-lg border-slate-200 bg-white">
-                <CardHeader className="bg-gradient-to-r from-slate-50 to-slate-100 rounded-t-lg border-b border-slate-200 py-4">
-                  <CardTitle className="flex items-center gap-2 text-slate-800 text-lg">
-                    <div className="p-2 bg-red-100 rounded-lg">
-                      <MapPin className="h-4 w-4 text-red-600" />
+                      ))}
                     </div>
-                    Ubicación del Incidente
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="p-6">
-                  <div className="rounded-lg overflow-hidden shadow-md border border-slate-200">
-                    <MapaReporteEspecifico
-                      reporte={reporte}
-                      height="h-[400px]"
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Map Section */}
+              {reporte.latitud && reporte.longitud && (
+                <Card className="shadow-lg border-slate-200 bg-white">
+                  <CardHeader className="bg-gradient-to-r from-slate-50 to-slate-100 rounded-t-lg border-b border-slate-200 py-4">
+                    <CardTitle className="flex items-center gap-2 text-slate-800 text-lg">
+                      <div className="p-2 bg-red-100 rounded-lg">
+                        <MapPin className="h-4 w-4 text-red-600" />
+                      </div>
+                      Ubicación del Incidente
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-6">
+                    <div className="rounded-lg overflow-hidden shadow-md border border-slate-200">
+                      <MapaReporteEspecifico
+                        reporte={reporte}
+                        height="h-[400px]"
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
           </div>
 
-          {/* Sidebar - Now smaller and more focused */}
+          {/* Sidebar - Fechas Card */}
           <div className="space-y-6">
-            {/* Fechas Card */}
             <Card className="shadow-lg border-slate-200 bg-white">
               <CardHeader className="bg-gradient-to-r from-slate-50 to-slate-100 rounded-t-lg border-b border-slate-200 py-4">
                 <CardTitle className="flex items-center gap-2 text-slate-800 text-lg">
