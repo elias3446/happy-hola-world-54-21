@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -21,7 +20,8 @@ import {
   History,
   UserCheck,
   Ban,
-  RefreshCw
+  RefreshCw,
+  BarChart3
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -29,6 +29,7 @@ import type { User as UserType } from '@/types/users';
 import { UserReportesAsignados } from './UserReportesAsignados';
 import { UsuarioAuditoria } from './UsuarioAuditoria';
 import { UsuarioCambiosRecibidos } from './UsuarioCambiosRecibidos';
+import { UsuarioEstadisticasActividad } from './UsuarioEstadisticasActividad';
 import { useUsers } from '@/hooks/useUsers';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from '@/hooks/use-toast';
@@ -322,7 +323,7 @@ export const UserDetail = ({ user, onEdit, onBack }: UserDetailProps) => {
                 <span className="hidden sm:inline">Cambios</span>
               </TabsTrigger>
               <TabsTrigger value="actividad" className="flex items-center gap-1">
-                <User className="h-4 w-4" />
+                <BarChart3 className="h-4 w-4" />
                 <span className="hidden sm:inline">Actividad</span>
               </TabsTrigger>
             </TabsList>
@@ -349,17 +350,10 @@ export const UserDetail = ({ user, onEdit, onBack }: UserDetailProps) => {
             </TabsContent>
 
             <TabsContent value="actividad">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Estadísticas de Actividad</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-center py-8 text-muted-foreground">
-                    <User className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                    <p>Próximamente: Estadísticas detalladas de actividad del usuario</p>
-                  </div>
-                </CardContent>
-              </Card>
+              <UsuarioEstadisticasActividad 
+                usuarioId={user.id} 
+                usuarioEmail={user.email}
+              />
             </TabsContent>
           </Tabs>
         </div>
