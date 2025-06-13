@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { InitialSetup } from '@/components/auth/InitialSetup';
@@ -13,6 +12,35 @@ const Index = () => {
   const location = useLocation();
 
   console.log('Index render - user:', user, 'loading:', loading, 'hasUsers:', hasUsers, 'hasProfile:', hasProfile);
+
+  // Aplicar tema del sistema al inicio de la aplicación
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const savedTheme = localStorage.getItem('theme');
+      
+      // Si no hay tema guardado o es 'system', aplicar tema del sistema
+      if (!savedTheme || savedTheme === 'system') {
+        const root = window.document.documentElement;
+        root.classList.remove('light', 'dark');
+        
+        const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        root.classList.add(systemTheme);
+        
+        // Si no había tema guardado, establecer 'system' como predeterminado
+        if (!savedTheme) {
+          localStorage.setItem('theme', 'system');
+        }
+        
+        console.log('Index: Applied system theme:', systemTheme);
+      } else {
+        // Si hay un tema específico guardado, aplicarlo
+        const root = window.document.documentElement;
+        root.classList.remove('light', 'dark');
+        root.classList.add(savedTheme);
+        console.log('Index: Applied saved theme:', savedTheme);
+      }
+    }
+  }, []);
 
   // Redirigir a login cuando no hay usuario autenticado
   useEffect(() => {

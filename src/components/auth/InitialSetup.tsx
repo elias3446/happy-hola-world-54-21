@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -16,6 +16,29 @@ export const InitialSetup = () => {
   const [loading, setLoading] = useState(false);
   const [redirecting, setRedirecting] = useState(false);
   const { signUp, signOut, checkHasUsers } = useAuth();
+
+  // Aplicar tema del sistema al cargar el componente
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const savedTheme = localStorage.getItem('theme');
+      
+      // Si no hay tema guardado o es 'system', aplicar tema del sistema
+      if (!savedTheme || savedTheme === 'system') {
+        const root = window.document.documentElement;
+        root.classList.remove('light', 'dark');
+        
+        const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        root.classList.add(systemTheme);
+        
+        // Si no había tema guardado, establecer 'system' como predeterminado
+        if (!savedTheme) {
+          localStorage.setItem('theme', 'system');
+        }
+        
+        console.log('InitialSetup: Applied system theme:', systemTheme);
+      }
+    }
+  }, []);
 
   const getErrorMessage = (error: any) => {
     if (!error?.message) return "Ocurrió un error inesperado";
