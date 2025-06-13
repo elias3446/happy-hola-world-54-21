@@ -11,6 +11,7 @@ import { RolesManagement } from '@/components/roles/RolesManagement';
 import { CategoriesManagement } from '@/components/categories/CategoriesManagement';
 import { EstadosManagement } from '@/components/estados/EstadosManagement';
 import { ReportesManagement } from '@/components/reportes/ReportesManagement';
+import { AuditoriaManagement } from '@/components/auditoria/AuditoriaManagement';
 import { cn } from '@/lib/utils';
 
 export const Dashboard = () => {
