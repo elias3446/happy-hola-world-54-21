@@ -5,7 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useReportes } from '@/hooks/useReportes';
-import { ArrowLeft, MapPin, Calendar, User, FileText, AlertTriangle } from 'lucide-react';
+import { MapaReporteEspecifico } from '@/components/MapaBase';
+import { ArrowLeft, Calendar, User, FileText, AlertTriangle } from 'lucide-react';
 
 const priorityConfig = {
   urgente: { color: '#DC2626', label: 'Urgente' },
@@ -162,6 +163,21 @@ export const ReporteDetalle = () => {
               </CardContent>
             </Card>
           )}
+
+          {/* Mapa del Reporte */}
+          {reporte.latitud && reporte.longitud && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Ubicación del Reporte</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <MapaReporteEspecifico
+                  reporte={reporte}
+                  height="h-[400px]"
+                />
+              </CardContent>
+            </Card>
+          )}
         </div>
 
         {/* Sidebar */}
@@ -209,55 +225,6 @@ export const ReporteDetalle = () => {
               </CardContent>
             </Card>
           )}
-
-          {/* Location */}
-          {reporte.latitud && reporte.longitud && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <MapPin className="h-5 w-5" />
-                  Ubicación
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="text-sm">
-                  <p className="font-medium">Coordenadas:</p>
-                  <p className="text-muted-foreground font-mono">
-                    {reporte.latitud.toFixed(6)}, {reporte.longitud.toFixed(6)}
-                  </p>
-                </div>
-                
-                <Button asChild variant="outline" className="w-full">
-                  <Link 
-                    to={`/mapa-reportes`}
-                    className="flex items-center gap-2"
-                  >
-                    <MapPin className="h-4 w-4" />
-                    Ver en Mapa
-                  </Link>
-                </Button>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Actions */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Acciones</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <Button asChild variant="outline" className="w-full">
-                <Link to="/reportes-publicos">
-                  Ver Todos los Reportes
-                </Link>
-              </Button>
-              <Button asChild variant="outline" className="w-full">
-                <Link to="/mapa-reportes">
-                  Explorar Mapa
-                </Link>
-              </Button>
-            </CardContent>
-          </Card>
         </div>
       </div>
     </div>
