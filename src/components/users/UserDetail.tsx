@@ -1,4 +1,3 @@
-
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
@@ -6,6 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { useUsers, type User } from '@/hooks/useUsers';
+import { useAuth } from '@/hooks/useAuth';
 import { PERMISSION_LABELS, PERMISSION_GROUPS } from '@/types/roles';
 import { 
   ArrowLeft, 
@@ -19,9 +19,11 @@ import {
   UserCheck,
   Lock,
   Crown,
-  User as UserIcon
+  User as UserIcon,
+  RefreshCw
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { toast } from '@/hooks/use-toast';
 
 interface UserDetailProps {
   user: User;
@@ -31,7 +33,9 @@ interface UserDetailProps {
 
 export const UserDetail = ({ user: initialUser, onEdit, onBack }: UserDetailProps) => {
   const { toggleUserStatus, isToggling, users } = useUsers();
+  const { resendConfirmation } = useAuth();
   const [currentUser, setCurrentUser] = useState(initialUser);
+  const [isResendingConfirmation, setIsResendingConfirmation] = useState(false);
 
   // Update currentUser when users data changes
   useEffect(() => {
@@ -110,6 +114,35 @@ export const UserDetail = ({ user: initialUser, onEdit, onBack }: UserDetailProp
     toggleUserStatus({ id: currentUser.id, asset: checked });
   };
 
+  const handleResendConfirmation = async () => {
+    setIsResendingConfirmation(true);
+    try {
+      const { error } = await resendConfirmation(currentUser.email);
+      
+      if (error) {
+        toast({
+          title: 'Error',
+          description: `Error al reenviar confirmación: ${error.message}`,
+          variant: 'destructive',
+        });
+      } else {
+        toast({
+          title: 'Éxito',
+          description: 'Email de confirmación reenviado correctamente',
+        });
+      }
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Error inesperado al reenviar confirmación',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsResendingConfirmation(false);
+    }
+  };
+
+  // Helper function to get all user permissions
   const getAllUserPermissions = () => {
     const allPermissions = new Set<string>();
     currentUser.user_roles?.forEach(userRole => {
@@ -120,6 +153,7 @@ export const UserDetail = ({ user: initialUser, onEdit, onBack }: UserDetailProp
     return Array.from(allPermissions);
   };
 
+  // Helper function to get user permissions grouped by role
   const getPermissionsByGroup = () => {
     const userPermissions = getAllUserPermissions();
     const permissionsByGroup: Record<string, string[]> = {};
@@ -173,10 +207,28 @@ export const UserDetail = ({ user: initialUser, onEdit, onBack }: UserDetailProp
             </div>
           </div>
           
-          <Button onClick={() => onEdit(currentUser)} className="flex items-center gap-2">
-            <Edit className="h-4 w-4" />
-            Editar Usuario
-          </Button>
+          <div className="flex flex-col gap-2">
+            <Button onClick={() => onEdit(currentUser)} className="flex items-center gap-2">
+              <Edit className="h-4 w-4" />
+              Editar Usuario
+            </Button>
+            
+            {!currentUser.confirmed && (
+              <Button 
+                onClick={handleResendConfirmation}
+                disabled={isResendingConfirmation}
+                variant="outline"
+                className="flex items-center gap-2"
+              >
+                {isResendingConfirmation ? (
+                  <RefreshCw className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Mail className="h-4 w-4" />
+                )}
+                {isResendingConfirmation ? 'Enviando...' : 'Reenviar Confirmación'}
+              </Button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -251,7 +303,7 @@ export const UserDetail = ({ user: initialUser, onEdit, onBack }: UserDetailProp
             
             <div>
               <label className="text-sm font-medium text-gray-700">Estado de Confirmación</label>
-              <div className="mt-2">
+              <div className="mt-2 flex items-center gap-3">
                 <Badge variant={currentUser.confirmed ? "default" : "secondary"} className="flex items-center gap-1">
                   {currentUser.confirmed ? (
                     <UserCheck className="h-3 w-3" />
@@ -260,6 +312,12 @@ export const UserDetail = ({ user: initialUser, onEdit, onBack }: UserDetailProp
                   )}
                   {currentUser.confirmed ? 'Email Confirmado' : 'Pendiente de Confirmación'}
                 </Badge>
+                
+                {!currentUser.confirmed && (
+                  <div className="text-sm text-amber-600">
+                    El usuario debe confirmar su email para poder acceder
+                  </div>
+                )}
               </div>
             </div>
           </CardContent>

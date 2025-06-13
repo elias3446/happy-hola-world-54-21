@@ -1,4 +1,3 @@
-
 import { useState, useEffect, createContext, useContext } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -10,6 +9,7 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signUp: (email: string, password: string, firstName: string, lastName: string, roleType?: 'admin' | 'user') => Promise<{ error: any }>;
   signOut: () => Promise<void>;
+  resendConfirmation: (email: string) => Promise<{ error: any }>;
   hasUsers: boolean | null;
   hasProfile: boolean | null;
   checkHasUsers: () => Promise<void>;
@@ -75,6 +75,30 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const isAdmin = () => {
     if (!userProfile || !userProfile.role) return false;
     return userProfile.role.includes('admin');
+  };
+
+  const resendConfirmation = async (email: string) => {
+    try {
+      console.log('Resending confirmation email to:', email);
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: email,
+        options: {
+          emailRedirectTo: `${window.location.origin}/`
+        }
+      });
+      
+      if (error) {
+        console.error('Error resending confirmation:', error);
+      } else {
+        console.log('Confirmation email resent successfully');
+      }
+      
+      return { error };
+    } catch (error) {
+      console.error('Error in resendConfirmation:', error);
+      return { error };
+    }
   };
 
   useEffect(() => {
@@ -239,6 +263,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       signIn,
       signUp,
       signOut,
+      resendConfirmation,
       hasUsers,
       hasProfile,
       checkHasUsers,
