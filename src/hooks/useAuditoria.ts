@@ -48,7 +48,7 @@ export const useAuditoria = () => {
     queryFn: async () => {
       const { data, error } = await supabase.rpc('get_user_activities', {
         p_user_id: filtros.user_id,
-        p_limit: filtros.limit,
+        p_limit: filtros.limit === 0 ? 1000 : filtros.limit, // Si limit es 0, usar 1000 como máximo
         p_offset: filtros.offset
       });
 
@@ -78,7 +78,7 @@ export const useAuditoria = () => {
         p_tabla_nombre: filtros.tabla_nombre,
         p_registro_id: filtros.registro_id,
         p_user_id: filtros.user_id,
-        p_limit: filtros.limit,
+        p_limit: filtros.limit === 0 ? 1000 : filtros.limit, // Si limit es 0, usar 1000 como máximo
         p_offset: filtros.offset
       });
 

@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,6 +10,7 @@ import { Shield, Activity, History, Filter, RefreshCw } from 'lucide-react';
 import { useAuditoria } from '@/hooks/useAuditoria';
 import { ActividadesList } from './ActividadesList';
 import { CambiosHistorialList } from './CambiosHistorialList';
+import { supabase } from '@/integrations/supabase/client';
 
 export const AuditoriaManagement = () => {
   const {
@@ -22,6 +23,97 @@ export const AuditoriaManagement = () => {
   } = useAuditoria();
 
   const [filtrosTemp, setFiltrosTemp] = useState(filtros);
+  const [registrosDisponibles, setRegistrosDisponibles] = useState<{id: string, display: string}[]>([]);
+  const [isLoadingRegistros, setIsLoadingRegistros] = useState(false);
+
+  // Obtener registros disponibles cuando cambia la tabla seleccionada
+  useEffect(() => {
+    const obtenerRegistros = async () => {
+      if (!filtrosTemp.tabla_nombre) {
+        // Si no hay tabla seleccionada, obtener IDs de todas las tablas
+        try {
+          setIsLoadingRegistros(true);
+          const tablas = ['reportes', 'categories', 'estados', 'profiles', 'roles', 'user_roles'];
+          const todosRegistros: {id: string, display: string}[] = [];
+
+          for (const tabla of tablas) {
+            const { data, error } = await supabase
+              .from(tabla)
+              .select('id, nombre, email, first_name, last_name')
+              .limit(100);
+
+            if (!error && data) {
+              data.forEach((registro: any) => {
+                const display = registro.nombre || 
+                               registro.email || 
+                               `${registro.first_name || ''} ${registro.last_name || ''}`.trim() ||
+                               registro.id;
+                todosRegistros.push({
+                  id: registro.id,
+                  display: `${tabla}: ${display}`
+                });
+              });
+            }
+          }
+          setRegistrosDisponibles(todosRegistros);
+        } catch (error) {
+          console.error('Error obteniendo todos los registros:', error);
+          setRegistrosDisponibles([]);
+        } finally {
+          setIsLoadingRegistros(false);
+        }
+      } else {
+        // Obtener registros de la tabla específica
+        try {
+          setIsLoadingRegistros(true);
+          let query = supabase.from(filtrosTemp.tabla_nombre).select('id');
+          
+          // Agregar campos adicionales según la tabla
+          switch (filtrosTemp.tabla_nombre) {
+            case 'reportes':
+              query = supabase.from(filtrosTemp.tabla_nombre).select('id, nombre');
+              break;
+            case 'categories':
+            case 'estados':
+            case 'roles':
+              query = supabase.from(filtrosTemp.tabla_nombre).select('id, nombre');
+              break;
+            case 'profiles':
+              query = supabase.from(filtrosTemp.tabla_nombre).select('id, email, first_name, last_name');
+              break;
+            case 'user_roles':
+              query = supabase.from(filtrosTemp.tabla_nombre).select('id');
+              break;
+          }
+
+          const { data, error } = await query.limit(100);
+
+          if (!error && data) {
+            const registros = data.map((registro: any) => {
+              const display = registro.nombre || 
+                             registro.email || 
+                             `${registro.first_name || ''} ${registro.last_name || ''}`.trim() ||
+                             registro.id;
+              return {
+                id: registro.id,
+                display: display
+              };
+            });
+            setRegistrosDisponibles(registros);
+          } else {
+            setRegistrosDisponibles([]);
+          }
+        } catch (error) {
+          console.error('Error obteniendo registros:', error);
+          setRegistrosDisponibles([]);
+        } finally {
+          setIsLoadingRegistros(false);
+        }
+      }
+    };
+
+    obtenerRegistros();
+  }, [filtrosTemp.tabla_nombre]);
 
   const aplicarFiltros = () => {
     setFiltros(filtrosTemp);
@@ -65,12 +157,13 @@ export const AuditoriaManagement = () => {
               <Label htmlFor="tabla_nombre">Tabla</Label>
               <Select
                 value={filtrosTemp.tabla_nombre || "all"}
-                onValueChange={(value) => 
+                onValueChange={(value) => {
                   setFiltrosTemp(prev => ({ 
                     ...prev, 
-                    tabla_nombre: value === "all" ? null : value 
-                  }))
-                }
+                    tabla_nombre: value === "all" ? null : value,
+                    registro_id: null // Limpiar registro_id cuando cambia la tabla
+                  }));
+                }}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Seleccionar tabla" />
@@ -89,27 +182,38 @@ export const AuditoriaManagement = () => {
 
             <div>
               <Label htmlFor="registro_id">ID de Registro</Label>
-              <Input
-                id="registro_id"
-                placeholder="ID del registro"
-                value={filtrosTemp.registro_id || ""}
-                onChange={(e) => 
+              <Select
+                value={filtrosTemp.registro_id || "all"}
+                onValueChange={(value) => 
                   setFiltrosTemp(prev => ({ 
                     ...prev, 
-                    registro_id: e.target.value || null 
+                    registro_id: value === "all" ? null : value 
                   }))
                 }
-              />
+                disabled={isLoadingRegistros}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={isLoadingRegistros ? "Cargando..." : "Seleccionar registro"} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos los registros</SelectItem>
+                  {registrosDisponibles.map((registro) => (
+                    <SelectItem key={registro.id} value={registro.id}>
+                      {registro.display}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div>
               <Label htmlFor="limit">Límite de Resultados</Label>
               <Select
-                value={filtrosTemp.limit.toString()}
+                value={filtrosTemp.limit === 0 ? "all" : filtrosTemp.limit.toString()}
                 onValueChange={(value) => 
                   setFiltrosTemp(prev => ({ 
                     ...prev, 
-                    limit: parseInt(value) 
+                    limit: value === "all" ? 0 : parseInt(value)
                   }))
                 }
               >
@@ -121,6 +225,7 @@ export const AuditoriaManagement = () => {
                   <SelectItem value="50">50 registros</SelectItem>
                   <SelectItem value="100">100 registros</SelectItem>
                   <SelectItem value="200">200 registros</SelectItem>
+                  <SelectItem value="all">Todos</SelectItem>
                 </SelectContent>
               </Select>
             </div>
