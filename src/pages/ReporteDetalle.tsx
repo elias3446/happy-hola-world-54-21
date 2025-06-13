@@ -80,7 +80,7 @@ export const ReporteDetalle = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="container mx-auto px-4 py-6 max-w-6xl">
+      <div className="container mx-auto px-4 py-6 max-w-7xl">
         {/* Header */}
         <div className="mb-6">
           <Button asChild variant="outline" className="mb-4">
@@ -94,9 +94,9 @@ export const ReporteDetalle = () => {
         {/* Main Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Left Column */}
-          <div className="space-y-6">
+          <div className="space-y-6 overflow-hidden">
             {/* Header Card with Report Info */}
-            <Card className="bg-white border border-gray-200">
+            <Card className="bg-white border border-gray-200 overflow-hidden">
               <CardContent className="p-6">
                 <div className="flex items-start gap-4 mb-4">
                   <div 
@@ -106,7 +106,7 @@ export const ReporteDetalle = () => {
                     {reporte.categoria?.icono?.charAt(0) || 'R'}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h1 className="text-xl font-bold text-gray-900 mb-2">{reporte.nombre}</h1>
+                    <h1 className="text-xl font-bold text-gray-900 mb-2 break-words">{reporte.nombre}</h1>
                     <div className="flex flex-wrap items-center gap-2 mb-3">
                       <Badge
                         variant="secondary"
@@ -133,18 +133,18 @@ export const ReporteDetalle = () => {
                   </div>
                 </div>
                 
-                <p className="text-gray-700 mb-4 leading-relaxed">
+                <p className="text-gray-700 mb-4 leading-relaxed break-words">
                   {reporte.descripcion}
                 </p>
                 
-                <div className="flex items-center gap-4 text-sm text-gray-600">
+                <div className="flex items-center gap-4 text-sm text-gray-600 flex-wrap">
                   <div className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4" />
-                    <span>{formatDate(reporte.created_at)}</span>
+                    <Calendar className="h-4 w-4 flex-shrink-0" />
+                    <span className="break-words">{formatDate(reporte.created_at)}</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <User className="h-4 w-4" />
-                    <span>Reportado por {getReporterName(reporte.created_by_profile)}</span>
+                    <User className="h-4 w-4 flex-shrink-0" />
+                    <span className="break-words">Reportado por {getReporterName(reporte.created_by_profile)}</span>
                   </div>
                 </div>
               </CardContent>
@@ -152,23 +152,23 @@ export const ReporteDetalle = () => {
 
             {/* Evidence Card */}
             {reporte.imagenes && reporte.imagenes.length > 0 && (
-              <Card className="bg-white border border-gray-200">
+              <Card className="bg-white border border-gray-200 overflow-hidden">
                 <CardHeader className="pb-3">
                   <CardTitle className="flex items-center justify-between text-lg font-semibold">
                     <div className="flex items-center gap-2">
-                      <Eye className="h-5 w-5 text-green-600" />
+                      <Eye className="h-5 w-5 text-green-600 flex-shrink-0" />
                       <span>Evidencia Fotográfica</span>
                     </div>
-                    <span className="text-sm font-normal text-gray-600">
+                    <span className="text-sm font-normal text-gray-600 flex-shrink-0">
                       {reporte.imagenes.length} imagen{reporte.imagenes.length !== 1 ? 'es' : ''}
                     </span>
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="pt-0">
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                <CardContent className="pt-0 p-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {reporte.imagenes.map((imagen, index) => (
-                      <div key={index} className="relative group">
-                        <div className="aspect-square rounded-lg overflow-hidden bg-gray-100 border border-gray-200">
+                      <div key={index} className="relative group overflow-hidden">
+                        <div className="aspect-[4/3] rounded-lg overflow-hidden bg-gray-100 border border-gray-200">
                           <img
                             src={imagen}
                             alt={`Evidencia ${index + 1}`}
@@ -184,21 +184,21 @@ export const ReporteDetalle = () => {
           </div>
 
           {/* Right Column */}
-          <div className="space-y-6">
+          <div className="space-y-6 overflow-hidden">
             {/* Map Card */}
             {reporte.latitud && reporte.longitud && (
-              <Card className="bg-white border border-gray-200">
+              <Card className="bg-white border border-gray-200 overflow-hidden">
                 <CardHeader className="pb-3">
                   <CardTitle className="flex items-center gap-2 text-lg font-semibold">
-                    <MapPin className="h-5 w-5 text-red-600" />
+                    <MapPin className="h-5 w-5 text-red-600 flex-shrink-0" />
                     <span>Ubicación del Incidente</span>
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="pt-0">
+                <CardContent className="pt-0 p-4">
                   <div className="rounded-lg overflow-hidden border border-gray-200">
                     <MapaReporteEspecifico
                       reporte={reporte}
-                      height="h-[300px]"
+                      height="h-[400px]"
                     />
                   </div>
                 </CardContent>
