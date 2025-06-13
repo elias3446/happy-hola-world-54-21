@@ -199,6 +199,23 @@ export const UsersList = ({ onCreateUser, onEditUser, onViewUser, onBulkUpload }
     }
   };
 
+  // Missing handler functions
+  const handleToggleStatus = (user: User) => {
+    toggleUserStatus({ id: user.id, asset: !user.asset });
+  };
+
+  const handleActivateUser = (user: User) => {
+    toggleUserStatus({ id: user.id, asset: true });
+  };
+
+  const handleBlockUser = (user: User) => {
+    toggleUserStatus({ id: user.id, asset: null });
+  };
+
+  const handleDeleteUser = (user: User) => {
+    deleteUser(user.id);
+  };
+
   // Nueva función para reenviar confirmación
   const handleResendConfirmation = async (user: User) => {
     setResendingEmails(prev => new Set(prev).add(user.id));
