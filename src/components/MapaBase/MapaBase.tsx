@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, useMap, useMapEvents, CircleMarker, Circle } from 'react-leaflet';
 import L from 'leaflet';
@@ -137,7 +138,7 @@ function CenterOnUserButton({ userPosition }: { userPosition: [number, number] }
   };
   
   return (
-    <div className="leaflet-top leaflet-right" style={{ top: '60px', right: '10px' }}>
+    <div className="leaflet-bottom leaflet-right" style={{ bottom: '10px', right: '10px' }}>
       <div className="leaflet-control leaflet-bar">
         <button 
           onClick={handleCenterClick}
@@ -232,10 +233,9 @@ const MapaBase: React.FC<MapaBaseProps> = ({
         </MapContainer>
       </div>
       
-      {/* Search bar positioned below map controls on mobile, side by side on desktop */}
+      {/* Search bar positioned at the top center, away from map controls */}
       {!hideSearchBar && (
-        <div className="absolute top-2 left-2 right-2 z-[1000] 
-                        sm:top-4 sm:left-4 sm:right-auto sm:w-80">
+        <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-[1000] w-full max-w-md px-4">
           <SearchBar 
             onSearch={handleSearchLocation} 
             userPosition={!isDefaultPosition(userPosition) ? userPosition : null} 
