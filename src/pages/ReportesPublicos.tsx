@@ -16,7 +16,8 @@ const priorityConfig = {
 };
 
 export const ReportesPublicos = () => {
-  const { reportes, isLoading } = useReportes();
+  // Usar el hook con onlyPublic: true para filtrar solo reportes activos y no eliminados
+  const { reportes, isLoading } = useReportes(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategoria, setSelectedCategoria] = useState<string>('all');
 

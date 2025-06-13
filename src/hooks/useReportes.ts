@@ -1,19 +1,19 @@
-
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import type { Reporte, CreateReporteData, UpdateReporteData } from '@/types/reportes';
 
-export const useReportes = () => {
+export const useReportes = (onlyPublic: boolean = false) => {
   const queryClient = useQueryClient();
   const { user } = useAuth();
 
   const { data: reportes = [], isLoading, error } = useQuery({
-    queryKey: ['reportes'],
+    queryKey: ['reportes', onlyPublic],
     queryFn: async () => {
-      console.log('Fetching reportes...');
-      const { data, error } = await supabase
+      console.log('Fetching reportes...', { onlyPublic });
+      
+      let query = supabase
         .from('reportes')
         .select(`
           *,
@@ -22,8 +22,14 @@ export const useReportes = () => {
           created_by_profile:profiles!reportes_created_by_fkey(id, first_name, last_name, email),
           assigned_to_profile:profiles!reportes_assigned_to_fkey(id, first_name, last_name, email)
         `)
-        .is('deleted_at', null)
-        .order('created_at', { ascending: false });
+        .is('deleted_at', null);
+
+      // Si solo queremos reportes públicos, filtrar por activo: true
+      if (onlyPublic) {
+        query = query.eq('activo', true);
+      }
+
+      const { data, error } = await query.order('created_at', { ascending: false });
 
       if (error) {
         console.error('Error fetching reportes:', error);
