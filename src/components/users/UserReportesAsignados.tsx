@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -16,7 +15,7 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 interface UserReportesAsignadosProps {
   userId: string;
@@ -25,6 +24,7 @@ interface UserReportesAsignadosProps {
 
 export const UserReportesAsignados = ({ userId, userName }: UserReportesAsignadosProps) => {
   const { data: reportes = [], isLoading, error } = useUserReportes(userId);
+  const navigate = useNavigate();
 
   const getPriorityBadge = (priority: string) => {
     switch (priority) {
@@ -39,6 +39,11 @@ export const UserReportesAsignados = ({ userId, userName }: UserReportesAsignado
       default:
         return { variant: 'secondary' as const, icon: <Clock className="h-3 w-3" /> };
     }
+  };
+
+  const handleNavigateToReporte = (reporteId: string) => {
+    // Navigate to admin reportes with the specific report in view mode
+    navigate(`/admin/reportes?view=${reporteId}`);
   };
 
   if (isLoading) {
@@ -163,14 +168,14 @@ export const UserReportesAsignados = ({ userId, userName }: UserReportesAsignado
                         </div>
                       </div>
                       
-                      <Button asChild size="sm" variant="outline" className="flex-shrink-0">
-                        <Link 
-                          to={`/reporte/${reporte.id}`}
-                          className="flex items-center gap-1"
-                        >
-                          <ExternalLink className="h-3 w-3" />
-                          Ver
-                        </Link>
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        className="flex-shrink-0"
+                        onClick={() => handleNavigateToReporte(reporte.id)}
+                      >
+                        <ExternalLink className="h-3 w-3 mr-1" />
+                        Ver
                       </Button>
                     </div>
                     
