@@ -322,38 +322,35 @@ export const UserDetail = ({ user, onEdit, onBack }: UserDetailProps) => {
         {/* Información Detallada - Responsive */}
         <div className="xl:col-span-2">
           <Tabs defaultValue="reportes" className="space-y-4">
-            <TabsList className="grid w-full grid-cols-3 sm:grid-cols-6">
-              <TabsTrigger value="reportes" className="flex items-center gap-1 text-xs sm:text-sm">
-                <FileText className="h-3 w-3 sm:h-4 sm:w-4" />
-                <span className="hidden sm:inline">Reportes</span>
-                <span className="sm:hidden">Rep</span>
-              </TabsTrigger>
-              <TabsTrigger value="roles" className="flex items-center gap-1 text-xs sm:text-sm">
-                <Shield className="h-3 w-3 sm:h-4 sm:w-4" />
-                <span className="hidden sm:inline">Roles</span>
-                <span className="sm:hidden">Rol</span>
-              </TabsTrigger>
-              <TabsTrigger value="permisos" className="flex items-center gap-1 text-xs sm:text-sm">
-                <Settings className="h-3 w-3 sm:h-4 sm:w-4" />
-                <span className="hidden sm:inline">Permisos</span>
-                <span className="sm:hidden">Per</span>
-              </TabsTrigger>
-              <TabsTrigger value="auditoria" className="flex items-center gap-1 text-xs sm:text-sm">
-                <History className="h-3 w-3 sm:h-4 sm:w-4" />
-                <span className="hidden sm:inline">Auditoría</span>
-                <span className="sm:hidden">Aud</span>
-              </TabsTrigger>
-              <TabsTrigger value="cambios" className="flex items-center gap-1 text-xs sm:text-sm">
-                <UserCheck className="h-3 w-3 sm:h-4 sm:w-4" />
-                <span className="hidden sm:inline">Cambios</span>
-                <span className="sm:hidden">Cam</span>
-              </TabsTrigger>
-              <TabsTrigger value="actividad" className="flex items-center gap-1 text-xs sm:text-sm">
-                <BarChart3 className="h-3 w-3 sm:h-4 sm:w-4" />
-                <span className="hidden sm:inline">Actividad</span>
-                <span className="sm:hidden">Act</span>
-              </TabsTrigger>
-            </TabsList>
+            {/* Responsive TabsList with scrollable layout */}
+            <div className="overflow-x-auto">
+              <TabsList className="flex w-full min-w-fit">
+                <TabsTrigger value="reportes" className="flex items-center gap-1 px-2 py-1.5 text-xs sm:text-sm sm:px-4 sm:py-2 whitespace-nowrap">
+                  <FileText className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                  <span className="hidden xs:inline sm:inline">Reportes</span>
+                </TabsTrigger>
+                <TabsTrigger value="roles" className="flex items-center gap-1 px-2 py-1.5 text-xs sm:text-sm sm:px-4 sm:py-2 whitespace-nowrap">
+                  <Shield className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                  <span className="hidden xs:inline sm:inline">Roles</span>
+                </TabsTrigger>
+                <TabsTrigger value="permisos" className="flex items-center gap-1 px-2 py-1.5 text-xs sm:text-sm sm:px-4 sm:py-2 whitespace-nowrap">
+                  <Settings className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                  <span className="hidden xs:inline sm:inline">Permisos</span>
+                </TabsTrigger>
+                <TabsTrigger value="auditoria" className="flex items-center gap-1 px-2 py-1.5 text-xs sm:text-sm sm:px-4 sm:py-2 whitespace-nowrap">
+                  <History className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                  <span className="hidden xs:inline sm:inline">Auditoría</span>
+                </TabsTrigger>
+                <TabsTrigger value="cambios" className="flex items-center gap-1 px-2 py-1.5 text-xs sm:text-sm sm:px-4 sm:py-2 whitespace-nowrap">
+                  <UserCheck className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                  <span className="hidden xs:inline sm:inline">Cambios</span>
+                </TabsTrigger>
+                <TabsTrigger value="actividad" className="flex items-center gap-1 px-2 py-1.5 text-xs sm:text-sm sm:px-4 sm:py-2 whitespace-nowrap">
+                  <BarChart3 className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                  <span className="hidden xs:inline sm:inline">Actividad</span>
+                </TabsTrigger>
+              </TabsList>
+            </div>
 
             <TabsContent value="reportes">
               <UserReportesAsignados 
