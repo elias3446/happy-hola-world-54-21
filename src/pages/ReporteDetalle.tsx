@@ -44,7 +44,7 @@ export const ReporteDetalle = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-background">
         <div className="container mx-auto px-4 py-6">
           <div className="flex items-center justify-center min-h-[300px]">
             <div className="text-center space-y-3">
@@ -59,10 +59,10 @@ export const ReporteDetalle = () => {
 
   if (!reporte) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-background">
         <div className="container mx-auto px-4 py-6">
           <div className="text-center py-8">
-            <h1 className="text-xl font-bold mb-3">Reporte no encontrado</h1>
+            <h1 className="text-xl font-bold mb-3 text-foreground">Reporte no encontrado</h1>
             <p className="text-muted-foreground mb-4">
               El reporte que buscas no existe o ha sido eliminado.
             </p>
@@ -79,7 +79,7 @@ export const ReporteDetalle = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-6 max-w-7xl">
         {/* Header */}
         <div className="mb-6">
@@ -96,7 +96,7 @@ export const ReporteDetalle = () => {
           {/* Left Column */}
           <div className="space-y-6 overflow-hidden">
             {/* Header Card with Report Info */}
-            <Card className="bg-white border border-gray-200 overflow-hidden">
+            <Card className="bg-card border-border overflow-hidden">
               <CardContent className="p-6">
                 <div className="flex items-start gap-4 mb-4">
                   <div 
@@ -106,17 +106,17 @@ export const ReporteDetalle = () => {
                     {reporte.categoria?.icono?.charAt(0) || 'R'}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h1 className="text-xl font-bold text-gray-900 mb-2 break-words">{reporte.nombre}</h1>
+                    <h1 className="text-xl font-bold text-foreground mb-2 break-words">{reporte.nombre}</h1>
                     <div className="flex flex-wrap items-center gap-2 mb-3">
                       <Badge
                         variant="secondary"
-                        className="bg-red-100 text-red-800 border-red-200"
+                        className="bg-red-100 dark:bg-red-900/20 text-red-800 dark:text-red-300 border-red-200 dark:border-red-800"
                       >
                         {priorityConfig[reporte.priority]?.label || 'Urgente'}
                       </Badge>
                       
                       {reporte.categoria && (
-                        <Badge variant="outline" className="border-gray-300">
+                        <Badge variant="outline" className="border-border">
                           {reporte.categoria.nombre}
                         </Badge>
                       )}
@@ -124,7 +124,7 @@ export const ReporteDetalle = () => {
                       {reporte.estado && (
                         <Badge 
                           variant="secondary"
-                          className="bg-green-100 text-green-800 border-green-200"
+                          className="bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-300 border-green-200 dark:border-green-800"
                         >
                           {reporte.estado.nombre}
                         </Badge>
@@ -133,11 +133,11 @@ export const ReporteDetalle = () => {
                   </div>
                 </div>
                 
-                <p className="text-gray-700 mb-4 leading-relaxed break-words">
+                <p className="text-foreground mb-4 leading-relaxed break-words">
                   {reporte.descripcion}
                 </p>
                 
-                <div className="flex items-center gap-4 text-sm text-gray-600 flex-wrap">
+                <div className="flex items-center gap-4 text-sm text-muted-foreground flex-wrap">
                   <div className="flex items-center gap-2">
                     <Calendar className="h-4 w-4 flex-shrink-0" />
                     <span className="break-words">{formatDate(reporte.created_at)}</span>
@@ -152,14 +152,14 @@ export const ReporteDetalle = () => {
 
             {/* Evidence Card */}
             {reporte.imagenes && reporte.imagenes.length > 0 && (
-              <Card className="bg-white border border-gray-200 overflow-hidden">
+              <Card className="bg-card border-border overflow-hidden">
                 <CardHeader className="pb-3">
-                  <CardTitle className="flex items-center justify-between text-lg font-semibold">
+                  <CardTitle className="flex items-center justify-between text-lg font-semibold text-foreground">
                     <div className="flex items-center gap-2">
-                      <Eye className="h-5 w-5 text-green-600 flex-shrink-0" />
+                      <Eye className="h-5 w-5 text-green-600 dark:text-green-400 flex-shrink-0" />
                       <span>Evidencia Fotográfica</span>
                     </div>
-                    <span className="text-sm font-normal text-gray-600 flex-shrink-0">
+                    <span className="text-sm font-normal text-muted-foreground flex-shrink-0">
                       {reporte.imagenes.length} imagen{reporte.imagenes.length !== 1 ? 'es' : ''}
                     </span>
                   </CardTitle>
@@ -168,7 +168,7 @@ export const ReporteDetalle = () => {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {reporte.imagenes.map((imagen, index) => (
                       <div key={index} className="relative group overflow-hidden">
-                        <div className="aspect-[4/3] rounded-lg overflow-hidden bg-gray-100 border border-gray-200">
+                        <div className="aspect-[4/3] rounded-lg overflow-hidden bg-muted border-border border">
                           <img
                             src={imagen}
                             alt={`Evidencia ${index + 1}`}
@@ -187,15 +187,15 @@ export const ReporteDetalle = () => {
           <div className="space-y-6 overflow-hidden">
             {/* Map Card */}
             {reporte.latitud && reporte.longitud && (
-              <Card className="bg-white border border-gray-200 overflow-hidden">
+              <Card className="bg-card border-border overflow-hidden">
                 <CardHeader className="pb-3">
-                  <CardTitle className="flex items-center gap-2 text-lg font-semibold">
-                    <MapPin className="h-5 w-5 text-red-600 flex-shrink-0" />
+                  <CardTitle className="flex items-center gap-2 text-lg font-semibold text-foreground">
+                    <MapPin className="h-5 w-5 text-red-600 dark:text-red-400 flex-shrink-0" />
                     <span>Ubicación del Incidente</span>
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="pt-0 p-4">
-                  <div className="rounded-lg overflow-hidden border border-gray-200">
+                  <div className="rounded-lg overflow-hidden border-border border">
                     <MapaReporteEspecifico
                       reporte={reporte}
                       height="h-[400px]"
