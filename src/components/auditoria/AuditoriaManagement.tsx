@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,8 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Shield, Activity, History, Filter, RefreshCw } from 'lucide-react';
+import { Shield, Activity, History, Filter, RefreshCw, Download } from 'lucide-react';
 import { useAuditoria } from '@/hooks/useAuditoria';
+import { useExportAuditoria } from '@/hooks/useExportAuditoria';
 import { ActividadesList } from './ActividadesList';
 import { CambiosHistorialList } from './CambiosHistorialList';
 import { supabase } from '@/integrations/supabase/client';
@@ -22,9 +22,12 @@ export const AuditoriaManagement = () => {
     setFiltros
   } = useAuditoria();
 
+  const { exportActividades, exportCambiosHistorial, isExporting } = useExportAuditoria();
+
   const [filtrosTemp, setFiltrosTemp] = useState(filtros);
   const [registrosDisponibles, setRegistrosDisponibles] = useState<{id: string, display: string}[]>([]);
   const [isLoadingRegistros, setIsLoadingRegistros] = useState(false);
+  const [activeTab, setActiveTab] = useState('actividades');
 
   // Obtener registros disponibles cuando cambia la tabla seleccionada
   useEffect(() => {
@@ -265,6 +268,14 @@ export const AuditoriaManagement = () => {
     setFiltros(filtrosVacios);
   };
 
+  const handleExport = () => {
+    if (activeTab === 'actividades') {
+      exportActividades(actividades);
+    } else {
+      exportCambiosHistorial(cambiosHistorial);
+    }
+  };
+
   return (
     <div className="container mx-auto px-4 py-6">
       <div className="mb-6">
@@ -378,17 +389,28 @@ export const AuditoriaManagement = () => {
       </Card>
 
       {/* Tabs con contenido */}
-      <Tabs defaultValue="actividades" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="actividades" className="flex items-center gap-2">
-            <Activity className="h-4 w-4" />
-            Actividades
-          </TabsTrigger>
-          <TabsTrigger value="cambios" className="flex items-center gap-2">
-            <History className="h-4 w-4" />
-            Historial de Cambios
-          </TabsTrigger>
-        </TabsList>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <TabsList className="grid w-full sm:w-auto grid-cols-2">
+            <TabsTrigger value="actividades" className="flex items-center gap-2">
+              <Activity className="h-4 w-4" />
+              Actividades
+            </TabsTrigger>
+            <TabsTrigger value="cambios" className="flex items-center gap-2">
+              <History className="h-4 w-4" />
+              Historial de Cambios
+            </TabsTrigger>
+          </TabsList>
+
+          <Button 
+            onClick={handleExport}
+            disabled={isExporting || (activeTab === 'actividades' ? actividades.length === 0 : cambiosHistorial.length === 0)}
+            className="flex items-center gap-2"
+          >
+            <Download className="h-4 w-4" />
+            {isExporting ? 'Exportando...' : 'Exportar Resultados'}
+          </Button>
+        </div>
 
         <TabsContent value="actividades">
           <ActividadesList 
