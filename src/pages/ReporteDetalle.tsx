@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useReportes } from '@/hooks/useReportes';
 import { MapaReporteEspecifico } from '@/components/MapaBase';
-import { ArrowLeft, Calendar, User, AlertTriangle, MapPin, Eye } from 'lucide-react';
+import { ArrowLeft, Calendar, User, Eye, MapPin } from 'lucide-react';
 
 const priorityConfig = {
   urgente: { color: '#DC2626', label: 'Urgente' },
@@ -28,9 +28,9 @@ export const ReporteDetalle = () => {
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('es-ES', {
-      year: 'numeric',
+      day: '2-digit',
       month: 'long',
-      day: 'numeric',
+      year: 'numeric',
       hour: '2-digit',
       minute: '2-digit'
     });
@@ -44,7 +44,7 @@ export const ReporteDetalle = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+      <div className="min-h-screen bg-gray-50">
         <div className="container mx-auto px-4 py-6">
           <div className="flex items-center justify-center min-h-[300px]">
             <div className="text-center space-y-3">
@@ -59,7 +59,7 @@ export const ReporteDetalle = () => {
 
   if (!reporte) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+      <div className="min-h-screen bg-gray-50">
         <div className="container mx-auto px-4 py-6">
           <div className="text-center py-8">
             <h1 className="text-xl font-bold mb-3">Reporte no encontrado</h1>
@@ -79,50 +79,44 @@ export const ReporteDetalle = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
-      <div className="container mx-auto px-4 py-4 max-w-7xl">
+    <div className="min-h-screen bg-gray-50">
+      <div className="container mx-auto px-4 py-6 max-w-6xl">
         {/* Header */}
         <div className="mb-6">
-          <Button asChild variant="outline" className="mb-4 shadow-sm">
+          <Button asChild variant="outline" className="mb-4">
             <Link to="/reportes-publicos">
               <ArrowLeft className="h-4 w-4 mr-2" />
               Volver a Reportes
             </Link>
           </Button>
-          
-          {/* Hero Section with Description */}
-          <div className="bg-white rounded-xl shadow-lg border border-slate-200 p-4 sm:p-6 mb-6">
-            <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
-              <div className="flex-1 min-w-0">
-                <div className="flex flex-col sm:flex-row items-start gap-3 mb-3">
+        </div>
+
+        {/* Main Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Left Column */}
+          <div className="space-y-6">
+            {/* Header Card with Report Info */}
+            <Card className="bg-white border border-gray-200">
+              <CardContent className="p-6">
+                <div className="flex items-start gap-4 mb-4">
                   <div 
-                    className="w-12 h-12 sm:w-16 sm:h-16 rounded-full flex items-center justify-center text-white text-lg sm:text-xl font-bold shadow-lg flex-shrink-0"
+                    className="w-12 h-12 rounded-full flex items-center justify-center text-white text-lg font-bold flex-shrink-0"
                     style={{ backgroundColor: reporte.categoria?.color || '#3B82F6' }}
                   >
                     {reporte.categoria?.icono?.charAt(0) || 'R'}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h1 className="text-xl sm:text-2xl font-bold text-slate-800 mb-2 break-words">{reporte.nombre}</h1>
+                    <h1 className="text-xl font-bold text-gray-900 mb-2">{reporte.nombre}</h1>
                     <div className="flex flex-wrap items-center gap-2 mb-3">
                       <Badge
                         variant="secondary"
-                        className="flex items-center gap-1 text-sm px-2 py-1 shadow-sm"
-                        style={{ 
-                          backgroundColor: `${priorityConfig[reporte.priority]?.color || priorityConfig.urgente.color}15`,
-                          color: priorityConfig[reporte.priority]?.color || priorityConfig.urgente.color,
-                          borderColor: `${priorityConfig[reporte.priority]?.color || priorityConfig.urgente.color}30`
-                        }}
+                        className="bg-red-100 text-red-800 border-red-200"
                       >
-                        <AlertTriangle className="h-3 w-3" />
                         {priorityConfig[reporte.priority]?.label || 'Urgente'}
                       </Badge>
                       
                       {reporte.categoria && (
-                        <Badge variant="outline" className="flex items-center gap-1 shadow-sm">
-                          <div 
-                            className="w-2 h-2 rounded-full"
-                            style={{ backgroundColor: reporte.categoria.color }}
-                          />
+                        <Badge variant="outline" className="border-gray-300">
                           {reporte.categoria.nombre}
                         </Badge>
                       )}
@@ -130,144 +124,86 @@ export const ReporteDetalle = () => {
                       {reporte.estado && (
                         <Badge 
                           variant="secondary"
-                          className="text-sm px-2 py-1 shadow-sm"
-                          style={{ 
-                            backgroundColor: `${getEstadoColor(reporte.estado)}20`,
-                            color: getEstadoColor(reporte.estado),
-                            borderColor: `${getEstadoColor(reporte.estado)}30`
-                          }}
+                          className="bg-green-100 text-green-800 border-green-200"
                         >
-                          <div 
-                            className="w-2 h-2 rounded-full mr-1"
-                            style={{ backgroundColor: getEstadoColor(reporte.estado) }}
-                          />
                           {reporte.estado.nombre}
                         </Badge>
                       )}
                     </div>
-                    
-                    <p className="text-slate-700 leading-relaxed mb-3 break-words">
-                      {reporte.descripcion}
-                    </p>
-                    
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-sm text-slate-600">
-                      <div className="flex items-center gap-2">
-                        <Calendar className="h-4 w-4 text-slate-400 flex-shrink-0" />
-                        <span className="break-words">{formatDate(reporte.created_at)}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <User className="h-4 w-4 text-slate-400 flex-shrink-0" />
-                        <span className="break-words">Reportado por {getReporterName(reporte.created_by_profile)}</span>
-                      </div>
-                    </div>
                   </div>
                 </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="grid gap-6 xl:grid-cols-4">
-          {/* Main Content - Images and Map */}
-          <div className="xl:col-span-3">
-            <div className="grid gap-6 lg:grid-cols-2">
-              {/* Images Gallery */}
-              {reporte.imagenes && reporte.imagenes.length > 0 && (
-                <Card className="shadow-lg border-slate-200 bg-white">
-                  <CardHeader className="bg-gradient-to-r from-slate-50 to-slate-100 rounded-t-lg border-b border-slate-200 py-4">
-                    <CardTitle className="flex items-center gap-2 text-slate-800 text-lg">
-                      <div className="p-2 bg-green-100 rounded-lg">
-                        <Eye className="h-4 w-4 text-green-600" />
-                      </div>
-                      <span className="break-words">Evidencia Fotográfica</span>
-                      <Badge variant="secondary" className="ml-auto">
-                        {reporte.imagenes.length} imagen{reporte.imagenes.length !== 1 ? 'es' : ''}
-                      </Badge>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-4 sm:p-6">
-                    <div className="grid gap-4 sm:grid-cols-1">
-                      {reporte.imagenes.map((imagen, index) => (
-                        <div key={index} className="relative group">
-                          <div className="aspect-video rounded-lg overflow-hidden bg-slate-100 shadow-md border border-slate-200">
-                            <img
-                              src={imagen}
-                              alt={`Imagen ${index + 1} del reporte`}
-                              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                            />
-                          </div>
-                          <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-all rounded-lg flex items-center justify-center">
-                            <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-                              <Badge variant="secondary" className="shadow-lg">
-                                Imagen {index + 1}
-                              </Badge>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Map Section */}
-              {reporte.latitud && reporte.longitud && (
-                <Card className="shadow-lg border-slate-200 bg-white">
-                  <CardHeader className="bg-gradient-to-r from-slate-50 to-slate-100 rounded-t-lg border-b border-slate-200 py-4">
-                    <CardTitle className="flex items-center gap-2 text-slate-800 text-lg">
-                      <div className="p-2 bg-red-100 rounded-lg">
-                        <MapPin className="h-4 w-4 text-red-600" />
-                      </div>
-                      <span className="break-words">Ubicación del Incidente</span>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-4 sm:p-6">
-                    <div className="rounded-lg overflow-hidden shadow-md border border-slate-200">
-                      <MapaReporteEspecifico
-                        reporte={reporte}
-                        height="h-[300px] sm:h-[400px]"
-                      />
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
-          </div>
-
-          {/* Sidebar - Fechas Card */}
-          <div className="space-y-6">
-            <Card className="shadow-lg border-slate-200 bg-white">
-              <CardHeader className="bg-gradient-to-r from-slate-50 to-slate-100 rounded-t-lg border-b border-slate-200 py-4">
-                <CardTitle className="flex items-center gap-2 text-slate-800 text-lg">
-                  <div className="p-2 bg-purple-100 rounded-lg">
-                    <Calendar className="h-4 w-4 text-purple-600" />
+                
+                <p className="text-gray-700 mb-4 leading-relaxed">
+                  {reporte.descripcion}
+                </p>
+                
+                <div className="flex items-center gap-4 text-sm text-gray-600">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="h-4 w-4" />
+                    <span>{formatDate(reporte.created_at)}</span>
                   </div>
-                  Fechas
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-4 space-y-4">
-                <div className="space-y-3">
-                  <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
-                    <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Creado</label>
-                    <p className="text-slate-800 font-medium mt-1 text-sm break-words">
-                      {formatDate(reporte.created_at)}
-                    </p>
-                  </div>
-
-                  <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
-                    <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Última Actualización</label>
-                    <p className="text-slate-800 font-medium mt-1 text-sm break-words">
-                      {formatDate(reporte.updated_at)}
-                    </p>
-                  </div>
-
-                  <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
-                    <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">ID del Reporte</label>
-                    <p className="text-slate-800 font-mono text-xs break-all mt-1">{reporte.id}</p>
+                  <div className="flex items-center gap-2">
+                    <User className="h-4 w-4" />
+                    <span>Reportado por {getReporterName(reporte.created_by_profile)}</span>
                   </div>
                 </div>
               </CardContent>
             </Card>
+
+            {/* Evidence Card */}
+            {reporte.imagenes && reporte.imagenes.length > 0 && (
+              <Card className="bg-white border border-gray-200">
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center justify-between text-lg font-semibold">
+                    <div className="flex items-center gap-2">
+                      <Eye className="h-5 w-5 text-green-600" />
+                      <span>Evidencia Fotográfica</span>
+                    </div>
+                    <span className="text-sm font-normal text-gray-600">
+                      {reporte.imagenes.length} imagen{reporte.imagenes.length !== 1 ? 'es' : ''}
+                    </span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    {reporte.imagenes.map((imagen, index) => (
+                      <div key={index} className="relative group">
+                        <div className="aspect-square rounded-lg overflow-hidden bg-gray-100 border border-gray-200">
+                          <img
+                            src={imagen}
+                            alt={`Evidencia ${index + 1}`}
+                            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+
+          {/* Right Column */}
+          <div className="space-y-6">
+            {/* Map Card */}
+            {reporte.latitud && reporte.longitud && (
+              <Card className="bg-white border border-gray-200">
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+                    <MapPin className="h-5 w-5 text-red-600" />
+                    <span>Ubicación del Incidente</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  <div className="rounded-lg overflow-hidden border border-gray-200">
+                    <MapaReporteEspecifico
+                      reporte={reporte}
+                      height="h-[300px]"
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
         </div>
       </div>
