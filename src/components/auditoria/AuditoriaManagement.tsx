@@ -64,11 +64,11 @@ export const AuditoriaManagement = () => {
             <div>
               <Label htmlFor="tabla_nombre">Tabla</Label>
               <Select
-                value={filtrosTemp.tabla_nombre || ""}
+                value={filtrosTemp.tabla_nombre || "all"}
                 onValueChange={(value) => 
                   setFiltrosTemp(prev => ({ 
                     ...prev, 
-                    tabla_nombre: value || null 
+                    tabla_nombre: value === "all" ? null : value 
                   }))
                 }
               >
@@ -76,7 +76,7 @@ export const AuditoriaManagement = () => {
                   <SelectValue placeholder="Seleccionar tabla" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todas las tablas</SelectItem>
+                  <SelectItem value="all">Todas las tablas</SelectItem>
                   <SelectItem value="reportes">Reportes</SelectItem>
                   <SelectItem value="categories">Categorías</SelectItem>
                   <SelectItem value="estados">Estados</SelectItem>
