@@ -15,16 +15,17 @@ export const LoginForm = () => {
   const [showPasswordRecovery, setShowPasswordRecovery] = useState(false);
   const { signIn } = useAuth();
 
-  // Aplicar tema del sistema al cargar el componente
+  // Aplicar tema del sistema al cargar el componente y escuchar cambios
   useEffect(() => {
-    if (typeof window !== 'undefined') {
+    if (typeof window === 'undefined') return;
+
+    const applyTheme = () => {
       const savedTheme = localStorage.getItem('theme');
+      const root = window.document.documentElement;
+      root.classList.remove('light', 'dark');
       
       // Si no hay tema guardado o es 'system', aplicar tema del sistema
       if (!savedTheme || savedTheme === 'system') {
-        const root = window.document.documentElement;
-        root.classList.remove('light', 'dark');
-        
         const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
         root.classList.add(systemTheme);
         
@@ -36,11 +37,35 @@ export const LoginForm = () => {
         console.log('LoginForm: Applied system theme:', systemTheme);
       } else {
         // Si hay un tema específico guardado, aplicarlo
-        const root = window.document.documentElement;
-        root.classList.remove('light', 'dark');
         root.classList.add(savedTheme);
         console.log('LoginForm: Applied saved theme:', savedTheme);
       }
+    };
+
+    // Aplicar tema inicial
+    applyTheme();
+
+    // Solo escuchar cambios del sistema si el tema guardado es 'system'
+    const savedTheme = localStorage.getItem('theme');
+    if (!savedTheme || savedTheme === 'system') {
+      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+      
+      const handleSystemThemeChange = (e: MediaQueryListEvent) => {
+        const currentSavedTheme = localStorage.getItem('theme');
+        // Solo aplicar cambios si el tema actual sigue siendo 'system'
+        if (!currentSavedTheme || currentSavedTheme === 'system') {
+          const root = window.document.documentElement;
+          root.classList.remove('light', 'dark');
+          root.classList.add(e.matches ? 'dark' : 'light');
+          console.log('LoginForm: System theme changed to:', e.matches ? 'dark' : 'light');
+        }
+      };
+
+      mediaQuery.addEventListener('change', handleSystemThemeChange);
+
+      return () => {
+        mediaQuery.removeEventListener('change', handleSystemThemeChange);
+      };
     }
   }, []);
 
