@@ -1,4 +1,3 @@
-
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -99,7 +98,6 @@ export const ReporteDetail = ({ reporte, onEdit, onBack }: ReporteDetailProps) =
                   {priorityConfig[reporte.priority]?.label || 'Urgente'}
                 </Badge>
               </div>
-              <p className="text-gray-600">ID: {reporte.id}</p>
             </div>
           </div>
           
