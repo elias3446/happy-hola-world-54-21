@@ -1,5 +1,6 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { ReportesList } from './ReportesList';
 import { ReporteForm } from './ReporteForm';
 import { ReporteDetail } from './ReporteDetail';
@@ -11,30 +12,51 @@ import type { Reporte } from '@/types/reportes';
 type ViewMode = 'list' | 'create' | 'edit' | 'detail' | 'bulk-upload';
 
 export const ReportesManagement = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [selectedReporte, setSelectedReporte] = useState<Reporte | null>(null);
   
-  const { createReporte, updateReporte, isCreating, isUpdating } = useReportes();
+  const { createReporte, updateReporte, isCreating, isUpdating, reportes } = useReportes();
   const { uploadImagesForReporte } = useCloudinary();
+
+  // Handle URL parameter for viewing specific reporte
+  useEffect(() => {
+    const viewParam = searchParams.get('view');
+    if (viewParam && reportes.length > 0) {
+      const reporte = reportes.find(r => r.id === viewParam);
+      if (reporte) {
+        setSelectedReporte(reporte);
+        setViewMode('detail');
+      } else {
+        // If reporte not found, clear the view param and go to list
+        setSearchParams({});
+        setViewMode('list');
+      }
+    }
+  }, [searchParams, reportes, setSearchParams]);
 
   const handleCreateReporte = () => {
     setSelectedReporte(null);
     setViewMode('create');
+    setSearchParams({});
   };
 
   const handleBulkUpload = () => {
     setSelectedReporte(null);
     setViewMode('bulk-upload');
+    setSearchParams({});
   };
 
   const handleEditReporte = (reporte: Reporte) => {
     setSelectedReporte(reporte);
     setViewMode('edit');
+    setSearchParams({});
   };
 
   const handleViewReporte = (reporte: Reporte) => {
     setSelectedReporte(reporte);
     setViewMode('detail');
+    setSearchParams({ view: reporte.id });
   };
 
   const handleFormSubmit = async (data: any) => {
@@ -83,6 +105,7 @@ export const ReportesManagement = () => {
       
       setViewMode('list');
       setSelectedReporte(null);
+      setSearchParams({});
     } catch (error) {
       console.error('Error in form submission:', error);
     }
@@ -91,11 +114,13 @@ export const ReportesManagement = () => {
   const handleCancel = () => {
     setViewMode('list');
     setSelectedReporte(null);
+    setSearchParams({});
   };
 
   const handleBackToList = () => {
     setViewMode('list');
     setSelectedReporte(null);
+    setSearchParams({});
   };
 
   if (viewMode === 'create' || viewMode === 'edit') {
