@@ -9,6 +9,110 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      actividades: {
+        Row: {
+          activity_type: Database["public"]["Enums"]["activity_type"]
+          created_at: string
+          descripcion: string
+          id: string
+          ip_address: unknown | null
+          metadatos: Json | null
+          registro_id: string | null
+          tabla_afectada: string | null
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          activity_type: Database["public"]["Enums"]["activity_type"]
+          created_at?: string
+          descripcion: string
+          id?: string
+          ip_address?: unknown | null
+          metadatos?: Json | null
+          registro_id?: string | null
+          tabla_afectada?: string | null
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          activity_type?: Database["public"]["Enums"]["activity_type"]
+          created_at?: string
+          descripcion?: string
+          id?: string
+          ip_address?: unknown | null
+          metadatos?: Json | null
+          registro_id?: string | null
+          tabla_afectada?: string | null
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "actividades_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cambios_historial: {
+        Row: {
+          actividad_id: string
+          campos_modificados: string[] | null
+          created_at: string
+          descripcion_cambio: string | null
+          id: string
+          operation_type: Database["public"]["Enums"]["operation_type"]
+          registro_id: string
+          tabla_nombre: string
+          user_id: string
+          valores_anteriores: Json | null
+          valores_nuevos: Json | null
+        }
+        Insert: {
+          actividad_id: string
+          campos_modificados?: string[] | null
+          created_at?: string
+          descripcion_cambio?: string | null
+          id?: string
+          operation_type: Database["public"]["Enums"]["operation_type"]
+          registro_id: string
+          tabla_nombre: string
+          user_id: string
+          valores_anteriores?: Json | null
+          valores_nuevos?: Json | null
+        }
+        Update: {
+          actividad_id?: string
+          campos_modificados?: string[] | null
+          created_at?: string
+          descripcion_cambio?: string | null
+          id?: string
+          operation_type?: Database["public"]["Enums"]["operation_type"]
+          registro_id?: string
+          tabla_nombre?: string
+          user_id?: string
+          valores_anteriores?: Json | null
+          valores_nuevos?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cambios_historial_actividad_id_fkey"
+            columns: ["actividad_id"]
+            isOneToOne: false
+            referencedRelation: "actividades"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cambios_historial_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       categories: {
         Row: {
           activo: boolean
@@ -397,9 +501,53 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_change_history: {
+        Args: {
+          p_tabla_nombre?: string
+          p_registro_id?: string
+          p_user_id?: string
+          p_limit?: number
+          p_offset?: number
+        }
+        Returns: {
+          id: string
+          tabla_nombre: string
+          registro_id: string
+          operation_type: Database["public"]["Enums"]["operation_type"]
+          valores_anteriores: Json
+          valores_nuevos: Json
+          campos_modificados: string[]
+          descripcion_cambio: string
+          created_at: string
+          user_email: string
+        }[]
+      }
+      get_user_activities: {
+        Args: { p_user_id?: string; p_limit?: number; p_offset?: number }
+        Returns: {
+          id: string
+          activity_type: Database["public"]["Enums"]["activity_type"]
+          descripcion: string
+          tabla_afectada: string
+          registro_id: string
+          metadatos: Json
+          created_at: string
+          user_email: string
+        }[]
+      }
       has_users: {
         Args: Record<PropertyKey, never>
         Returns: boolean
+      }
+      registrar_actividad: {
+        Args: {
+          p_activity_type: Database["public"]["Enums"]["activity_type"]
+          p_descripcion: string
+          p_tabla_afectada?: string
+          p_registro_id?: string
+          p_metadatos?: Json
+        }
+        Returns: string
       }
       user_has_role_permission: {
         Args: {
@@ -409,6 +557,17 @@ export type Database = {
       }
     }
     Enums: {
+      activity_type:
+        | "CREATE"
+        | "READ"
+        | "UPDATE"
+        | "DELETE"
+        | "LOGIN"
+        | "LOGOUT"
+        | "SEARCH"
+        | "EXPORT"
+        | "IMPORT"
+      operation_type: "INSERT" | "UPDATE" | "DELETE" | "SELECT"
       permission_enum:
         | "ver_reporte"
         | "crear_reporte"
@@ -546,6 +705,18 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      activity_type: [
+        "CREATE",
+        "READ",
+        "UPDATE",
+        "DELETE",
+        "LOGIN",
+        "LOGOUT",
+        "SEARCH",
+        "EXPORT",
+        "IMPORT",
+      ],
+      operation_type: ["INSERT", "UPDATE", "DELETE", "SELECT"],
       permission_enum: [
         "ver_reporte",
         "crear_reporte",

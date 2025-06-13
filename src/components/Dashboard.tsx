@@ -53,6 +53,12 @@ export const Dashboard = () => {
       icon: Circle,
       href: '/admin?tab=estados'
     },
+    { 
+      value: 'auditoria', 
+      label: 'Auditoría', 
+      icon: Shield,
+      href: '/admin?tab=auditoria'
+    },
   ];
 
   const isActive = (tabValue: string) => activeTab === tabValue;
@@ -67,6 +73,8 @@ export const Dashboard = () => {
         return <CategoriesManagement />;
       case 'estados':
         return <EstadosManagement />;
+      case 'auditoria':
+        return <AuditoriaManagement />;
       case 'reportes':
       default:
         return <ReportesManagement />;
