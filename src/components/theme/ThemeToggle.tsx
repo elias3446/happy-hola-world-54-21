@@ -16,30 +16,49 @@ export const ThemeToggle = () => {
     // Verificar si estamos en el navegador
     if (typeof window !== 'undefined') {
       const savedTheme = localStorage.getItem('theme') as Theme;
+      // Si hay un tema guardado, usarlo, sino usar 'system' por defecto
       return savedTheme || 'system';
     }
     return 'system';
   });
 
+  // Función para obtener el tema del sistema
+  const getSystemTheme = (): 'dark' | 'light' => {
+    if (typeof window !== 'undefined') {
+      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+    return 'light';
+  };
+
   // Función para aplicar el tema
   const applyTheme = (currentTheme: Theme) => {
+    if (typeof window === 'undefined') return;
+    
     const root = window.document.documentElement;
     root.classList.remove('light', 'dark');
 
+    let effectiveTheme: 'dark' | 'light';
+    
     if (currentTheme === 'system') {
-      const systemTheme = window.matchMedia('(prefers-color-scheme: dark)')
-        .matches
-        ? 'dark'
-        : 'light';
-      root.classList.add(systemTheme);
+      effectiveTheme = getSystemTheme();
     } else {
-      root.classList.add(currentTheme);
+      effectiveTheme = currentTheme;
     }
+    
+    root.classList.add(effectiveTheme);
+    
+    console.log('Theme applied:', currentTheme, 'effective:', effectiveTheme);
   };
 
   // Aplicar tema inicial al cargar el componente
   useEffect(() => {
     if (typeof window !== 'undefined') {
+      // Al inicio, si no hay tema guardado, establecer 'system' como predeterminado
+      const savedTheme = localStorage.getItem('theme') as Theme;
+      if (!savedTheme) {
+        localStorage.setItem('theme', 'system');
+        setTheme('system');
+      }
       applyTheme(theme);
     }
   }, []);
@@ -51,18 +70,25 @@ export const ThemeToggle = () => {
     }
   }, [theme]);
 
-  // Escuchar cambios en las preferencias del sistema
+  // Escuchar cambios en las preferencias del sistema solo si el tema es 'system'
   useEffect(() => {
-    if (theme !== 'system') return;
+    if (typeof window === 'undefined' || theme !== 'system') return;
 
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
     
     const handleSystemThemeChange = (e: MediaQueryListEvent) => {
-      const root = window.document.documentElement;
-      root.classList.remove('light', 'dark');
-      root.classList.add(e.matches ? 'dark' : 'light');
+      // Solo aplicar cambios si el tema actual es 'system'
+      if (theme === 'system') {
+        const root = window.document.documentElement;
+        root.classList.remove('light', 'dark');
+        root.classList.add(e.matches ? 'dark' : 'light');
+        console.log('System theme changed to:', e.matches ? 'dark' : 'light');
+      }
     };
 
+    // Aplicar tema inicial del sistema
+    applyTheme('system');
+    
     mediaQuery.addEventListener('change', handleSystemThemeChange);
 
     return () => {
@@ -71,6 +97,7 @@ export const ThemeToggle = () => {
   }, [theme]);
 
   const handleThemeChange = (newTheme: Theme) => {
+    console.log('Theme changed to:', newTheme);
     localStorage.setItem('theme', newTheme);
     setTheme(newTheme);
   };
@@ -91,6 +118,7 @@ export const ThemeToggle = () => {
         >
           <Sun className="mr-2 h-4 w-4" />
           <span>Claro</span>
+          {theme === 'light' && <span className="ml-auto">✓</span>}
         </DropdownMenuItem>
         <DropdownMenuItem 
           onClick={() => handleThemeChange('dark')}
@@ -98,6 +126,7 @@ export const ThemeToggle = () => {
         >
           <Moon className="mr-2 h-4 w-4" />
           <span>Oscuro</span>
+          {theme === 'dark' && <span className="ml-auto">✓</span>}
         </DropdownMenuItem>
         <DropdownMenuItem 
           onClick={() => handleThemeChange('system')}
@@ -105,6 +134,7 @@ export const ThemeToggle = () => {
         >
           <span className="mr-2">💻</span>
           <span>Sistema</span>
+          {theme === 'system' && <span className="ml-auto">✓</span>}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
