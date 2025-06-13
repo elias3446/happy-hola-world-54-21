@@ -7,6 +7,7 @@ import { Separator } from '@/components/ui/separator';
 import { useRoles } from '@/hooks/useRoles';
 import type { Role } from '@/types/roles';
 import { PERMISSION_LABELS, PERMISSION_GROUPS } from '@/types/roles';
+import { RolAuditoria } from './RolAuditoria';
 import { 
   ArrowLeft, 
   Edit, 
@@ -228,11 +229,6 @@ export const RoleDetail = ({ role: initialRole, onEdit, onBack }: RoleDetailProp
               </p>
             </div>
 
-            <div>
-              <label className="text-sm font-medium text-gray-700">ID del Rol</label>
-              <p className="text-gray-900 mt-1 font-mono text-xs break-all">{currentRole.id}</p>
-            </div>
-
             {isSystemRoleItem && (
               <>
                 <Separator />
@@ -249,7 +245,7 @@ export const RoleDetail = ({ role: initialRole, onEdit, onBack }: RoleDetailProp
         </Card>
 
         {/* Permisos */}
-        <Card className="lg:col-span-3">
+        <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <User className="h-5 w-5" />
@@ -280,6 +276,11 @@ export const RoleDetail = ({ role: initialRole, onEdit, onBack }: RoleDetailProp
             )}
           </CardContent>
         </Card>
+
+        {/* Auditoría del Rol */}
+        <div className="lg:col-span-1">
+          <RolAuditoria rolId={currentRole.id} />
+        </div>
       </div>
     </div>
   );
