@@ -33,28 +33,101 @@ export const AuditoriaManagement = () => {
         // Si no hay tabla seleccionada, obtener IDs de todas las tablas
         try {
           setIsLoadingRegistros(true);
-          const tablas = ['reportes', 'categories', 'estados', 'profiles', 'roles', 'user_roles'];
           const todosRegistros: {id: string, display: string}[] = [];
 
-          for (const tabla of tablas) {
-            const { data, error } = await supabase
-              .from(tabla)
-              .select('id, nombre, email, first_name, last_name')
-              .limit(100);
-
-            if (!error && data) {
-              data.forEach((registro: any) => {
-                const display = registro.nombre || 
-                               registro.email || 
-                               `${registro.first_name || ''} ${registro.last_name || ''}`.trim() ||
-                               registro.id;
-                todosRegistros.push({
-                  id: registro.id,
-                  display: `${tabla}: ${display}`
-                });
+          // Obtener reportes
+          const { data: reportes } = await supabase
+            .from('reportes')
+            .select('id, nombre')
+            .limit(100);
+          
+          if (reportes) {
+            reportes.forEach((registro) => {
+              todosRegistros.push({
+                id: registro.id,
+                display: `reportes: ${registro.nombre}`
               });
-            }
+            });
           }
+
+          // Obtener categorías
+          const { data: categories } = await supabase
+            .from('categories')
+            .select('id, nombre')
+            .limit(100);
+          
+          if (categories) {
+            categories.forEach((registro) => {
+              todosRegistros.push({
+                id: registro.id,
+                display: `categories: ${registro.nombre}`
+              });
+            });
+          }
+
+          // Obtener estados
+          const { data: estados } = await supabase
+            .from('estados')
+            .select('id, nombre')
+            .limit(100);
+          
+          if (estados) {
+            estados.forEach((registro) => {
+              todosRegistros.push({
+                id: registro.id,
+                display: `estados: ${registro.nombre}`
+              });
+            });
+          }
+
+          // Obtener perfiles
+          const { data: profiles } = await supabase
+            .from('profiles')
+            .select('id, email, first_name, last_name')
+            .limit(100);
+          
+          if (profiles) {
+            profiles.forEach((registro) => {
+              const display = registro.email || 
+                             `${registro.first_name || ''} ${registro.last_name || ''}`.trim() ||
+                             registro.id;
+              todosRegistros.push({
+                id: registro.id,
+                display: `profiles: ${display}`
+              });
+            });
+          }
+
+          // Obtener roles
+          const { data: roles } = await supabase
+            .from('roles')
+            .select('id, nombre')
+            .limit(100);
+          
+          if (roles) {
+            roles.forEach((registro) => {
+              todosRegistros.push({
+                id: registro.id,
+                display: `roles: ${registro.nombre}`
+              });
+            });
+          }
+
+          // Obtener user_roles
+          const { data: userRoles } = await supabase
+            .from('user_roles')
+            .select('id')
+            .limit(100);
+          
+          if (userRoles) {
+            userRoles.forEach((registro) => {
+              todosRegistros.push({
+                id: registro.id,
+                display: `user_roles: ${registro.id}`
+              });
+            });
+          }
+
           setRegistrosDisponibles(todosRegistros);
         } catch (error) {
           console.error('Error obteniendo todos los registros:', error);
@@ -66,43 +139,104 @@ export const AuditoriaManagement = () => {
         // Obtener registros de la tabla específica
         try {
           setIsLoadingRegistros(true);
-          let query = supabase.from(filtrosTemp.tabla_nombre).select('id');
+          let registros: {id: string, display: string}[] = [];
           
-          // Agregar campos adicionales según la tabla
+          // Usar switch para manejar cada tabla específicamente
           switch (filtrosTemp.tabla_nombre) {
             case 'reportes':
-              query = supabase.from(filtrosTemp.tabla_nombre).select('id, nombre');
+              const { data: reportes } = await supabase
+                .from('reportes')
+                .select('id, nombre')
+                .limit(100);
+              
+              if (reportes) {
+                registros = reportes.map((registro) => ({
+                  id: registro.id,
+                  display: registro.nombre
+                }));
+              }
               break;
+
             case 'categories':
+              const { data: categories } = await supabase
+                .from('categories')
+                .select('id, nombre')
+                .limit(100);
+              
+              if (categories) {
+                registros = categories.map((registro) => ({
+                  id: registro.id,
+                  display: registro.nombre
+                }));
+              }
+              break;
+
             case 'estados':
-            case 'roles':
-              query = supabase.from(filtrosTemp.tabla_nombre).select('id, nombre');
+              const { data: estados } = await supabase
+                .from('estados')
+                .select('id, nombre')
+                .limit(100);
+              
+              if (estados) {
+                registros = estados.map((registro) => ({
+                  id: registro.id,
+                  display: registro.nombre
+                }));
+              }
               break;
+
             case 'profiles':
-              query = supabase.from(filtrosTemp.tabla_nombre).select('id, email, first_name, last_name');
+              const { data: profiles } = await supabase
+                .from('profiles')
+                .select('id, email, first_name, last_name')
+                .limit(100);
+              
+              if (profiles) {
+                registros = profiles.map((registro) => {
+                  const display = registro.email || 
+                                 `${registro.first_name || ''} ${registro.last_name || ''}`.trim() ||
+                                 registro.id;
+                  return {
+                    id: registro.id,
+                    display: display
+                  };
+                });
+              }
               break;
+
+            case 'roles':
+              const { data: roles } = await supabase
+                .from('roles')
+                .select('id, nombre')
+                .limit(100);
+              
+              if (roles) {
+                registros = roles.map((registro) => ({
+                  id: registro.id,
+                  display: registro.nombre
+                }));
+              }
+              break;
+
             case 'user_roles':
-              query = supabase.from(filtrosTemp.tabla_nombre).select('id');
+              const { data: userRoles } = await supabase
+                .from('user_roles')
+                .select('id')
+                .limit(100);
+              
+              if (userRoles) {
+                registros = userRoles.map((registro) => ({
+                  id: registro.id,
+                  display: registro.id
+                }));
+              }
               break;
+
+            default:
+              registros = [];
           }
 
-          const { data, error } = await query.limit(100);
-
-          if (!error && data) {
-            const registros = data.map((registro: any) => {
-              const display = registro.nombre || 
-                             registro.email || 
-                             `${registro.first_name || ''} ${registro.last_name || ''}`.trim() ||
-                             registro.id;
-              return {
-                id: registro.id,
-                display: display
-              };
-            });
-            setRegistrosDisponibles(registros);
-          } else {
-            setRegistrosDisponibles([]);
-          }
+          setRegistrosDisponibles(registros);
         } catch (error) {
           console.error('Error obteniendo registros:', error);
           setRegistrosDisponibles([]);
