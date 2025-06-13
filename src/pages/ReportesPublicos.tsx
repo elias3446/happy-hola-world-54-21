@@ -53,7 +53,7 @@ export const ReportesPublicos = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-background">
         <div className="container mx-auto px-4 py-8">
           <div className="flex items-center justify-center min-h-[400px]">
             <div className="text-center space-y-4">
@@ -67,11 +67,11 @@ export const ReportesPublicos = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8 max-w-7xl">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-2xl sm:text-3xl font-bold mb-2">Reportes Públicos</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold mb-2 text-foreground">Reportes Públicos</h1>
           <p className="text-muted-foreground text-sm sm:text-base">
             Explora todos los reportes enviados por la comunidad
           </p>
@@ -105,7 +105,7 @@ export const ReportesPublicos = () => {
             <div className="mx-auto mb-4 h-12 w-12 text-muted-foreground">
               <Search className="h-full w-full" />
             </div>
-            <h3 className="text-lg font-semibold mb-2">No se encontraron reportes</h3>
+            <h3 className="text-lg font-semibold mb-2 text-foreground">No se encontraron reportes</h3>
             <p className="text-muted-foreground mb-4">
               {searchTerm 
                 ? "Intenta ajustar tu búsqueda o filtros" 
@@ -121,10 +121,10 @@ export const ReportesPublicos = () => {
         ) : (
           <div className="space-y-6">
             {filteredReportes.map((reporte) => (
-              <Card key={reporte.id} className="overflow-hidden border border-gray-200">
+              <Card key={reporte.id} className="overflow-hidden border border-border">
                 <CardHeader className="pb-3">
                   <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
-                    <CardTitle className="text-lg sm:text-xl break-words pr-2">
+                    <CardTitle className="text-lg sm:text-xl break-words pr-2 text-foreground">
                       {reporte.nombre}
                     </CardTitle>
                     <div className="flex flex-wrap gap-2 shrink-0">
@@ -172,7 +172,7 @@ export const ReportesPublicos = () => {
                         className="w-3 h-3 rounded-full shrink-0"
                         style={{ backgroundColor: reporte.categoria.color }}
                       />
-                      <span className="text-sm font-medium break-words">
+                      <span className="text-sm font-medium break-words text-foreground">
                         {reporte.categoria.nombre}
                       </span>
                     </div>
@@ -188,7 +188,7 @@ export const ReportesPublicos = () => {
                   )}
 
                   {/* Meta Information */}
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-sm text-muted-foreground border-t pt-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-sm text-muted-foreground border-t border-border pt-4">
                     <div className="flex items-center gap-1">
                       <Calendar className="h-4 w-4 shrink-0" />
                       <span className="break-words">{formatDate(reporte.created_at)}</span>
