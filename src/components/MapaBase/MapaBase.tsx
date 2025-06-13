@@ -138,11 +138,11 @@ function CenterOnUserButton({ userPosition }: { userPosition: [number, number] }
   };
   
   return (
-    <div className="leaflet-top leaflet-right">
+    <div className="leaflet-top leaflet-right" style={{ top: '60px', right: '10px' }}>
       <div className="leaflet-control leaflet-bar">
         <button 
           onClick={handleCenterClick}
-          className="bg-white p-2 rounded-md shadow-md hover:bg-gray-100 focus:outline-none"
+          className="bg-white p-2 rounded-md shadow-md hover:bg-gray-100 focus:outline-none text-gray-700"
           title="Center on your location"
           type="button"
         >
@@ -234,10 +234,10 @@ const MapaBase: React.FC<MapaBaseProps> = ({
         </MapContainer>
       </div>
       
-      {/* Search bar with proper responsive positioning */}
+      {/* Search bar positioned to not overlap with map controls */}
       {!hideSearchBar && (
-        <div className="absolute top-2 left-2 right-2 sm:top-4 sm:left-4 sm:right-4 z-20">
-          <div className="w-full max-w-md">
+        <div className="absolute top-2 left-2 right-16 sm:top-4 sm:left-4 sm:right-20 z-20">
+          <div className="w-full max-w-xs sm:max-w-md">
             <SearchBar 
               onSearch={handleSearchLocation} 
               userPosition={!isDefaultPosition(userPosition) ? userPosition : null} 
