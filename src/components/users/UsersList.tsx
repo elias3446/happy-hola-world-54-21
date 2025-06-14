@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -164,7 +163,7 @@ export const UsersList = ({ onCreateUser, onEditUser, onViewUser, onBulkUpload }
     setCurrentPage(1);
   }, [filteredData.length]);
 
-  // Bulk selection hook - only for selectable users (non-blocked) and paginated data
+  // Bulk selection hook - NOW USES ALL SELECTABLE FILTERED DATA, NOT JUST PAGINATED
   const {
     selectedItems,
     isAllSelected,
@@ -174,7 +173,7 @@ export const UsersList = ({ onCreateUser, onEditUser, onViewUser, onBulkUpload }
     clearSelection,
     getSelectedData,
     selectedCount,
-  } = useBulkSelection(paginatedData.filter(user => user.asset !== null));
+  } = useBulkSelection(selectableUsers); // Use all selectable filtered data for bulk selection
 
   // Define columns for the table
   const columns: DataTableColumn[] = [
@@ -194,6 +193,31 @@ export const UsersList = ({ onCreateUser, onEditUser, onViewUser, onBulkUpload }
   useEffect(() => {
     setFilteredData(transformedUsers);
   }, [transformedUsers]);
+
+  // Check if all visible items on current page are selected
+  const visibleSelectableItems = paginatedData.filter(user => user.asset !== null);
+  const visibleItemsSelected = visibleSelectableItems.every(item => selectedItems.has(item.id));
+  const someVisibleItemsSelected = visibleSelectableItems.some(item => selectedItems.has(item.id));
+  const isCurrentPageIndeterminate = someVisibleItemsSelected && !visibleItemsSelected;
+
+  // Handler for selecting/deselecting all items on current page
+  const handleSelectAllCurrentPage = () => {
+    if (visibleItemsSelected) {
+      // Deselect all items on current page
+      visibleSelectableItems.forEach(item => {
+        if (selectedItems.has(item.id)) {
+          handleSelectItem(item.id);
+        }
+      });
+    } else {
+      // Select all items on current page
+      visibleSelectableItems.forEach(item => {
+        if (!selectedItems.has(item.id)) {
+          handleSelectItem(item.id);
+        }
+      });
+    }
+  };
 
   // Helper function to get user display name
   const getUserDisplayName = (user: User) => {
@@ -604,11 +628,11 @@ export const UsersList = ({ onCreateUser, onEditUser, onViewUser, onBulkUpload }
                     <TableRow>
                       <TableHead className="w-[40px]">
                         <Checkbox
-                          checked={isAllSelected}
-                          onCheckedChange={handleSelectAll}
+                          checked={visibleItemsSelected}
+                          onCheckedChange={handleSelectAllCurrentPage}
                           ref={(el) => {
                             if (el && 'indeterminate' in el) {
-                              (el as any).indeterminate = isIndeterminate;
+                              (el as any).indeterminate = isCurrentPageIndeterminate;
                             }
                           }}
                         />
@@ -836,6 +860,33 @@ export const UsersList = ({ onCreateUser, onEditUser, onViewUser, onBulkUpload }
                   </TableBody>
                 </Table>
               </div>
+
+              {/* Enhanced selection info */}
+              {selectedCount > 0 && (
+                <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg border border-blue-200">
+                  <div className="flex items-center gap-2 text-sm text-blue-700">
+                    <span className="font-medium">{selectedCount} usuarios seleccionados</span>
+                    {selectedCount !== selectableUsers.length && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleSelectAll}
+                        className="h-6 px-2 text-xs border-blue-300 text-blue-700 hover:bg-blue-100"
+                      >
+                        Seleccionar todos ({selectableUsers.length})
+                      </Button>
+                    )}
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={clearSelection}
+                    className="h-6 px-2 text-xs border-blue-300 text-blue-700 hover:bg-blue-100"
+                  >
+                    Limpiar selección
+                  </Button>
+                </div>
+              )}
 
               {/* Pagination Info and Controls */}
               {filteredData.length > 0 && (
