@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -78,6 +77,12 @@ const UsuariosAnalyticsContent = () => {
         return filters.searchTerm.length >= 2;
       case 'fechas':
         return filters.dateRange !== null;
+      case 'prioridad': // roles
+        return filters.priority.length > 0;
+      case 'estados': // activación
+        return filters.estados.length > 0;
+      case 'categorias': // confirmación
+        return filters.categorias.length > 0;
       default:
         return false;
     }
@@ -120,6 +125,40 @@ const UsuariosAnalyticsContent = () => {
             isDateInRange(user.created_at, appliedFilters.dateRange!)
           );
           console.log(`Filtro de fecha aplicado: ${filteredUsers.length} usuarios en el rango`);
+        }
+        break;
+
+      case 'prioridad': // roles
+        if (appliedFilters.priority.length > 0) {
+          filteredUsers = filteredUsers.filter(user => {
+            if (!user.role || user.role.length === 0) return false;
+            return appliedFilters.priority.some(selectedRole => 
+              user.role?.includes(selectedRole)
+            );
+          });
+          console.log(`Filtro de roles aplicado: ${filteredUsers.length} usuarios con roles seleccionados`);
+        }
+        break;
+
+      case 'estados': // activación
+        if (appliedFilters.estados.length > 0) {
+          filteredUsers = filteredUsers.filter(user => {
+            const isActive = user.asset;
+            const userState = isActive ? 'Activo' : 'Inactivo';
+            return appliedFilters.estados.includes(userState);
+          });
+          console.log(`Filtro de activación aplicado: ${filteredUsers.length} usuarios con estados seleccionados`);
+        }
+        break;
+
+      case 'categorias': // confirmación
+        if (appliedFilters.categorias.length > 0) {
+          filteredUsers = filteredUsers.filter(user => {
+            const isConfirmed = user.confirmed;
+            const userConfirmation = isConfirmed ? 'Confirmado' : 'No Confirmado';
+            return appliedFilters.categorias.includes(userConfirmation);
+          });
+          console.log(`Filtro de confirmación aplicado: ${filteredUsers.length} usuarios con confirmaciones seleccionadas`);
         }
         break;
     }
@@ -238,6 +277,21 @@ const UsuariosAnalyticsContent = () => {
             {appliedFilters.activeTab === 'fechas' && appliedFilters.dateRange && (
               <span className="bg-blue-100 px-2 py-1 rounded">
                 Fechas: {appliedFilters.dateRange.from.toLocaleDateString('es-ES')} - {appliedFilters.dateRange.to.toLocaleDateString('es-ES')}
+              </span>
+            )}
+            {appliedFilters.activeTab === 'prioridad' && appliedFilters.priority.length > 0 && (
+              <span className="bg-blue-100 px-2 py-1 rounded">
+                Roles: {appliedFilters.priority.join(', ')}
+              </span>
+            )}
+            {appliedFilters.activeTab === 'estados' && appliedFilters.estados.length > 0 && (
+              <span className="bg-blue-100 px-2 py-1 rounded">
+                Activación: {appliedFilters.estados.join(', ')}
+              </span>
+            )}
+            {appliedFilters.activeTab === 'categorias' && appliedFilters.categorias.length > 0 && (
+              <span className="bg-blue-100 px-2 py-1 rounded">
+                Confirmación: {appliedFilters.categorias.join(', ')}
               </span>
             )}
           </div>
