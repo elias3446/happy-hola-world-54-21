@@ -5,8 +5,11 @@ import { Switch } from '@/components/ui/switch';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { useCategories } from '@/hooks/useCategories';
+import { useReportes } from '@/hooks/useReportes';
 import type { Category } from '@/types/categories';
 import { CategoriaAuditoria } from './CategoriaAuditoria';
+import { CategoryReportesList } from './CategoryReportesList';
+import { ReporteDetail } from '@/components/reportes/ReporteDetail';
 import { 
   ArrowLeft, 
   Edit, 
@@ -33,7 +36,9 @@ const isSystemCategory = (categoryName: string): boolean => {
 
 export const CategoryDetail = ({ category: initialCategory, onEdit, onBack }: CategoryDetailProps) => {
   const { toggleCategoryStatus, isToggling, categories } = useCategories();
+  const { reportes } = useReportes();
   const [currentCategory, setCurrentCategory] = useState(initialCategory);
+  const [selectedReporteId, setSelectedReporteId] = useState<string | null>(null);
 
   // Update currentCategory when categories data changes
   useEffect(() => {
@@ -56,6 +61,33 @@ export const CategoryDetail = ({ category: initialCategory, onEdit, onBack }: Ca
     }
     onEdit(currentCategory);
   };
+
+  const handleViewReporte = (reporteId: string) => {
+    setSelectedReporteId(reporteId);
+  };
+
+  const handleBackFromReporteDetail = () => {
+    setSelectedReporteId(null);
+  };
+
+  const handleEditReporte = (reporte: any) => {
+    // This could be extended to handle reporte editing if needed
+    console.log('Edit reporte:', reporte);
+  };
+
+  // If viewing reporte detail, show ReporteDetail component
+  if (selectedReporteId) {
+    const selectedReporte = reportes.find(r => r.id === selectedReporteId);
+    if (selectedReporte) {
+      return (
+        <ReporteDetail
+          reporte={selectedReporte}
+          onEdit={handleEditReporte}
+          onBack={handleBackFromReporteDetail}
+        />
+      );
+    }
+  }
 
   const isSystemCategoryItem = isSystemCategory(currentCategory.nombre);
 
@@ -224,6 +256,11 @@ export const CategoryDetail = ({ category: initialCategory, onEdit, onBack }: Ca
             )}
           </CardContent>
         </Card>
+
+        {/* Reportes con esta Categoría */}
+        <div className="lg:col-span-2">
+          <CategoryReportesList category={currentCategory} onViewReporte={handleViewReporte} />
+        </div>
 
         {/* Auditoría de la Categoría */}
         <div className="lg:col-span-1">
