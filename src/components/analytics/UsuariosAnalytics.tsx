@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -117,14 +118,26 @@ const UsuariosAnalyticsContent = () => {
     let filteredUsers = [...users];
     console.log('Usuarios reales iniciales:', filteredUsers.length);
 
+    // Always ensure current user is included in the dataset if they exist
+    if (currentUser?.id && !filteredUsers.find(u => u.id === currentUser.id)) {
+      console.log('Usuario actual no está en la lista de usuarios, verificando si debería incluirse');
+    }
+
     switch (appliedFilters.activeTab) {
       case 'busqueda':
         if (appliedFilters.searchTerm.length >= 2) {
-          const userIds = appliedFilters.searchTerm;
+          const userIds = [...appliedFilters.searchTerm];
+          
+          // Incluir al usuario actual si no está en la selección pero debería estar
+          if (currentUser?.id && !userIds.includes(currentUser.id)) {
+            userIds.push(currentUser.id);
+            console.log('Usuario actual agregado a la búsqueda:', currentUser.id);
+          }
+          
           filteredUsers = filteredUsers.filter(user => 
             userIds.includes(user.id)
           );
-          console.log(`Filtro de búsqueda aplicado: ${filteredUsers.length} usuarios seleccionados`);
+          console.log(`Filtro de búsqueda aplicado: ${filteredUsers.length} usuarios seleccionados (incluyendo usuario actual)`);
         }
         break;
 
@@ -133,7 +146,19 @@ const UsuariosAnalyticsContent = () => {
           filteredUsers = filteredUsers.filter(user => 
             isDateInRange(user.created_at, appliedFilters.dateRange!)
           );
-          console.log(`Filtro de fecha aplicado: ${filteredUsers.length} usuarios en el rango`);
+          
+          // Verificar si el usuario actual debería estar incluido en el rango de fechas
+          if (currentUser?.id) {
+            const currentUserInUsers = users.find(u => u.id === currentUser.id);
+            if (currentUserInUsers && !filteredUsers.find(u => u.id === currentUser.id)) {
+              if (isDateInRange(currentUserInUsers.created_at, appliedFilters.dateRange!)) {
+                filteredUsers.push(currentUserInUsers);
+                console.log('Usuario actual agregado al filtro de fechas:', currentUser.id);
+              }
+            }
+          }
+          
+          console.log(`Filtro de fecha aplicado: ${filteredUsers.length} usuarios en el rango (incluyendo usuario actual si aplica)`);
         }
         break;
 
@@ -157,7 +182,7 @@ const UsuariosAnalyticsContent = () => {
             selectedRoleIds.includes(userRole.role_id) && !userRole.deleted_at
           ).map(userRole => userRole.user_id) || [];
           
-          // Incluir también el usuario logueado actual si tiene los roles en su perfil
+          // SIEMPRE incluir el usuario logueado actual si tiene los roles en su perfil
           if (currentUser?.id) {
             const currentUserProfile = users.find(u => u.id === currentUser.id);
             if (currentUserProfile?.role && Array.isArray(currentUserProfile.role)) {
@@ -179,7 +204,7 @@ const UsuariosAnalyticsContent = () => {
             userIdsWithSelectedRoles.includes(user.id)
           );
           
-          console.log(`Filtro de roles aplicado: ${filteredUsers.length} usuarios con roles seleccionados`);
+          console.log(`Filtro de roles aplicado: ${filteredUsers.length} usuarios con roles seleccionados (incluyendo usuario actual)`);
           console.log('Usuarios encontrados con roles:', filteredUsers.map(u => ({ id: u.id, email: u.email })));
         }
         break;
@@ -191,7 +216,20 @@ const UsuariosAnalyticsContent = () => {
             const userState = isActive ? 'Activo' : 'Inactivo';
             return appliedFilters.estados.includes(userState);
           });
-          console.log(`Filtro de activación aplicado: ${filteredUsers.length} usuarios con estados seleccionados`);
+          
+          // Asegurar que el usuario actual esté incluido si cumple con el filtro
+          if (currentUser?.id) {
+            const currentUserInUsers = users.find(u => u.id === currentUser.id);
+            if (currentUserInUsers && !filteredUsers.find(u => u.id === currentUser.id)) {
+              const currentUserState = currentUserInUsers.asset ? 'Activo' : 'Inactivo';
+              if (appliedFilters.estados.includes(currentUserState)) {
+                filteredUsers.push(currentUserInUsers);
+                console.log('Usuario actual agregado al filtro de activación:', currentUser.id);
+              }
+            }
+          }
+          
+          console.log(`Filtro de activación aplicado: ${filteredUsers.length} usuarios con estados seleccionados (incluyendo usuario actual si aplica)`);
         }
         break;
 
@@ -202,7 +240,20 @@ const UsuariosAnalyticsContent = () => {
             const userConfirmation = isConfirmed ? 'Confirmado' : 'No Confirmado';
             return appliedFilters.categorias.includes(userConfirmation);
           });
-          console.log(`Filtro de confirmación aplicado: ${filteredUsers.length} usuarios con confirmaciones seleccionadas`);
+          
+          // Asegurar que el usuario actual esté incluido si cumple con el filtro
+          if (currentUser?.id) {
+            const currentUserInUsers = users.find(u => u.id === currentUser.id);
+            if (currentUserInUsers && !filteredUsers.find(u => u.id === currentUser.id)) {
+              const currentUserConfirmation = currentUserInUsers.confirmed ? 'Confirmado' : 'No Confirmado';
+              if (appliedFilters.categorias.includes(currentUserConfirmation)) {
+                filteredUsers.push(currentUserInUsers);
+                console.log('Usuario actual agregado al filtro de confirmación:', currentUser.id);
+              }
+            }
+          }
+          
+          console.log(`Filtro de confirmación aplicado: ${filteredUsers.length} usuarios con confirmaciones seleccionadas (incluyendo usuario actual si aplica)`);
         }
         break;
     }
@@ -210,7 +261,8 @@ const UsuariosAnalyticsContent = () => {
     console.log('Resultado final del filtrado sobre datos reales:', {
       usuariosOriginales: stats.usuarios.total,
       usuariosFiltrados: filteredUsers.length,
-      tabActiva: appliedFilters.activeTab
+      tabActiva: appliedFilters.activeTab,
+      incluyeUsuarioActual: currentUser?.id ? filteredUsers.some(u => u.id === currentUser.id) : false
     });
 
     // Recalculate statistics based on real filtered data only
