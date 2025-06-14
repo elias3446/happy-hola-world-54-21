@@ -1,20 +1,27 @@
-
 import React, { useState, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { FileText, TrendingUp, Activity, AlertTriangle, RefreshCw, MapPin, Clock, CheckCircle } from 'lucide-react';
+import { FileText, TrendingUp, Activity, AlertTriangle, Users, RefreshCw } from 'lucide-react';
 import { useDashboardStats } from '@/hooks/useDashboardStats';
 import { RealTimeMetrics } from './RealTimeMetrics';
 import { InteractiveCharts } from './InteractiveCharts';
 import { AdvancedFiltersPanel } from './AdvancedFiltersPanel';
+import { ActivityPeakChart } from './ActivityPeakChart';
 import { AdvancedFilters } from '@/hooks/useAdvancedFilters';
 import { useQueryClient } from '@tanstack/react-query';
 import { useReportes } from '@/hooks/useReportes';
 import { useToast } from '@/hooks/use-toast';
 
+const priorityConfig = {
+  urgente: { color: '#DC2626', label: 'Urgente' },
+  alto: { color: '#EA580C', label: 'Alto' },
+  medio: { color: '#D97706', label: 'Medio' },
+  bajo: { color: '#059669', label: 'Bajo' },
+};
+
 const ReportesAnalyticsContent = () => {
   const { data: stats, isLoading, error, refetch } = useDashboardStats();
-  const { reportes } = useReportes(false);
+  const { reportes } = useReportes();
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [appliedFilters, setAppliedFilters] = useState<AdvancedFilters | null>(null);
   const [selectedReportIds, setSelectedReportIds] = useState<string[]>([]);
@@ -41,6 +48,7 @@ const ReportesAnalyticsContent = () => {
   const handleFiltersChange = useCallback((filters: AdvancedFilters) => {
     setAppliedFilters(filters);
     
+    // Actualizar los IDs seleccionados cuando cambien los filtros de búsqueda
     if (filters.searchTerm && filters.searchTerm.length > 0) {
       setSelectedReportIds(filters.searchTerm);
     } else if (filters.searchTerm.length === 0 && selectedReportIds.length > 0) {
@@ -92,97 +100,126 @@ const ReportesAnalyticsContent = () => {
   const hasValidFilters = appliedFilters && isValidForComparison(appliedFilters);
 
   const getFilteredStats = () => {
-    if (!stats || !reportes) return null;
+    if (!stats) return stats;
     
     if (!hasValidFilters) {
-      console.log('Sin filtros válidos - mostrando datos reales de la base de datos');
+      console.log('Sin filtros válidos - mostrando datos en tiempo real');
       return stats;
     }
 
-    console.log('Aplicando filtros de comparación sobre datos reales:', {
+    console.log('Aplicando filtros de comparación:', {
       totalReportes: stats.reportes.total,
-      reportesCompletos: reportes.length,
+      datosCompletos: stats.reportes.datosCompletos.length,
       filtros: appliedFilters,
       tabActiva: appliedFilters.activeTab
     });
 
-    let filteredReports = [...reportes];
-    console.log('Reportes reales iniciales:', filteredReports.length);
+    let filteredReportes = [...stats.reportes.datosCompletos];
+    console.log('Reportes iniciales:', filteredReportes.length);
 
     switch (appliedFilters.activeTab) {
       case 'busqueda':
         if (appliedFilters.searchTerm.length >= 2) {
-          const reportIds = [...appliedFilters.searchTerm];
-          
-          filteredReports = filteredReports.filter(report => 
-            reportIds.includes(report.id)
+          // Los searchTerm ahora son IDs de reportes
+          const reportIds = appliedFilters.searchTerm;
+          filteredReportes = filteredReportes.filter(reporte => 
+            reportIds.includes(reporte.id)
           );
-          console.log(`Filtro de búsqueda aplicado: ${filteredReports.length} reportes seleccionados`);
+          console.log(`Filtro de búsqueda aplicado: ${filteredReportes.length} reportes seleccionados`);
         }
         break;
 
       case 'fechas':
         if (appliedFilters.dateRange) {
-          filteredReports = filteredReports.filter(report => 
-            isDateInRange(report.created_at, appliedFilters.dateRange!)
+          filteredReportes = filteredReportes.filter(reporte => 
+            isDateInRange(reporte.created_at, appliedFilters.dateRange!)
           );
-          console.log(`Filtro de fecha aplicado: ${filteredReports.length} reportes en el rango`);
+          console.log(`Filtro de fecha aplicado: ${filteredReportes.length} reportes en el rango`);
         }
         break;
 
       case 'prioridad':
         if (appliedFilters.priority.length > 0) {
-          filteredReports = filteredReports.filter(report => 
-            appliedFilters.priority.includes(report.priority)
+          filteredReportes = filteredReportes.filter(reporte => 
+            appliedFilters.priority.includes(reporte.priority)
           );
-          console.log(`Filtro de prioridad aplicado: ${filteredReports.length} reportes con prioridades seleccionadas`);
+          console.log(`Filtro de prioridad aplicado: ${filteredReportes.length} reportes`);
         }
         break;
 
       case 'estados':
         if (appliedFilters.estados.length > 0) {
-          filteredReports = filteredReports.filter(report => 
-            report.estado && appliedFilters.estados.includes(report.estado.nombre)
+          filteredReportes = filteredReportes.filter(reporte => 
+            reporte.estado && appliedFilters.estados.includes(reporte.estado.nombre)
           );
-          console.log(`Filtro de estado aplicado: ${filteredReports.length} reportes con estados seleccionados`);
+          console.log(`Filtro de estado aplicado: ${filteredReportes.length} reportes`);
         }
         break;
 
       case 'categorias':
         if (appliedFilters.categorias.length > 0) {
-          filteredReports = filteredReports.filter(report => 
-            report.categoria && appliedFilters.categorias.includes(report.categoria.nombre)
+          filteredReportes = filteredReportes.filter(reporte => 
+            reporte.categoria && appliedFilters.categorias.includes(reporte.categoria.nombre)
           );
-          console.log(`Filtro de categoría aplicado: ${filteredReports.length} reportes con categorías seleccionadas`);
+          console.log(`Filtro de categoría aplicado: ${filteredReportes.length} reportes`);
         }
         break;
     }
 
-    console.log('Resultado final del filtrado sobre datos reales:', {
+    console.log('Resultado final del filtrado:', {
       reportesOriginales: stats.reportes.total,
-      reportesFiltrados: filteredReports.length,
+      reportesFiltrados: filteredReportes.length,
       tabActiva: appliedFilters.activeTab
     });
 
-    const totalFiltrado = filteredReports.length;
-    const activosFiltrado = filteredReports.filter(r => r.activo === true).length;
-    const asignadosFiltrado = filteredReports.filter(r => r.assigned_to !== null).length;
+    // Recalcular estadísticas basadas en datos filtrados reales
+    const totalFiltrado = filteredReportes.length;
+    const activosFiltrado = filteredReportes.filter(r => r.activo).length;
     
+    // Calcular reportes recientes (últimos 7 días) en los datos filtrados
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-    const recientesFiltrado = filteredReports.filter(r => 
+    const recientesFiltrado = filteredReportes.filter(r => 
       new Date(r.created_at) >= sevenDaysAgo
     ).length;
 
-    const porActividad = [
-      { actividad: 'Activos', count: activosFiltrado, color: '#10B981' },
-      { actividad: 'Inactivos', count: totalFiltrado - activosFiltrado, color: '#EF4444' }
-    ];
+    // Re-agrupar por estado basado en datos filtrados
+    const porEstadoFiltrado = filteredReportes.reduce((acc, reporte) => {
+      const estadoNombre = reporte.estado?.nombre || 'Sin estado';
+      const estadoColor = reporte.estado?.color || '#6B7280';
+      const existing = acc.find(item => item.estado === estadoNombre);
+      if (existing) {
+        existing.count++;
+      } else {
+        acc.push({ estado: estadoNombre, count: 1, color: estadoColor });
+      }
+      return acc;
+    }, [] as { estado: string; count: number; color: string }[]);
 
-    const porAsignacion = [
-      { asignacion: 'Asignados', count: asignadosFiltrado, color: '#3B82F6' },
-      { asignacion: 'Sin asignar', count: totalFiltrado - asignadosFiltrado, color: '#F59E0B' }
-    ];
+    // Re-agrupar por categoría basado en datos filtrados
+    const porCategoriaFiltrado = filteredReportes.reduce((acc, reporte) => {
+      const categoriaNombre = reporte.categoria?.nombre || 'Sin categoría';
+      const categoriaColor = reporte.categoria?.color || '#6B7280';
+      const existing = acc.find(item => item.categoria === categoriaNombre);
+      if (existing) {
+        existing.count++;
+      } else {
+        acc.push({ categoria: categoriaNombre, count: 1, color: categoriaColor });
+      }
+      return acc;
+    }, [] as { categoria: string; count: number; color: string }[]);
+
+    // Re-agrupar por prioridad basado en datos filtrados
+    const porPrioridadFiltrado = filteredReportes.reduce((acc, reporte) => {
+      const prioridad = reporte.priority;
+      const existing = acc.find(item => item.priority === prioridad);
+      if (existing) {
+        existing.count++;
+      } else {
+        acc.push({ priority: prioridad, count: 1 });
+      }
+      return acc;
+    }, [] as { priority: string; count: number }[]);
 
     return {
       ...stats,
@@ -190,23 +227,37 @@ const ReportesAnalyticsContent = () => {
         ...stats.reportes,
         total: totalFiltrado,
         activos: activosFiltrado,
-        asignados: asignadosFiltrado,
         recientes: recientesFiltrado,
-        porActividad,
-        porAsignacion,
-        datosCompletos: filteredReports,
+        porEstado: porEstadoFiltrado,
+        porCategoria: porCategoriaFiltrado,
+        porPrioridad: porPrioridadFiltrado,
+        datosCompletos: filteredReportes,
       }
     };
   };
 
   const filteredStats = getFilteredStats();
 
+  // Preparar datos para comparación múltiple de reportes - solo datos reales
+  const reportesParaComparacion = selectedReportIds.length > 0 && reportes ? 
+    reportes
+      .filter(r => selectedReportIds.includes(r.id))
+      .map(r => ({
+        id: r.id,
+        titulo: r.nombre,
+        estado: r.estado?.nombre || 'Sin estado',
+        categoria: r.categoria?.nombre || 'Sin categoría',
+        prioridad: r.priority,
+        fechaCreacion: r.created_at,
+        activo: r.activo
+      })) : [];
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <Activity className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
-          <p className="text-muted-foreground">Cargando estadísticas desde la base de datos...</p>
+          <p className="text-muted-foreground">Cargando estadísticas...</p>
         </div>
       </div>
     );
@@ -215,7 +266,7 @@ const ReportesAnalyticsContent = () => {
   if (error || !filteredStats) {
     return (
       <div className="text-center">
-        <p className="text-destructive">Error al cargar las estadísticas de la base de datos</p>
+        <p className="text-destructive">Error al cargar las estadísticas</p>
         <Button onClick={handleRefreshData} className="mt-2">
           <RefreshCw className="h-4 w-4 mr-2" />
           Reintentar
@@ -224,27 +275,18 @@ const ReportesAnalyticsContent = () => {
     );
   }
 
-  const safeStats = {
-    ...filteredStats,
-    reportes: {
-      ...filteredStats.reportes,
-      porActividad: filteredStats.reportes.porActividad || [],
-      porAsignacion: filteredStats.reportes.porAsignacion || [],
-    }
-  };
-
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold text-foreground mb-2">
-            {hasValidFilters ? 'Análisis Comparativo de Reportes (Datos Reales)' : 'Análisis de Reportes en Tiempo Real (Datos Reales)'}
+            {hasValidFilters ? 'Análisis Comparativo de Reportes' : 'Análisis de Reportes en Tiempo Real'}
           </h2>
           <p className="text-muted-foreground">
             {hasValidFilters 
-              ? 'Dashboard con filtros aplicados sobre datos reales de la base de datos'
-              : 'Dashboard en tiempo real con datos reales de la base de datos'
+              ? 'Dashboard interactivo con filtros de comparación aplicados'
+              : 'Dashboard en tiempo real mostrando todos los reportes del sistema'
             }
           </p>
         </div>
@@ -261,13 +303,12 @@ const ReportesAnalyticsContent = () => {
         onFiltersChange={handleFiltersChange}
         onMultipleReportSelection={handleReportSelection}
         selectedReportIds={selectedReportIds}
-        context="reportes"
       />
 
       {/* Indicador de filtros aplicados */}
       {hasValidFilters && (
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <h3 className="text-sm font-medium text-blue-900 mb-2">Comparación activa sobre datos reales:</h3>
+          <h3 className="text-sm font-medium text-blue-900 mb-2">Comparación activa:</h3>
           <div className="flex flex-wrap gap-2 text-sm text-blue-700">
             {appliedFilters.activeTab === 'busqueda' && appliedFilters.searchTerm.length >= 2 && (
               <span className="bg-blue-100 px-2 py-1 rounded">
@@ -280,23 +321,17 @@ const ReportesAnalyticsContent = () => {
               </span>
             )}
             {appliedFilters.activeTab === 'prioridad' && appliedFilters.priority.length > 0 && (
-              <span className="bg-blue-100 px-2 py-1 rounded">
-                Prioridades: {appliedFilters.priority.join(', ')}
-              </span>
+              <span className="bg-blue-100 px-2 py-1 rounded">Prioridades: {appliedFilters.priority.join(', ')}</span>
             )}
             {appliedFilters.activeTab === 'estados' && appliedFilters.estados.length > 0 && (
-              <span className="bg-blue-100 px-2 py-1 rounded">
-                Estados: {appliedFilters.estados.join(', ')}
-              </span>
+              <span className="bg-blue-100 px-2 py-1 rounded">Estados: {appliedFilters.estados.join(', ')}</span>
             )}
             {appliedFilters.activeTab === 'categorias' && appliedFilters.categorias.length > 0 && (
-              <span className="bg-blue-100 px-2 py-1 rounded">
-                Categorías: {appliedFilters.categorias.join(', ')}
-              </span>
+              <span className="bg-blue-100 px-2 py-1 rounded">Categorías: {appliedFilters.categorias.join(', ')}</span>
             )}
           </div>
           <div className="mt-2 text-xs text-blue-600">
-            Datos reales: {safeStats.reportes.total} de {stats?.reportes.total} reportes
+            Comparando {filteredStats.reportes.total} de {stats?.reportes.total} reportes
           </div>
         </div>
       )}
@@ -304,211 +339,178 @@ const ReportesAnalyticsContent = () => {
       {/* Indicador de vista en tiempo real */}
       {!hasValidFilters && (
         <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-          <h3 className="text-sm font-medium text-green-900 mb-2">Vista en Tiempo Real (Datos Reales):</h3>
+          <h3 className="text-sm font-medium text-green-900 mb-2">Vista en Tiempo Real:</h3>
           <div className="text-sm text-green-700">
-            Mostrando todos los reportes reales de la base de datos ({stats?.reportes.total} reportes)
+            Mostrando todos los reportes del sistema ({stats?.reportes.total} reportes)
           </div>
         </div>
       )}
 
-      {/* Métricas en Tiempo Real */}
+      {/* Métricas en Tiempo Real - SIN gráficos de actividad por horas */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <RealTimeMetrics
           title="Total Reportes"
-          value={safeStats.reportes.total}
+          value={filteredStats.reportes.total}
           previousValue={hasValidFilters ? stats?.reportes.total : undefined}
-          subtitle={`${safeStats.reportes.activos} activos`}
+          subtitle={`${filteredStats.reportes.activos} activos`}
           icon={FileText}
           color="text-blue-600"
           onRefresh={() => queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] })}
           showHourlyChart={false}
-          showSparkline={false}
         />
         
         <RealTimeMetrics
           title="Reportes Activos"
-          value={safeStats.reportes.activos}
+          value={filteredStats.reportes.activos}
           previousValue={hasValidFilters ? stats?.reportes.activos : undefined}
-          subtitle={`${Math.round((safeStats.reportes.activos / Math.max(safeStats.reportes.total, 1)) * 100)}% del total`}
-          icon={CheckCircle}
+          subtitle={`${Math.round((filteredStats.reportes.activos / Math.max(filteredStats.reportes.total, 1)) * 100)}% del total`}
+          icon={TrendingUp}
           color="text-green-600"
           onRefresh={() => queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] })}
           showHourlyChart={false}
-          showSparkline={false}
         />
         
         <RealTimeMetrics
-          title="Reportes Asignados"
-          value={safeStats.reportes.asignados}
-          previousValue={hasValidFilters ? stats?.reportes.asignados : undefined}
-          subtitle="Con responsable asignado"
-          icon={MapPin}
-          color="text-purple-600"
-          onRefresh={() => queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] })}
-          showHourlyChart={false}
-          showSparkline={false}
-        />
-        
-        <RealTimeMetrics
-          title="Nuevos Reportes"
-          value={safeStats.reportes.recientes}
+          title="Reportes Recientes"
+          value={filteredStats.reportes.recientes}
           previousValue={hasValidFilters ? stats?.reportes.recientes : undefined}
           subtitle="Últimos 7 días"
-          icon={Clock}
+          icon={Activity}
           color="text-orange-600"
           onRefresh={() => queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] })}
           showHourlyChart={false}
-          showSparkline={false}
+        />
+        
+        <RealTimeMetrics
+          title="Estados Únicos"
+          value={filteredStats.reportes.porEstado.length}
+          previousValue={hasValidFilters ? stats?.reportes.porEstado.length : undefined}
+          subtitle="Diferentes estados"
+          icon={AlertTriangle}
+          color="text-purple-600"
+          onRefresh={() => queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] })}
+          showHourlyChart={false}
         />
       </div>
 
-      {/* Gráficos Interactivos */}
+      {/* Gráfico de Pico de Actividad - Componente separado */}
+      <ActivityPeakChart
+        data={filteredStats.reportes.datosCompletos}
+        title={hasValidFilters ? "Pico de Actividad - Reportes Filtrados" : "Pico de Actividad - Todos los Reportes"}
+        subtitle={hasValidFilters 
+          ? `Distribución horaria de ${filteredStats.reportes.total} reportes filtrados`
+          : `Distribución horaria de todos los reportes (${filteredStats.reportes.total} total)`
+        }
+        color="#3b82f6"
+      />
+
+      {/* Gráficos Interactivos - SOLO DATOS REALES */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <InteractiveCharts
-          title="Distribución por Actividad"
-          description={hasValidFilters ? "Reportes filtrados según su estado de actividad (datos reales)" : "Todos los reportes según su estado de actividad (datos reales)"}
-          data={safeStats.reportes.porActividad.map(item => ({
-            name: item.actividad,
+          title="Distribución por Estado"
+          description={hasValidFilters ? "Reportes filtrados clasificados según su estado" : "Todos los reportes clasificados según su estado actual"}
+          data={filteredStats.reportes.porEstado.map(item => ({
+            name: item.estado,
             value: item.count,
             color: item.color,
           }))}
         />
         
         <InteractiveCharts
-          title="Distribución por Asignación"
-          description={hasValidFilters ? "Reportes filtrados según su asignación (datos reales)" : "Todos los reportes según su asignación (datos reales)"}
-          data={safeStats.reportes.porAsignacion.map(item => ({
-            name: item.asignacion,
+          title="Distribución por Categoría"
+          description={hasValidFilters ? "Reportes filtrados clasificados según su categoría" : "Todos los reportes clasificados según su categoría"}
+          data={filteredStats.reportes.porCategoria.map(item => ({
+            name: item.categoria,
             value: item.count,
             color: item.color,
           }))}
         />
       </div>
 
-      {/* Análisis detallado */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <CheckCircle className="h-5 w-5" />
-              Análisis de Actividad (Datos Reales)
-            </CardTitle>
-            <CardDescription>
-              {hasValidFilters ? "Métricas de actividad en reportes filtrados (datos reales)" : "Métricas detalladas de actividad basadas en datos reales de la base de datos"}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between p-3 rounded-lg border">
-                <div className="flex items-center gap-3">
-                  <div className="w-4 h-4 rounded-full bg-green-500" />
-                  <div>
-                    <span className="font-medium">Reportes Activos</span>
-                    <div className="text-xs text-muted-foreground">
-                      {Math.round((safeStats.reportes.activos / Math.max(safeStats.reportes.total, 1)) * 100)}% del total real
+      {filteredStats.reportes.porPrioridad && filteredStats.reportes.porPrioridad.length > 0 && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <InteractiveCharts
+            title="Distribución por Prioridad"
+            description={hasValidFilters ? "Reportes filtrados clasificados según su prioridad" : "Todos los reportes clasificados según su nivel de prioridad"}
+            data={filteredStats.reportes.porPrioridad.map(item => ({
+              name: priorityConfig[item.priority as keyof typeof priorityConfig]?.label || item.priority,
+              value: item.count,
+              color: priorityConfig[item.priority as keyof typeof priorityConfig]?.color || '#6B7280',
+            }))}
+          />
+          
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5" />
+                Análisis de Prioridades
+              </CardTitle>
+              <CardDescription>
+                {hasValidFilters ? "Métricas de prioridades en reportes filtrados" : "Métricas detalladas por nivel de prioridad basadas en datos reales"}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {filteredStats.reportes.porPrioridad.map((item) => {
+                  const config = priorityConfig[item.priority as keyof typeof priorityConfig];
+                  const percentage = Math.round((item.count / Math.max(filteredStats.reportes.total, 1)) * 100);
+                  
+                  return (
+                    <div key={item.priority} className="flex items-center justify-between p-3 rounded-lg border">
+                      <div className="flex items-center gap-3">
+                        <div 
+                          className="w-4 h-4 rounded-full"
+                          style={{ backgroundColor: config?.color || '#6B7280' }}
+                        />
+                        <div>
+                          <span className="font-medium">
+                            {config?.label || item.priority}
+                          </span>
+                          <div className="text-xs text-muted-foreground">
+                            {percentage}% del total
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="font-bold text-lg">{item.count}</div>
+                        <div className="text-xs text-muted-foreground">reportes</div>
+                      </div>
                     </div>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <div className="font-bold text-lg">{safeStats.reportes.activos}</div>
-                  <div className="text-xs text-muted-foreground">reportes</div>
-                </div>
+                  );
+                })}
               </div>
-              
-              <div className="flex items-center justify-between p-3 rounded-lg border">
-                <div className="flex items-center gap-3">
-                  <div className="w-4 h-4 rounded-full bg-red-500" />
-                  <div>
-                    <span className="font-medium">Reportes Inactivos</span>
-                    <div className="text-xs text-muted-foreground">
-                      {Math.round(((safeStats.reportes.total - safeStats.reportes.activos) / Math.max(safeStats.reportes.total, 1)) * 100)}% del total real
-                    </div>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <div className="font-bold text-lg">{safeStats.reportes.total - safeStats.reportes.activos}</div>
-                  <div className="text-xs text-muted-foreground">reportes</div>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <MapPin className="h-5 w-5" />
-              Análisis de Asignación (Datos Reales)
-            </CardTitle>
-            <CardDescription>
-              {hasValidFilters ? "Métricas de asignación en reportes filtrados (datos reales)" : "Métricas detalladas de asignación basadas en datos reales de la base de datos"}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between p-3 rounded-lg border">
-                <div className="flex items-center gap-3">
-                  <div className="w-4 h-4 rounded-full bg-blue-500" />
-                  <div>
-                    <span className="font-medium">Reportes Asignados</span>
-                    <div className="text-xs text-muted-foreground">
-                      {Math.round((safeStats.reportes.asignados / Math.max(safeStats.reportes.total, 1)) * 100)}% del total real
-                    </div>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <div className="font-bold text-lg">{safeStats.reportes.asignados}</div>
-                  <div className="text-xs text-muted-foreground">reportes</div>
-                </div>
-              </div>
-              
-              <div className="flex items-center justify-between p-3 rounded-lg border">
-                <div className="flex items-center gap-3">
-                  <div className="w-4 h-4 rounded-full bg-amber-500" />
-                  <div>
-                    <span className="font-medium">Sin Asignar</span>
-                    <div className="text-xs text-muted-foreground">
-                      {Math.round(((safeStats.reportes.total - safeStats.reportes.asignados) / Math.max(safeStats.reportes.total, 1)) * 100)}% del total real
-                    </div>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <div className="font-bold text-lg">{safeStats.reportes.total - safeStats.reportes.asignados}</div>
-                  <div className="text-xs text-muted-foreground">reportes</div>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
-      {/* Métricas adicionales */}
+      {/* Métricas adicionales - BASADAS EN DATOS REALES */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card>
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">
-              <FileText className="h-4 w-4 text-blue-600" />
-              Resumen de Actividad (Datos Reales)
+              <Users className="h-4 w-4 text-blue-600" />
+              Resumen de Actividad
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
               <div className="flex justify-between">
-                <span className="text-sm text-muted-foreground">Tasa de actividad real</span>
+                <span className="text-sm text-muted-foreground">Tasa de actividad</span>
                 <span className="text-sm font-medium">
-                  {Math.round((safeStats.reportes.activos / Math.max(safeStats.reportes.total, 1)) * 100)}%
+                  {Math.round((filteredStats.reportes.activos / Math.max(filteredStats.reportes.total, 1)) * 100)}%
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-sm text-muted-foreground">Tasa de asignación real</span>
-                <span className="text-sm font-medium">
-                  {Math.round((safeStats.reportes.asignados / Math.max(safeStats.reportes.total, 1)) * 100)}%
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-sm text-muted-foreground">Reportes recientes (BD)</span>
+                <span className="text-sm text-muted-foreground">Reportes recientes</span>
                 <span className="text-sm font-medium text-green-600">
-                  {safeStats.reportes.recientes}
+                  {filteredStats.reportes.recientes}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-sm text-muted-foreground">Estados únicos</span>
+                <span className="text-sm font-medium">
+                  {filteredStats.reportes.porEstado.length}
                 </span>
               </div>
             </div>
@@ -519,24 +521,24 @@ const ReportesAnalyticsContent = () => {
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">
               <Activity className="h-4 w-4 text-green-600" />
-              Distribución Temporal (Datos Reales)
+              Distribución Temporal
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
               <div className="flex justify-between">
-                <span className="text-sm text-muted-foreground">Esta semana (BD)</span>
-                <span className="text-sm font-medium">{safeStats.reportes.recientes}</span>
+                <span className="text-sm text-muted-foreground">Esta semana</span>
+                <span className="text-sm font-medium">{filteredStats.reportes.recientes}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-sm text-muted-foreground">Promedio diario real</span>
+                <span className="text-sm text-muted-foreground">Promedio diario</span>
                 <span className="text-sm font-medium">
-                  {Math.round(safeStats.reportes.recientes / 7)}
+                  {Math.round(filteredStats.reportes.recientes / 7)}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-sm text-muted-foreground">{hasValidFilters ? 'Total filtrado (BD)' : 'Total histórico (BD)'}</span>
-                <span className="text-sm font-medium">{safeStats.reportes.total}</span>
+                <span className="text-sm text-muted-foreground">{hasValidFilters ? 'Total filtrado' : 'Total histórico'}</span>
+                <span className="text-sm font-medium">{filteredStats.reportes.total}</span>
               </div>
             </div>
           </CardContent>
@@ -545,28 +547,28 @@ const ReportesAnalyticsContent = () => {
         <Card>
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">
-              <TrendingUp className="h-4 w-4 text-purple-600" />
-              Eficiencia del Sistema (Datos Reales)
+              <FileText className="h-4 w-4 text-purple-600" />
+              Eficiencia del Sistema
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
               <div className="flex justify-between">
-                <span className="text-sm text-muted-foreground">Reportes por categoría (BD)</span>
+                <span className="text-sm text-muted-foreground">Reportes por categoría</span>
                 <span className="text-sm font-medium">
-                  {(safeStats.reportes.total / Math.max(stats?.categorias.total || 1, 1)).toFixed(1)}
+                  {(filteredStats.reportes.total / Math.max(filteredStats.categorias.total, 1)).toFixed(1)}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-sm text-muted-foreground">Estados en uso (BD)</span>
+                <span className="text-sm text-muted-foreground">Reportes por estado</span>
                 <span className="text-sm font-medium">
-                  {stats?.estados.activos || 0}
+                  {(filteredStats.reportes.total / Math.max(filteredStats.estados.total, 1)).toFixed(1)}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-sm text-muted-foreground">Categorías activas (BD)</span>
+                <span className="text-sm text-muted-foreground">Categorías activas</span>
                 <span className="text-sm font-medium">
-                  {Math.round(((stats?.categorias.activas || 0) / Math.max(stats?.categorias.total || 1, 1)) * 100)}%
+                  {Math.round((filteredStats.categorias.activas / Math.max(filteredStats.categorias.total, 1)) * 100)}%
                 </span>
               </div>
             </div>

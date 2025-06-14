@@ -8,7 +8,6 @@ interface ReporteWithDates {
   priority: string;
   categoria: { nombre: string; color: string } | null;
   estado: { nombre: string; color: string } | null;
-  assigned_to: string | null;
 }
 
 interface UserWithDates {
@@ -22,12 +21,9 @@ interface DashboardStats {
   reportes: {
     total: number;
     activos: number;
-    asignados: number;
     porEstado: { estado: string; count: number; color: string }[];
     porCategoria: { categoria: string; count: number; color: string }[];
     porPrioridad: { priority: string; count: number }[];
-    porActividad: { actividad: string; count: number; color: string }[];
-    porAsignacion: { asignacion: string; count: number; color: string }[];
     recientes: number; // últimos 7 días
     datosCompletos: ReporteWithDates[]; // Agregamos los datos completos para filtrado
   };
@@ -69,7 +65,6 @@ export const useDashboardStats = () => {
           activo,
           created_at,
           priority,
-          assigned_to,
           categoria:categories(nombre, color),
           estado:estados(nombre, color)
         `)
@@ -141,7 +136,6 @@ export const useDashboardStats = () => {
 
       // Estadísticas de reportes
       const reportesActivos = reportes?.filter(r => r.activo) || [];
-      const reportesAsignados = reportes?.filter(r => r.assigned_to !== null) || [];
       const reportesRecientes = reportes?.filter(r => 
         new Date(r.created_at) >= sevenDaysAgo
       ) || [];
@@ -153,8 +147,7 @@ export const useDashboardStats = () => {
         created_at: r.created_at,
         priority: r.priority || 'medio',
         categoria: r.categoria,
-        estado: r.estado,
-        assigned_to: r.assigned_to
+        estado: r.estado
       })) || [];
 
       // Agrupar por estado
@@ -194,17 +187,6 @@ export const useDashboardStats = () => {
         }
         return acc;
       }, [] as { priority: string; count: number }[]) || [];
-
-      // Nuevas distribuciones requeridas
-      const porActividad = [
-        { actividad: 'Activos', count: reportesActivos.length, color: '#10B981' },
-        { actividad: 'Inactivos', count: (reportes?.length || 0) - reportesActivos.length, color: '#EF4444' }
-      ];
-
-      const porAsignacion = [
-        { asignacion: 'Asignados', count: reportesAsignados.length, color: '#3B82F6' },
-        { asignacion: 'Sin asignar', count: (reportes?.length || 0) - reportesAsignados.length, color: '#F59E0B' }
-      ];
 
       // Estadísticas de usuarios
       const usuariosActivos = usuarios?.filter(u => u.asset) || [];
@@ -246,12 +228,9 @@ export const useDashboardStats = () => {
         reportes: {
           total: reportes?.length || 0,
           activos: reportesActivos.length,
-          asignados: reportesAsignados.length,
           porEstado,
           porCategoria,
           porPrioridad,
-          porActividad,
-          porAsignacion,
           recientes: reportesRecientes.length,
           datosCompletos, // Incluimos los datos completos
         },
