@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -43,7 +42,7 @@ export const AdvancedFiltersPanel: React.FC<AdvancedFiltersPanelProps> = ({
 }) => {
   const { filters, updateFilter, resetFilters, hasActiveFilters } = useAdvancedFilters();
   const { data: stats } = useDashboardStats();
-  const { data: reportes } = useReportes();
+  const { reportes } = useReportes();
 
   React.useEffect(() => {
     onFiltersChange(filters);
@@ -73,11 +72,11 @@ export const AdvancedFiltersPanel: React.FC<AdvancedFiltersPanelProps> = ({
   // Transform reportes data for the SearchCombobox
   const reportesForSearch = reportes?.map(reporte => ({
     id: reporte.id,
-    titulo: reporte.titulo,
+    titulo: reporte.nombre,
     descripcion: reporte.descripcion || '',
     estado: reporte.estado?.nombre || 'Sin estado',
     categoria: reporte.categoria?.nombre || 'Sin categoría',
-    prioridad: reporte.prioridad || 'medio'
+    prioridad: reporte.priority || 'medio'
   })) || [];
 
   if (!isOpen) {
