@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -300,18 +299,6 @@ export const ReportesList = ({ onCreateReporte, onEditReporte, onViewReporte, on
             onDataFilter={setFilteredData}
           />
 
-          {/* Pagination Info */}
-          {filteredData.length > 0 && (
-            <div className="flex items-center justify-between text-sm text-muted-foreground">
-              <p>
-                Mostrando {startIndex + 1} a {Math.min(endIndex, filteredData.length)} de {filteredData.length} reportes
-              </p>
-              <p>
-                Página {currentPage} de {totalPages}
-              </p>
-            </div>
-          )}
-
           {/* Bulk Actions Bar */}
           <BulkActionsBar
             selectedCount={selectedCount}
@@ -515,6 +502,18 @@ export const ReportesList = ({ onCreateReporte, onEditReporte, onViewReporte, on
                   </TableBody>
                 </Table>
               </div>
+
+              {/* Pagination Info - Now below the table */}
+              {filteredData.length > 0 && (
+                <div className="flex items-center justify-between text-sm text-muted-foreground">
+                  <p>
+                    Mostrando {startIndex + 1} a {Math.min(endIndex, filteredData.length)} de {filteredData.length} reportes
+                  </p>
+                  <p>
+                    Página {currentPage} de {totalPages}
+                  </p>
+                </div>
+              )}
 
               {/* Pagination */}
               {totalPages > 1 && (
