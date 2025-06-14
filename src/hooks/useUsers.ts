@@ -61,9 +61,6 @@ export const useUsers = (includeCurrentUser: boolean = false) => {
     queryFn: async () => {
       console.log('Fetching users with includeCurrentUser:', includeCurrentUser);
       
-      // Get current user ID
-      const { data: { user: currentUser } } = await supabase.auth.getUser();
-      
       const { data: usersWithRoles, error: rolesError } = await supabase
         .from('profiles')
         .select(`
@@ -106,22 +103,34 @@ export const useUsers = (includeCurrentUser: boolean = false) => {
           user_roles: []
         }));
         
-        // Filter current user only if not including them
-        const filteredUsers = includeCurrentUser 
-          ? transformedUsers
-          : transformedUsers.filter(user => !currentUser || user.id !== currentUser.id);
+        // If includeCurrentUser is false, filter out the current user
+        if (!includeCurrentUser) {
+          const { data: { user: currentUser } } = await supabase.auth.getUser();
+          const filteredUsers = currentUser 
+            ? transformedUsers.filter(user => user.id !== currentUser.id)
+            : transformedUsers;
+          
+          console.log('Fetched users without roles (current user filtered):', filteredUsers);
+          return filteredUsers as User[];
+        }
         
-        console.log('Fetched users without roles (filtered):', filteredUsers);
+        console.log('Fetched users without roles (including current user):', transformedUsers);
+        return transformedUsers as User[];
+      }
+
+      // If includeCurrentUser is false, filter out the current user
+      if (!includeCurrentUser) {
+        const { data: { user: currentUser } } = await supabase.auth.getUser();
+        const filteredUsers = currentUser 
+          ? (usersWithRoles || []).filter(user => user.id !== currentUser.id)
+          : (usersWithRoles || []);
+
+        console.log('Fetched users with roles (current user filtered):', filteredUsers);
         return filteredUsers as User[];
       }
 
-      // Filter current user only if not including them
-      const filteredUsers = includeCurrentUser 
-        ? (usersWithRoles || [])
-        : (usersWithRoles || []).filter(user => !currentUser || user.id !== currentUser.id);
-
-      console.log('Fetched users with roles (filtered):', filteredUsers);
-      return filteredUsers as User[];
+      console.log('Fetched users with roles (including current user):', usersWithRoles);
+      return (usersWithRoles || []) as User[];
     },
   });
 
