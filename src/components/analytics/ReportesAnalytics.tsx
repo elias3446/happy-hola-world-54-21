@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,6 +10,7 @@ import { AdvancedFiltersPanel } from './AdvancedFiltersPanel';
 import { NotificationProvider, useNotifications } from './NotificationSystem';
 import { AdvancedFilters } from '@/hooks/useAdvancedFilters';
 import { useQueryClient } from '@tanstack/react-query';
+import { useReportes } from '@/hooks/useReportes';
 
 const priorityConfig = {
   urgente: { color: '#DC2626', label: 'Urgente' },
@@ -19,6 +21,7 @@ const priorityConfig = {
 
 const ReportesAnalyticsContent = () => {
   const { data: stats, isLoading, error, refetch } = useDashboardStats();
+  const { reportes } = useReportes();
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [appliedFilters, setAppliedFilters] = useState<AdvancedFilters | null>(null);
   const { showSuccess, showError } = useNotifications();
@@ -61,6 +64,43 @@ const ReportesAnalyticsContent = () => {
     });
     
     return reportDate >= fromDate && reportDate <= toDate;
+  };
+
+  // Función mejorada para filtrar por término de búsqueda específico
+  const filterBySearchTerm = (filteredReportes: any[], searchTerm: string) => {
+    if (!searchTerm || !reportes) return filteredReportes;
+
+    console.log('Aplicando filtro de búsqueda:', searchTerm);
+    
+    // Encontrar el reporte específico seleccionado en el SearchCombobox
+    const selectedReporte = reportes.find(reporte => 
+      reporte.id === searchTerm || 
+      reporte.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      reporte.descripcion?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    if (selectedReporte) {
+      console.log('Reporte específico encontrado:', selectedReporte.id);
+      // Filtrar solo por el reporte específico seleccionado
+      const result = filteredReportes.filter(reporte => reporte.id === selectedReporte.id);
+      console.log(`Filtro de búsqueda específica aplicado: ${result.length} reportes (solo el seleccionado)`);
+      return result;
+    } else {
+      // Si no se encuentra un reporte específico, buscar por texto en campos relevantes
+      const result = filteredReportes.filter(reporte => {
+        const matchesId = reporte.id.toLowerCase().includes(searchTerm.toLowerCase());
+        // Como no tenemos acceso directo al nombre/descripción en datosCompletos,
+        // buscamos en los datos completos de reportes si están disponibles
+        const reporteCompleto = reportes?.find(r => r.id === reporte.id);
+        const matchesNombre = reporteCompleto?.nombre?.toLowerCase().includes(searchTerm.toLowerCase()) || false;
+        const matchesDescripcion = reporteCompleto?.descripcion?.toLowerCase().includes(searchTerm.toLowerCase()) || false;
+        
+        return matchesId || matchesNombre || matchesDescripcion;
+      });
+      
+      console.log(`Filtro de búsqueda por texto aplicado: ${result.length} reportes encontrados`);
+      return result;
+    }
   };
 
   // Filtrar datos usando los datos reales de la base de datos
@@ -135,15 +175,9 @@ const ReportesAnalyticsContent = () => {
       console.log(`Filtro de categoría aplicado: ${filteredReportes.length}/${reportesAntesDelFiltro} reportes`);
     }
 
-    // Aplicar filtro de búsqueda (simulación básica en el nombre/descripción)
+    // Aplicar filtro de búsqueda específica usando la función mejorada
     if (appliedFilters.searchTerm.length > 0) {
-      // Para el término de búsqueda, como no tenemos nombre/descripción en los datos básicos,
-      // aplicamos una reducción proporcional basada en la longitud del término
-      const reportesAntesDelFiltro = filteredReportes.length;
-      const searchReduction = Math.min(0.7, appliedFilters.searchTerm.length * 0.08);
-      const targetCount = Math.round(filteredReportes.length * (1 - searchReduction));
-      filteredReportes = filteredReportes.slice(0, targetCount);
-      console.log(`Filtro de búsqueda aplicado: ${filteredReportes.length}/${reportesAntesDelFiltro} reportes`);
+      filteredReportes = filterBySearchTerm(filteredReportes, appliedFilters.searchTerm);
     }
 
     console.log('Resultado final del filtrado:', {
@@ -294,7 +328,7 @@ const ReportesAnalyticsContent = () => {
         </div>
       )}
 
-      {/* Métricas en Tiempo Real */}
+      {/* Métricas en Tiempo Real - Siempre visibles */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <RealTimeMetrics
           title="Total Reportes"
@@ -337,7 +371,7 @@ const ReportesAnalyticsContent = () => {
         />
       </div>
 
-      {/* Gráficos Interactivos */}
+      {/* Gráficos Interactivos - Siempre visibles */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <InteractiveCharts
           title="Distribución por Estado"
@@ -364,7 +398,7 @@ const ReportesAnalyticsContent = () => {
         />
       </div>
 
-      {/* Gráfico de Prioridades */}
+      {/* Gráfico de Prioridades - Siempre visible si hay datos */}
       {filteredStats.reportes.porPrioridad && filteredStats.reportes.porPrioridad.length > 0 && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <InteractiveCharts
@@ -434,7 +468,7 @@ const ReportesAnalyticsContent = () => {
         </div>
       )}
 
-      {/* Métricas adicionales */}
+      {/* Métricas adicionales - Siempre visibles */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card>
           <CardHeader>
