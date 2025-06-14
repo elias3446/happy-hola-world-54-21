@@ -78,7 +78,7 @@ export const useDashboardStats = () => {
         throw reportesError;
       }
 
-      // Obtener estadísticas de usuarios con datos completos
+      // CRÍTICO: Obtener TODOS los usuarios incluyendo el actual (sin filtrar)
       const { data: usuarios, error: usuariosError } = await supabase
         .from('profiles')
         .select('id, asset, confirmed, created_at, role')
@@ -88,6 +88,8 @@ export const useDashboardStats = () => {
         console.error('Error fetching usuarios stats:', usuariosError);
         throw usuariosError;
       }
+
+      console.log('DashboardStats - Usuarios obtenidos (TODOS incluyendo actual):', usuarios?.length || 0);
 
       // Obtener asignaciones de roles desde user_roles table
       const { data: userRoles, error: userRolesError } = await supabase
@@ -197,12 +199,19 @@ export const useDashboardStats = () => {
         return acc;
       }, [] as { priority: string; count: number }[]) || [];
 
-      // Estadísticas de usuarios
+      // Estadísticas de usuarios - USAR TODOS LOS USUARIOS
       const usuariosActivos = usuarios?.filter(u => u.asset) || [];
       const usuariosConfirmados = usuarios?.filter(u => u.confirmed) || [];
       const usuariosRecientes = usuarios?.filter(u => 
         new Date(u.created_at) >= sevenDaysAgo
       ) || [];
+
+      console.log('DashboardStats - Estadísticas calculadas con TODOS los usuarios:', {
+        total: usuarios?.length || 0,
+        activos: usuariosActivos.length,
+        confirmados: usuariosConfirmados.length,
+        recientes: usuariosRecientes.length
+      });
 
       // Guardar datos completos de usuarios para filtrado posterior
       const usuariosCompletos: UserWithDates[] = usuarios?.map(u => ({
@@ -322,7 +331,7 @@ export const useDashboardStats = () => {
           datosCompletos,
         },
         usuarios: {
-          total: usuarios?.length || 0,
+          total: usuarios?.length || 0, // TODOS los usuarios incluyendo el actual
           activos: usuariosActivos.length,
           confirmados: usuariosConfirmados.length,
           recientes: usuariosRecientes.length,
@@ -347,7 +356,11 @@ export const useDashboardStats = () => {
         },
       };
 
-      console.log('Dashboard stats calculated:', stats);
+      console.log('Dashboard stats calculated with ALL users (including current):', {
+        totalUsuarios: stats.usuarios.total,
+        usuariosActivos: stats.usuarios.activos,
+        usuariosCompletos: usuariosCompletos.length
+      });
       return stats;
     },
   });
