@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,7 +11,6 @@ import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious
 import { useReportes } from '@/hooks/useReportes';
 import { useReporteHistorial } from '@/hooks/useReporteHistorial';
 import { MapaReporteEspecifico } from '@/components/MapaBase';
-import { ReporteAuditoria } from '@/components/reportes/ReporteAuditoria';
 import { 
   ArrowLeft, 
   Calendar, 
@@ -23,7 +21,6 @@ import {
   MapPin,
   Clock,
   History,
-  Settings,
   X
 } from 'lucide-react';
 import { format } from 'date-fns';
@@ -221,14 +218,10 @@ export const ReporteDetalle = () => {
 
         {/* Información Detallada - Responsive */}
         <div className="xl:col-span-2">
-          <Tabs defaultValue="detalles" className="space-y-4">
+          <Tabs defaultValue="evidencia" className="space-y-4">
             {/* Responsive TabsList with scrollable layout */}
             <div className="overflow-x-auto">
               <TabsList className="flex w-full min-w-fit">
-                <TabsTrigger value="detalles" className="flex items-center gap-1 px-2 py-1.5 text-xs sm:text-sm sm:px-4 sm:py-2 whitespace-nowrap">
-                  <FileText className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
-                  <span className="hidden xs:inline sm:inline">Detalles</span>
-                </TabsTrigger>
                 {reporte.imagenes && reporte.imagenes.length > 0 && (
                   <TabsTrigger value="evidencia" className="flex items-center gap-1 px-2 py-1.5 text-xs sm:text-sm sm:px-4 sm:py-2 whitespace-nowrap">
                     <Eye className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
@@ -245,99 +238,8 @@ export const ReporteDetalle = () => {
                   <History className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
                   <span className="hidden xs:inline sm:inline">Historial</span>
                 </TabsTrigger>
-                <TabsTrigger value="auditoria" className="flex items-center gap-1 px-2 py-1.5 text-xs sm:text-sm sm:px-4 sm:py-2 whitespace-nowrap">
-                  <Settings className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
-                  <span className="hidden xs:inline sm:inline">Auditoría</span>
-                </TabsTrigger>
               </TabsList>
             </div>
-
-            <TabsContent value="detalles">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <FileText className="h-5 w-5" />
-                    Información del Reporte
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <label className="text-sm font-medium text-gray-700">Categoría</label>
-                      <div className="flex items-center gap-3 mt-1">
-                        <div 
-                          className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-medium flex-shrink-0"
-                          style={{ backgroundColor: reporte.categoria?.color || '#3B82F6' }}
-                        >
-                          {reporte.categoria?.icono?.charAt(0)}
-                        </div>
-                        <div className="min-w-0">
-                          <p className="font-medium text-gray-900 break-words">{reporte.categoria?.nombre}</p>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <label className="text-sm font-medium text-gray-700">Estado</label>
-                      <div className="flex items-center gap-3 mt-1">
-                        <div 
-                          className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-medium flex-shrink-0"
-                          style={{ backgroundColor: reporte.estado?.color || '#10B981' }}
-                        >
-                          {reporte.estado?.icono?.charAt(0)}
-                        </div>
-                        <div className="min-w-0">
-                          <p className="font-medium text-gray-900 break-words">{reporte.estado?.nombre}</p>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="text-sm font-medium text-gray-700">Prioridad</label>
-                      <div className="mt-1">
-                        <Badge
-                          variant="secondary"
-                          className="flex items-center gap-1 w-fit"
-                          style={{ 
-                            backgroundColor: `${priorityConfig[reporte.priority]?.color || priorityConfig.urgente.color}20`,
-                            color: priorityConfig[reporte.priority]?.color || priorityConfig.urgente.color,
-                            borderColor: priorityConfig[reporte.priority]?.color || priorityConfig.urgente.color
-                          }}
-                        >
-                          <AlertTriangle className="h-3 w-3" />
-                          {priorityConfig[reporte.priority]?.label || 'Urgente'}
-                        </Badge>
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="text-sm font-medium text-gray-700">Creado por</label>
-                      <div className="flex items-center gap-2 mt-1">
-                        <User className="h-4 w-4 text-gray-400 flex-shrink-0" />
-                        <span className="text-gray-900 break-words">{getProfileName(reporte.created_by_profile)}</span>
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="text-sm font-medium text-gray-700">Asignado a</label>
-                      <div className="flex items-center gap-2 mt-1">
-                        <User className="h-4 w-4 text-gray-400 flex-shrink-0" />
-                        <span className="text-gray-900 break-words">
-                          {reporte.assigned_to_profile ? getProfileName(reporte.assigned_to_profile) : 'Sin asignar'}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <Separator />
-
-                  <div>
-                    <label className="text-sm font-medium text-gray-700">Descripción</label>
-                    <p className="text-gray-900 mt-1 break-words whitespace-pre-wrap">{reporte.descripcion}</p>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
 
             {reporte.imagenes && reporte.imagenes.length > 0 && (
               <TabsContent value="evidencia">
@@ -461,10 +363,6 @@ export const ReporteDetalle = () => {
                   )}
                 </CardContent>
               </Card>
-            </TabsContent>
-
-            <TabsContent value="auditoria">
-              <ReporteAuditoria reporteId={reporte.id} />
             </TabsContent>
           </Tabs>
         </div>
