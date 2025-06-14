@@ -1,12 +1,14 @@
+
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { toast } from 'sonner';
+import { useToast } from '@/hooks/use-toast';
 import type { Reporte, CreateReporteData, UpdateReporteData } from '@/types/reportes';
 
 export const useReportes = (onlyPublic: boolean = false) => {
   const queryClient = useQueryClient();
   const { user } = useAuth();
+  const { toast } = useToast();
 
   const { data: reportes = [], isLoading, error } = useQuery({
     queryKey: ['reportes', onlyPublic],
@@ -66,11 +68,19 @@ export const useReportes = (onlyPublic: boolean = false) => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['reportes'] });
-      toast.success('Reporte creado exitosamente');
+      toast({
+        title: "Éxito",
+        description: "Reporte creado exitosamente",
+        variant: "default",
+      });
     },
     onError: (error: any) => {
       console.error('Error creating reporte:', error);
-      toast.error(error.message || 'Error al crear el reporte');
+      toast({
+        title: "Error",
+        description: error.message || 'Error al crear el reporte',
+        variant: "destructive",
+      });
     },
   });
 
@@ -96,11 +106,19 @@ export const useReportes = (onlyPublic: boolean = false) => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['reportes'] });
-      toast.success('Reporte actualizado exitosamente');
+      toast({
+        title: "Éxito",
+        description: "Reporte actualizado exitosamente",
+        variant: "default",
+      });
     },
     onError: (error: any) => {
       console.error('Error updating reporte:', error);
-      toast.error(error.message || 'Error al actualizar el reporte');
+      toast({
+        title: "Error",
+        description: error.message || 'Error al actualizar el reporte',
+        variant: "destructive",
+      });
     },
   });
 
@@ -136,11 +154,19 @@ export const useReportes = (onlyPublic: boolean = false) => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['reportes'] });
-      toast.success('Reporte eliminado exitosamente');
+      toast({
+        title: "Éxito",
+        description: "Reporte eliminado exitosamente",
+        variant: "default",
+      });
     },
     onError: (error: any) => {
       console.error('Error deleting reporte:', error);
-      toast.error(error.message || 'Error al eliminar el reporte');
+      toast({
+        title: "Error",
+        description: error.message || 'Error al eliminar el reporte',
+        variant: "destructive",
+      });
     },
   });
 
@@ -162,11 +188,19 @@ export const useReportes = (onlyPublic: boolean = false) => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['reportes'] });
-      toast.success('Estado del reporte actualizado');
+      toast({
+        title: "Éxito",
+        description: "Estado del reporte actualizado",
+        variant: "default",
+      });
     },
     onError: (error: any) => {
       console.error('Error toggling reporte status:', error);
-      toast.error(error.message || 'Error al cambiar el estado del reporte');
+      toast({
+        title: "Error",
+        description: error.message || 'Error al cambiar el estado del reporte',
+        variant: "destructive",
+      });
     },
   });
 
@@ -203,11 +237,19 @@ export const useReportes = (onlyPublic: boolean = false) => {
     },
     onSuccess: (reporteIds) => {
       queryClient.invalidateQueries({ queryKey: ['reportes'] });
-      toast.success(`Estado actualizado para ${reporteIds.length} reportes`);
+      toast({
+        title: "Éxito",
+        description: `Estado actualizado para ${reporteIds.length} reportes`,
+        variant: "default",
+      });
     },
     onError: (error: any) => {
       console.error('Error bulk toggling status:', error);
-      toast.error(error.message || 'Error al cambiar el estado de los reportes');
+      toast({
+        title: "Error",
+        description: error.message || 'Error al cambiar el estado de los reportes',
+        variant: "destructive",
+      });
     },
   });
 
@@ -228,11 +270,19 @@ export const useReportes = (onlyPublic: boolean = false) => {
     },
     onSuccess: (reporteIds) => {
       queryClient.invalidateQueries({ queryKey: ['reportes'] });
-      toast.success(`${reporteIds.length} reportes eliminados exitosamente`);
+      toast({
+        title: "Éxito",
+        description: `${reporteIds.length} reportes eliminados exitosamente`,
+        variant: "default",
+      });
     },
     onError: (error: any) => {
       console.error('Error bulk deleting reportes:', error);
-      toast.error(error.message || 'Error al eliminar los reportes');
+      toast({
+        title: "Error",
+        description: error.message || 'Error al eliminar los reportes',
+        variant: "destructive",
+      });
     },
   });
 
@@ -253,11 +303,19 @@ export const useReportes = (onlyPublic: boolean = false) => {
     },
     onSuccess: ({ reporteIds }) => {
       queryClient.invalidateQueries({ queryKey: ['reportes'] });
-      toast.success(`Categoría actualizada para ${reporteIds.length} reportes`);
+      toast({
+        title: "Éxito",
+        description: `Categoría actualizada para ${reporteIds.length} reportes`,
+        variant: "default",
+      });
     },
     onError: (error: any) => {
       console.error('Error bulk changing category:', error);
-      toast.error(error.message || 'Error al cambiar la categoría de los reportes');
+      toast({
+        title: "Error",
+        description: error.message || 'Error al cambiar la categoría de los reportes',
+        variant: "destructive",
+      });
     },
   });
 
@@ -278,11 +336,19 @@ export const useReportes = (onlyPublic: boolean = false) => {
     },
     onSuccess: ({ reporteIds }) => {
       queryClient.invalidateQueries({ queryKey: ['reportes'] });
-      toast.success(`Estado actualizado para ${reporteIds.length} reportes`);
+      toast({
+        title: "Éxito",
+        description: `Estado actualizado para ${reporteIds.length} reportes`,
+        variant: "default",
+      });
     },
     onError: (error: any) => {
       console.error('Error bulk changing estado:', error);
-      toast.error(error.message || 'Error al cambiar el estado de los reportes');
+      toast({
+        title: "Error",
+        description: error.message || 'Error al cambiar el estado de los reportes',
+        variant: "destructive",
+      });
     },
   });
 
@@ -306,11 +372,19 @@ export const useReportes = (onlyPublic: boolean = false) => {
       const message = userId 
         ? `Asignación actualizada para ${reporteIds.length} reportes`
         : `${reporteIds.length} reportes desasignados`;
-      toast.success(message);
+      toast({
+        title: "Éxito",
+        description: message,
+        variant: "default",
+      });
     },
     onError: (error: any) => {
       console.error('Error bulk changing assignment:', error);
-      toast.error(error.message || 'Error al cambiar la asignación de los reportes');
+      toast({
+        title: "Error",
+        description: error.message || 'Error al cambiar la asignación de los reportes',
+        variant: "destructive",
+      });
     },
   });
 

@@ -3,7 +3,7 @@ import React from 'react';
 import { useSearchParams, Link, useLocation } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Toaster } from "@/components/ui/sonner";
+import { Toaster } from "@/components/ui/toaster";
 import { 
   FileText, 
   Users, 
@@ -186,12 +186,7 @@ const Dashboard = () => {
       </div>
       
       {/* Toast notifications */}
-      <Toaster 
-        position="top-right"
-        expand={true}
-        richColors
-        closeButton
-      />
+      <Toaster />
     </div>
   );
 };

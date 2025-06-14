@@ -7,10 +7,10 @@ import { RealTimeMetrics } from './RealTimeMetrics';
 import { InteractiveCharts } from './InteractiveCharts';
 import { AdvancedFiltersPanel } from './AdvancedFiltersPanel';
 import { MultiReportComparison } from './MultiReportComparison';
-import { NotificationProvider, useNotifications } from './NotificationSystem';
 import { AdvancedFilters } from '@/hooks/useAdvancedFilters';
 import { useQueryClient } from '@tanstack/react-query';
 import { useReportes } from '@/hooks/useReportes';
+import { useToast } from '@/hooks/use-toast';
 
 const priorityConfig = {
   urgente: { color: '#DC2626', label: 'Urgente' },
@@ -25,17 +25,25 @@ const ReportesAnalyticsContent = () => {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [appliedFilters, setAppliedFilters] = useState<AdvancedFilters | null>(null);
   const [selectedReportIds, setSelectedReportIds] = useState<string[]>([]);
-  const { showSuccess, showError } = useNotifications();
+  const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const handleRefreshData = useCallback(async () => {
     try {
       await refetch();
-      showSuccess('Datos actualizados correctamente');
+      toast({
+        title: "Éxito",
+        description: "Datos actualizados correctamente",
+        variant: "default",
+      });
     } catch (error) {
-      showError('Error al actualizar los datos');
+      toast({
+        title: "Error",
+        description: "Error al actualizar los datos",
+        variant: "destructive",
+      });
     }
-  }, [refetch, showSuccess, showError]);
+  }, [refetch, toast]);
 
   const handleFiltersChange = useCallback((filters: AdvancedFilters) => {
     setAppliedFilters(filters);
@@ -434,7 +442,6 @@ const ReportesAnalyticsContent = () => {
         />
       </div>
 
-      {/* ... keep existing code (rest of the charts and metrics sections) */}
       {filteredStats.reportes.porPrioridad && filteredStats.reportes.porPrioridad.length > 0 && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <InteractiveCharts
@@ -612,9 +619,5 @@ const ReportesAnalyticsContent = () => {
 };
 
 export const ReportesAnalytics = () => {
-  return (
-    <NotificationProvider>
-      <ReportesAnalyticsContent />
-    </NotificationProvider>
-  );
+  return <ReportesAnalyticsContent />;
 };

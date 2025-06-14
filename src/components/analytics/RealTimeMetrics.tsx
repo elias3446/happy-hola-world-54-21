@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { LucideIcon, TrendingUp, TrendingDown, Minus, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useNotifications } from './NotificationSystem';
+import { useToast } from '@/hooks/use-toast';
 
 interface MetricValue {
   current: number;
@@ -37,7 +37,7 @@ export const RealTimeMetrics: React.FC<RealTimeMetricsProps> = ({
 }) => {
   const [metricHistory, setMetricHistory] = useState<MetricValue[]>([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const { showDataUpdate } = useNotifications();
+  const { toast } = useToast();
 
   // Calculate trend
   const trend = previousValue !== undefined ? ((value - previousValue) / previousValue) * 100 : 0;
@@ -55,10 +55,11 @@ export const RealTimeMetrics: React.FC<RealTimeMetricsProps> = ({
         if (metricHistory.length > 0) {
           const lastValue = metricHistory[metricHistory.length - 1].current;
           if (lastValue !== value) {
-            showDataUpdate(
-              `${title}: ${formatValue(lastValue)} → ${formatValue(value)}`,
-              value > lastValue
-            );
+            toast({
+              title: "Actualización de Datos",
+              description: `${title}: ${formatValue(lastValue)} → ${formatValue(value)}`,
+              variant: "default",
+            });
           }
         }
       } finally {
@@ -67,7 +68,7 @@ export const RealTimeMetrics: React.FC<RealTimeMetricsProps> = ({
     }, refreshInterval);
 
     return () => clearInterval(interval);
-  }, [refreshInterval, onRefresh, value, title, formatValue, metricHistory, showDataUpdate]);
+  }, [refreshInterval, onRefresh, value, title, formatValue, metricHistory, toast]);
 
   // Update history when value changes
   useEffect(() => {
