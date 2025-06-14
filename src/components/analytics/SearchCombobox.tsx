@@ -32,24 +32,24 @@ export const SearchCombobox: React.FC<SearchComboboxProps> = ({
   const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
-  const handleSelect = (selectedValue: string) => {
-    const isSelected = value.includes(selectedValue);
+  const handleSelect = (selectedId: string) => {
+    const isSelected = value.includes(selectedId);
     
     if (isSelected) {
       // Remover si ya está seleccionado
-      onValueChange(value.filter(v => v !== selectedValue));
+      onValueChange(value.filter(v => v !== selectedId));
     } else {
       // Agregar si no está seleccionado
-      onValueChange([...value, selectedValue]);
+      onValueChange([...value, selectedId]);
     }
   };
 
-  const handleRemove = (valueToRemove: string) => {
-    onValueChange(value.filter(v => v !== valueToRemove));
+  const handleRemove = (idToRemove: string) => {
+    onValueChange(value.filter(v => v !== idToRemove));
   };
 
   const selectedReportes = reportes.filter(reporte => 
-    value.includes(reporte.titulo) || value.includes(reporte.id)
+    value.includes(reporte.id)
   );
 
   // Filtrar reportes basado en la búsqueda interna del componente
@@ -82,7 +82,7 @@ export const SearchCombobox: React.FC<SearchComboboxProps> = ({
               ) : (
                 <span className="truncate">
                   {value.length === 1 
-                    ? selectedReportes[0]?.titulo || value[0]
+                    ? selectedReportes[0]?.titulo || 'Reporte seleccionado'
                     : `${value.length} reportes seleccionados`
                   }
                 </span>
@@ -105,13 +105,13 @@ export const SearchCombobox: React.FC<SearchComboboxProps> = ({
                   {value.length}/{reportes.length} reportes seleccionados
                 </div>
                 {filteredReportes.map((reporte) => {
-                  const isSelected = value.includes(reporte.titulo);
+                  const isSelected = value.includes(reporte.id);
                   
                   return (
                     <CommandItem
                       key={reporte.id}
-                      value={reporte.titulo}
-                      onSelect={() => handleSelect(reporte.titulo)}
+                      value={`${reporte.titulo}-${reporte.id}`}
+                      onSelect={() => handleSelect(reporte.id)}
                       className="cursor-pointer"
                     >
                       <Check
@@ -158,7 +158,7 @@ export const SearchCombobox: React.FC<SearchComboboxProps> = ({
               <span className="truncate">{reporte.titulo}</span>
               <X
                 className="h-3 w-3 cursor-pointer hover:text-destructive"
-                onClick={() => handleRemove(reporte.titulo)}
+                onClick={() => handleRemove(reporte.id)}
               />
             </Badge>
           ))}

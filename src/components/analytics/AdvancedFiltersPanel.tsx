@@ -34,7 +34,7 @@ interface AdvancedFiltersPanelProps {
   isOpen: boolean;
   onToggle: () => void;
   onFiltersChange: (filters: AdvancedFilters) => void;
-  onMultipleReportSelection?: (reportTitles: string[]) => void;
+  onMultipleReportSelection?: (reportIds: string[]) => void;
   selectedReportIds?: string[];
 }
 
