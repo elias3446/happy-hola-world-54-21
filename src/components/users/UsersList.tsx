@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -23,6 +24,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DataTableToolbar, useDataTableFilters, type DataTableColumn } from '@/components/ui/data-table-toolbar';
 import { BulkActionsBar } from '@/components/ui/bulk-actions-bar';
 import { BulkUserActionsDialog, type BulkUserActionType } from './dialogs/BulkUserActionsDialog';
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from '@/components/ui/pagination';
 import { useUsers, type User } from '@/hooks/useUsers';
 import { useAuth } from '@/hooks/useAuth';
 import { useBulkSelection } from '@/hooks/useBulkSelection';
@@ -54,6 +63,8 @@ interface UsersListProps {
   onBulkUpload: () => void;
 }
 
+const ITEMS_PER_PAGE = 5;
+
 export const UsersList = ({ onCreateUser, onEditUser, onViewUser, onBulkUpload }: UsersListProps) => {
   const { 
     users, 
@@ -72,6 +83,7 @@ export const UsersList = ({ onCreateUser, onEditUser, onViewUser, onBulkUpload }
   const isMobile = useIsMobile();
   const [filters, setFilters] = useDataTableFilters();
   const [filteredData, setFilteredData] = useState<any[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
   const [resendingEmails, setResendingEmails] = useState<Set<string>>(new Set());
   const [isBulkResendingConfirmation, setIsBulkResendingConfirmation] = useState(false);
   
@@ -141,7 +153,18 @@ export const UsersList = ({ onCreateUser, onEditUser, onViewUser, onBulkUpload }
     return filteredData.filter(user => user.asset !== null);
   }, [filteredData]);
 
-  // Bulk selection hook - only for selectable users (non-blocked)
+  // Calculate pagination values
+  const totalPages = Math.ceil(filteredData.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const endIndex = startIndex + ITEMS_PER_PAGE;
+  const paginatedData = filteredData.slice(startIndex, endIndex);
+
+  // Reset to first page when filtered data changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filteredData.length]);
+
+  // Bulk selection hook - only for selectable users (non-blocked) and paginated data
   const {
     selectedItems,
     isAllSelected,
@@ -151,7 +174,7 @@ export const UsersList = ({ onCreateUser, onEditUser, onViewUser, onBulkUpload }
     clearSelection,
     getSelectedData,
     selectedCount,
-  } = useBulkSelection(selectableUsers);
+  } = useBulkSelection(paginatedData.filter(user => user.asset !== null));
 
   // Define columns for the table
   const columns: DataTableColumn[] = [
@@ -458,6 +481,10 @@ export const UsersList = ({ onCreateUser, onEditUser, onViewUser, onBulkUpload }
     document.body.removeChild(link);
   };
 
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
   // Filter unconfirmed users for bulk resend confirmation
   const selectedUnconfirmedCount = useMemo(() => {
     const selectedData = getSelectedData();
@@ -570,244 +597,304 @@ export const UsersList = ({ onCreateUser, onEditUser, onViewUser, onBulkUpload }
               </Button>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-[40px]">
-                      <Checkbox
-                        checked={isAllSelected}
-                        onCheckedChange={handleSelectAll}
-                        ref={(el) => {
-                          if (el && 'indeterminate' in el) {
-                            (el as any).indeterminate = isIndeterminate;
-                          }
-                        }}
-                      />
-                    </TableHead>
-                    <TableHead className={isMobile ? "min-w-[180px]" : "min-w-[200px]"}>Usuario</TableHead>
-                    {!isMobile && <TableHead className="min-w-[200px]">Email</TableHead>}
-                    <TableHead className="min-w-[140px]">Tipo de Usuario</TableHead>
-                    <TableHead className={isMobile ? "min-w-[120px]" : "min-w-[150px]"}>Roles</TableHead>
-                    <TableHead className={isMobile ? "min-w-[100px]" : "min-w-[120px]"}>Estado</TableHead>
-                    {!isMobile && <TableHead className="min-w-[100px]">Confirmado</TableHead>}
-                    {!isMobile && <TableHead className="min-w-[120px]">Fecha de Registro</TableHead>}
-                    <TableHead className="w-[50px]">Acciones</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredData.map((user) => {
-                    const statusBadge = getStatusBadge(user);
-                    const typeBadge = getUserTypeBadge(user.role || ['user']);
-                    const isBlocked = user.asset === null;
-                    const isResending = resendingEmails.has(user.id);
+            <>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[40px]">
+                        <Checkbox
+                          checked={isAllSelected}
+                          onCheckedChange={handleSelectAll}
+                          ref={(el) => {
+                            if (el && 'indeterminate' in el) {
+                              (el as any).indeterminate = isIndeterminate;
+                            }
+                          }}
+                        />
+                      </TableHead>
+                      <TableHead className={isMobile ? "min-w-[180px]" : "min-w-[200px]"}>Usuario</TableHead>
+                      {!isMobile && <TableHead className="min-w-[200px]">Email</TableHead>}
+                      <TableHead className="min-w-[140px]">Tipo de Usuario</TableHead>
+                      <TableHead className={isMobile ? "min-w-[120px]" : "min-w-[150px]"}>Roles</TableHead>
+                      <TableHead className={isMobile ? "min-w-[100px]" : "min-w-[120px]"}>Estado</TableHead>
+                      {!isMobile && <TableHead className="min-w-[100px]">Confirmado</TableHead>}
+                      {!isMobile && <TableHead className="min-w-[120px]">Fecha de Registro</TableHead>}
+                      <TableHead className="w-[50px]">Acciones</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {paginatedData.map((user) => {
+                      const statusBadge = getStatusBadge(user);
+                      const typeBadge = getUserTypeBadge(user.role || ['user']);
+                      const isBlocked = user.asset === null;
+                      const isResending = resendingEmails.has(user.id);
 
-                    return (
-                      <TableRow key={user.id}>
-                        <TableCell>
-                          {!isBlocked ? (
-                            <Checkbox
-                              checked={selectedItems.has(user.id)}
-                              onCheckedChange={() => handleSelectItem(user.id)}
-                            />
-                          ) : (
-                            <div className="w-4 h-4" /> // Empty space for blocked users
-                          )}
-                        </TableCell>
-                        
-                        <TableCell>
-                          <div className="flex items-center gap-3">
-                            <Avatar className={isMobile ? "h-8 w-8" : "h-10 w-10"}>
-                              <AvatarImage src={user.avatar || undefined} />
-                              <AvatarFallback>
-                                {((user.first_name || '').charAt(0) + (user.last_name || '').charAt(0)).toUpperCase() || 
-                                 user.email.charAt(0).toUpperCase()}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div className="min-w-0 flex-1">
-                              <button
-                                onClick={() => onViewUser(user)}
-                                className="font-medium text-blue-600 hover:text-blue-800 hover:underline transition-colors text-left"
-                              >
-                                <span className={isMobile ? "line-clamp-1 break-words text-sm" : ""}>
-                                  {user.full_name}
-                                </span>
-                              </button>
-                              {isMobile && (
-                                <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
-                                  <Mail className="h-3 w-3" />
-                                  <span className="truncate">{user.email}</span>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </TableCell>
-                        
-                        {!isMobile && (
-                          <TableCell className="max-w-xs">
-                            <p className="text-sm truncate" title={user.email}>
-                              {user.email}
-                            </p>
-                          </TableCell>
-                        )}
-                        
-                        <TableCell>
-                          <Badge 
-                            variant={typeBadge.variant} 
-                            className="flex items-center gap-1 text-xs"
-                          >
-                            {typeBadge.icon}
-                            {typeBadge.text}
-                          </Badge>
-                        </TableCell>
-                        
-                        <TableCell>
-                          <div className="flex flex-wrap gap-1">
-                            {user.user_roles?.slice(0, isMobile ? 1 : 2).map((userRole) => (
-                              <Badge 
-                                key={userRole.id} 
-                                variant="secondary" 
-                                className={`${isMobile ? 'text-xs px-1' : 'text-xs'}`}
-                                style={{ backgroundColor: userRole.roles.color + '20', color: userRole.roles.color }}
-                              >
-                                {userRole.roles.nombre}
-                              </Badge>
-                            ))}
-                            {user.user_roles && user.user_roles.length > (isMobile ? 1 : 2) && (
-                              <Badge variant="outline" className="text-xs">
-                                +{user.user_roles.length - (isMobile ? 1 : 2)}
-                              </Badge>
-                            )}
-                            {(!user.user_roles || user.user_roles.length === 0) && (
-                              <Badge variant="outline" className="text-xs">
-                                Sin roles
-                              </Badge>
-                            )}
-                          </div>
-                        </TableCell>
-                        
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            {user.asset !== null && (
-                              <Switch
-                                checked={user.asset}
-                                onCheckedChange={() => handleToggleStatus(user)}
-                                disabled={isToggling}
+                      return (
+                        <TableRow key={user.id}>
+                          <TableCell>
+                            {!isBlocked ? (
+                              <Checkbox
+                                checked={selectedItems.has(user.id)}
+                                onCheckedChange={() => handleSelectItem(user.id)}
                               />
+                            ) : (
+                              <div className="w-4 h-4" /> // Empty space for blocked users
                             )}
+                          </TableCell>
+                          
+                          <TableCell>
+                            <div className="flex items-center gap-3">
+                              <Avatar className={isMobile ? "h-8 w-8" : "h-10 w-10"}>
+                                <AvatarImage src={user.avatar || undefined} />
+                                <AvatarFallback>
+                                  {((user.first_name || '').charAt(0) + (user.last_name || '').charAt(0)).toUpperCase() || 
+                                   user.email.charAt(0).toUpperCase()}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div className="min-w-0 flex-1">
+                                <button
+                                  onClick={() => onViewUser(user)}
+                                  className="font-medium text-blue-600 hover:text-blue-800 hover:underline transition-colors text-left"
+                                >
+                                  <span className={isMobile ? "line-clamp-1 break-words text-sm" : ""}>
+                                    {user.full_name}
+                                  </span>
+                                </button>
+                                {isMobile && (
+                                  <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
+                                    <Mail className="h-3 w-3" />
+                                    <span className="truncate">{user.email}</span>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </TableCell>
+                          
+                          {!isMobile && (
+                            <TableCell className="max-w-xs">
+                              <p className="text-sm truncate" title={user.email}>
+                                {user.email}
+                              </p>
+                            </TableCell>
+                          )}
+                          
+                          <TableCell>
                             <Badge 
-                              variant={statusBadge.variant} 
+                              variant={typeBadge.variant} 
                               className="flex items-center gap-1 text-xs"
                             >
-                              {statusBadge.icon}
-                              {statusBadge.text}
+                              {typeBadge.icon}
+                              {typeBadge.text}
                             </Badge>
-                          </div>
-                        </TableCell>
-                        
-                        {!isMobile && (
+                          </TableCell>
+                          
+                          <TableCell>
+                            <div className="flex flex-wrap gap-1">
+                              {user.user_roles?.slice(0, isMobile ? 1 : 2).map((userRole) => (
+                                <Badge 
+                                  key={userRole.id} 
+                                  variant="secondary" 
+                                  className={`${isMobile ? 'text-xs px-1' : 'text-xs'}`}
+                                  style={{ backgroundColor: userRole.roles.color + '20', color: userRole.roles.color }}
+                                >
+                                  {userRole.roles.nombre}
+                                </Badge>
+                              ))}
+                              {user.user_roles && user.user_roles.length > (isMobile ? 1 : 2) && (
+                                <Badge variant="outline" className="text-xs">
+                                  +{user.user_roles.length - (isMobile ? 1 : 2)}
+                                </Badge>
+                              )}
+                              {(!user.user_roles || user.user_roles.length === 0) && (
+                                <Badge variant="outline" className="text-xs">
+                                  Sin roles
+                                </Badge>
+                              )}
+                            </div>
+                          </TableCell>
+                          
                           <TableCell>
                             <div className="flex items-center gap-2">
-                              <Badge variant={user.confirmed ? "default" : "secondary"} className="text-xs">
-                                {user.confirmed ? (
-                                  <>
-                                    <CheckCircle className="h-3 w-3 mr-1" />
-                                    Confirmado
-                                  </>
-                                ) : (
-                                  <>
-                                    <XCircle className="h-3 w-3 mr-1" />
-                                    Pendiente
-                                  </>
-                                )}
-                              </Badge>
-                              {!user.confirmed && (
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => handleResendConfirmation(user)}
-                                  disabled={isResending}
-                                  className="h-6 px-2 text-xs"
-                                  title="Reenviar confirmación"
-                                >
-                                  {isResending ? (
-                                    <RefreshCw className="h-3 w-3 animate-spin" />
-                                  ) : (
-                                    <Mail className="h-3 w-3" />
-                                  )}
-                                </Button>
+                              {user.asset !== null && (
+                                <Switch
+                                  checked={user.asset}
+                                  onCheckedChange={() => handleToggleStatus(user)}
+                                  disabled={isToggling}
+                                />
                               )}
+                              <Badge 
+                                variant={statusBadge.variant} 
+                                className="flex items-center gap-1 text-xs"
+                              >
+                                {statusBadge.icon}
+                                {statusBadge.text}
+                              </Badge>
                             </div>
                           </TableCell>
-                        )}
-                        
-                        {!isMobile && (
-                          <TableCell>
-                            <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                              <Calendar className="h-3 w-3" />
-                              <span>{new Date(user.created_at).toLocaleDateString('es-ES')}</span>
-                            </div>
-                          </TableCell>
-                        )}
-                        
-                        <TableCell>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="sm">
-                                <MoreHorizontal className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => onEditUser(user)}>
-                                <Edit className="h-4 w-4 mr-2" />
-                                Editar
-                              </DropdownMenuItem>
-                              {!user.confirmed && (
-                                <>
-                                  <DropdownMenuSeparator />
-                                  <DropdownMenuItem 
+                          
+                          {!isMobile && (
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                <Badge variant={user.confirmed ? "default" : "secondary"} className="text-xs">
+                                  {user.confirmed ? (
+                                    <>
+                                      <CheckCircle className="h-3 w-3 mr-1" />
+                                      Confirmado
+                                    </>
+                                  ) : (
+                                    <>
+                                      <XCircle className="h-3 w-3 mr-1" />
+                                      Pendiente
+                                    </>
+                                  )}
+                                </Badge>
+                                {!user.confirmed && (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
                                     onClick={() => handleResendConfirmation(user)}
                                     disabled={isResending}
+                                    className="h-6 px-2 text-xs"
+                                    title="Reenviar confirmación"
                                   >
                                     {isResending ? (
-                                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                                      <RefreshCw className="h-3 w-3 animate-spin" />
                                     ) : (
-                                      <Mail className="h-4 w-4 mr-2" />
+                                      <Mail className="h-3 w-3" />
                                     )}
-                                    {isResending ? 'Enviando...' : 'Reenviar Confirmación'}
+                                  </Button>
+                                )}
+                              </div>
+                            </TableCell>
+                          )}
+                          
+                          {!isMobile && (
+                            <TableCell>
+                              <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                                <Calendar className="h-3 w-3" />
+                                <span>{new Date(user.created_at).toLocaleDateString('es-ES')}</span>
+                              </div>
+                            </TableCell>
+                          )}
+                          
+                          <TableCell>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="sm">
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={()=> onEditUser(user)}>
+                                  <Edit className="h-4 w-4 mr-2" />
+                                  Editar
+                                </DropdownMenuItem>
+                                {!user.confirmed && (
+                                  <>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem 
+                                      onClick={() => handleResendConfirmation(user)}
+                                      disabled={isResending}
+                                    >
+                                      {isResending ? (
+                                        <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                                      ) : (
+                                        <Mail className="h-4 w-4 mr-2" />
+                                      )}
+                                      {isResending ? 'Enviando...' : 'Reenviar Confirmación'}
+                                    </DropdownMenuItem>
+                                  </>
+                                )}
+                                <DropdownMenuSeparator />
+                                {user.asset === null && (
+                                  <DropdownMenuItem onClick={() => handleActivateUser(user)}>
+                                    <UserCheck className="h-4 w-4 mr-2" />
+                                    Desbloquear
                                   </DropdownMenuItem>
-                                </>
-                              )}
-                              <DropdownMenuSeparator />
-                              {user.asset === null && (
-                                <DropdownMenuItem onClick={() => handleActivateUser(user)}>
-                                  <UserCheck className="h-4 w-4 mr-2" />
-                                  Desbloquear
+                                )}
+                                {user.asset !== null && (
+                                  <DropdownMenuItem onClick={() => handleBlockUser(user)}>
+                                    <Ban className="h-4 w-4 mr-2" />
+                                    Bloquear
+                                  </DropdownMenuItem>
+                                )}
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem 
+                                  onClick={() => handleDeleteUser(user)}
+                                  className="text-red-600"
+                                >
+                                  <Trash2 className="h-4 w-4 mr-2" />
+                                  Eliminar
                                 </DropdownMenuItem>
-                              )}
-                              {user.asset !== null && (
-                                <DropdownMenuItem onClick={() => handleBlockUser(user)}>
-                                  <Ban className="h-4 w-4 mr-2" />
-                                  Bloquear
-                                </DropdownMenuItem>
-                              )}
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem 
-                                onClick={() => handleDeleteUser(user)}
-                                className="text-red-600"
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+
+              {/* Pagination Info and Controls */}
+              {filteredData.length > 0 && (
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4">
+                  {/* Info section */}
+                  <div className="flex items-center text-sm text-muted-foreground">
+                    <span>
+                      Mostrando {startIndex + 1} a {Math.min(endIndex, filteredData.length)} de {filteredData.length} elementos
+                    </span>
+                  </div>
+
+                  {/* Pagination */}
+                  {totalPages > 1 && (
+                    <Pagination>
+                      <PaginationContent>
+                        <PaginationItem>
+                          <PaginationPrevious 
+                            onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
+                            className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                          />
+                        </PaginationItem>
+                        
+                        {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+                          let pageNumber;
+                          if (totalPages <= 5) {
+                            pageNumber = i + 1;
+                          } else if (currentPage <= 3) {
+                            pageNumber = i + 1;
+                          } else if (currentPage >= totalPages - 2) {
+                            pageNumber = totalPages - 4 + i;
+                          } else {
+                            pageNumber = currentPage - 2 + i;
+                          }
+                          
+                          return (
+                            <PaginationItem key={pageNumber}>
+                              <PaginationLink
+                                onClick={() => handlePageChange(pageNumber)}
+                                isActive={currentPage === pageNumber}
+                                className="cursor-pointer"
                               >
-                                <Trash2 className="h-4 w-4 mr-2" />
-                                Eliminar
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </div>
+                                {pageNumber}
+                              </PaginationLink>
+                            </PaginationItem>
+                          );
+                        })}
+                        
+                        <PaginationItem>
+                          <PaginationNext 
+                            onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
+                            className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                          />
+                        </PaginationItem>
+                      </PaginationContent>
+                    </Pagination>
+                  )}
+                </div>
+              )}
+            </>
           )}
         </CardContent>
       </Card>
