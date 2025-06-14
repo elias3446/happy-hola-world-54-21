@@ -37,6 +37,7 @@ import {
   Lock,
   Upload
 } from 'lucide-react';
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
 
 interface EstadosListProps {
   onCreateEstado: () => void;
@@ -51,6 +52,8 @@ const SYSTEM_ESTADOS = ['Sin estado'];
 const isSystemEstado = (estadoName: string): boolean => {
   return SYSTEM_ESTADOS.includes(estadoName);
 };
+
+const ITEMS_PER_PAGE = 5;
 
 export const EstadosList = ({ onCreateEstado, onEditEstado, onViewEstado, onBulkUpload }: EstadosListProps) => {
   const { 
@@ -67,6 +70,7 @@ export const EstadosList = ({ onCreateEstado, onEditEstado, onViewEstado, onBulk
   const [estadoToDelete, setEstadoToDelete] = useState<Estado | null>(null);
   const [estadoToToggle, setEstadoToToggle] = useState<Estado | null>(null);
   const [filteredData, setFilteredData] = useState<any[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
   const [bulkActionDialog, setBulkActionDialog] = useState<{
     open: boolean;
     type: BulkEstadoActionType | null;
@@ -76,7 +80,18 @@ export const EstadosList = ({ onCreateEstado, onEditEstado, onViewEstado, onBulk
   // Filter out system estados for bulk selection
   const selectableEstados = filteredData.filter(estado => !isSystemEstado(estado.nombre));
 
-  // Bulk selection hook with only selectable estados
+  // Calculate pagination values
+  const totalPages = Math.ceil(filteredData.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const endIndex = startIndex + ITEMS_PER_PAGE;
+  const paginatedData = filteredData.slice(startIndex, endIndex);
+
+  // Reset to first page when filtered data changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filteredData.length]);
+
+  // Bulk selection hook with only selectable estados and paginated data
   const {
     selectedItems,
     isAllSelected,
@@ -86,7 +101,7 @@ export const EstadosList = ({ onCreateEstado, onEditEstado, onViewEstado, onBulk
     clearSelection,
     getSelectedData,
     selectedCount,
-  } = useBulkSelection(selectableEstados);
+  } = useBulkSelection(paginatedData.filter(estado => !isSystemEstado(estado.nombre)));
 
   const columns: DataTableColumn[] = [
     { key: 'nombre', label: 'Estado', searchable: true, sortable: true, filterable: true },
@@ -221,6 +236,10 @@ export const EstadosList = ({ onCreateEstado, onEditEstado, onViewEstado, onBulk
     document.body.removeChild(link);
   };
 
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
   if (isLoading) {
     return (
       <Card>
@@ -299,138 +318,198 @@ export const EstadosList = ({ onCreateEstado, onEditEstado, onViewEstado, onBulk
               </Button>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-[40px]">
-                      <Checkbox
-                        checked={isAllSelected}
-                        onCheckedChange={handleSelectAll}
-                        ref={(el) => {
-                          if (el && 'indeterminate' in el) {
-                            (el as any).indeterminate = isIndeterminate;
-                          }
-                        }}
-                      />
-                    </TableHead>
-                    <TableHead>Estado</TableHead>
-                    <TableHead className="hidden lg:table-cell">Descripción</TableHead>
-                    <TableHead>Estado</TableHead>
-                    <TableHead className="hidden xl:table-cell">Fecha de Creación</TableHead>
-                    <TableHead className="w-[100px]">Acciones</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredData.map((estado) => {
-                    const isSystemEstadoItem = isSystemEstado(estado.nombre);
-                    
-                    return (
-                      <TableRow key={estado.id}>
-                        <TableCell>
-                          {isSystemEstadoItem ? (
-                            <Lock className="h-4 w-4 text-gray-400" />
-                          ) : (
-                            <Checkbox
-                              checked={selectedItems.has(estado.id)}
-                              onCheckedChange={() => handleSelectItem(estado.id)}
-                            />
-                          )}
-                        </TableCell>
-                        
-                        <TableCell>
-                          <div className="flex items-center gap-3">
-                            <div 
-                              className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-medium"
-                              style={{ backgroundColor: estado.color }}
-                            >
-                              {estado.icono.charAt(0)}
-                            </div>
-                            <div>
-                              <div className="flex items-center gap-2">
-                                <button
-                                  onClick={() => onViewEstado(estado)}
-                                  className="font-medium text-blue-600 hover:text-blue-800 hover:underline transition-colors"
-                                >
-                                  {estado.nombre}
-                                </button>
-                                {isSystemEstadoItem && (
-                                  <Badge variant="secondary" className="text-xs flex items-center gap-1">
-                                    <Lock className="h-3 w-3" />
-                                    Sistema
-                                  </Badge>
-                                )}
-                              </div>
-                              <p className="text-sm text-gray-500">{estado.icono}</p>
-                            </div>
-                          </div>
-                        </TableCell>
-                        
-                        <TableCell className="hidden lg:table-cell">
-                          <p className="max-w-xs truncate" title={estado.descripcion}>
-                            {estado.descripcion}
-                          </p>
-                        </TableCell>
-                        
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <Switch
-                              checked={estado.activo}
-                              onCheckedChange={() => handleToggleStatus(estado)}
-                              disabled={isToggling || isSystemEstadoItem}
-                            />
-                            <Badge variant={estado.activo ? "default" : "secondary"}>
-                              {estado.activo ? 'Activo' : 'Inactivo'}
-                            </Badge>
-                          </div>
-                        </TableCell>
-                        
-                        <TableCell className="hidden xl:table-cell">
-                          <p className="text-sm">
-                            {new Date(estado.created_at).toLocaleDateString('es-ES')}
-                          </p>
-                        </TableCell>
-                        
-                        <TableCell>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="sm">
-                                <MoreHorizontal className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem 
-                                onClick={() => handleEditEstadoClick(estado)}
-                                disabled={isSystemEstadoItem}
+            <>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[40px]">
+                        <Checkbox
+                          checked={isAllSelected}
+                          onCheckedChange={handleSelectAll}
+                          ref={(el) => {
+                            if (el && 'indeterminate' in el) {
+                              (el as any).indeterminate = isIndeterminate;
+                            }
+                          }}
+                        />
+                      </TableHead>
+                      <TableHead>Estado</TableHead>
+                      <TableHead className="hidden lg:table-cell">Descripción</TableHead>
+                      <TableHead>Estado</TableHead>
+                      <TableHead className="hidden xl:table-cell">Fecha de Creación</TableHead>
+                      <TableHead className="w-[100px]">Acciones</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {paginatedData.map((estado) => {
+                      const isSystemEstadoItem = isSystemEstado(estado.nombre);
+                      
+                      return (
+                        <TableRow key={estado.id}>
+                          <TableCell>
+                            {isSystemEstadoItem ? (
+                              <Lock className="h-4 w-4 text-gray-400" />
+                            ) : (
+                              <Checkbox
+                                checked={selectedItems.has(estado.id)}
+                                onCheckedChange={() => handleSelectItem(estado.id)}
+                              />
+                            )}
+                          </TableCell>
+                          
+                          <TableCell>
+                            <div className="flex items-center gap-3">
+                              <div 
+                                className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-medium"
+                                style={{ backgroundColor: estado.color }}
                               >
-                                {isSystemEstadoItem ? (
-                                  <Lock className="h-4 w-4 mr-2" />
-                                ) : (
-                                  <Edit className="h-4 w-4 mr-2" />
-                                )}
-                                {isSystemEstadoItem ? 'Protegido' : 'Editar'}
-                              </DropdownMenuItem>
-                              {!isSystemEstadoItem && (
-                                <>
-                                  <DropdownMenuSeparator />
-                                  <DropdownMenuItem 
-                                    onClick={() => handleDeleteClick(estado)}
-                                    className="text-red-600"
+                                {estado.icono.charAt(0)}
+                              </div>
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <button
+                                    onClick={() => onViewEstado(estado)}
+                                    className="font-medium text-blue-600 hover:text-blue-800 hover:underline transition-colors"
                                   >
-                                    <Trash2 className="h-4 w-4 mr-2" />
-                                    Eliminar
-                                  </DropdownMenuItem>
-                                </>
-                              )}
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </div>
+                                    {estado.nombre}
+                                  </button>
+                                  {isSystemEstadoItem && (
+                                    <Badge variant="secondary" className="text-xs flex items-center gap-1">
+                                      <Lock className="h-3 w-3" />
+                                      Sistema
+                                    </Badge>
+                                  )}
+                                </div>
+                                <p className="text-sm text-gray-500">{estado.icono}</p>
+                              </div>
+                            </div>
+                          </TableCell>
+                          
+                          <TableCell className="hidden lg:table-cell">
+                            <p className="max-w-xs truncate" title={estado.descripcion}>
+                              {estado.descripcion}
+                            </p>
+                          </TableCell>
+                          
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <Switch
+                                checked={estado.activo}
+                                onCheckedChange={() => handleToggleStatus(estado)}
+                                disabled={isToggling || isSystemEstadoItem}
+                              />
+                              <Badge variant={estado.activo ? "default" : "secondary"}>
+                                {estado.activo ? 'Activo' : 'Inactivo'}
+                              </Badge>
+                            </div>
+                          </TableCell>
+                          
+                          <TableCell className="hidden xl:table-cell">
+                            <p className="text-sm">
+                              {new Date(estado.created_at).toLocaleDateString('es-ES')}
+                            </p>
+                          </TableCell>
+                          
+                          <TableCell>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="sm">
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem 
+                                  onClick={() => handleEditEstadoClick(estado)}
+                                  disabled={isSystemEstadoItem}
+                                >
+                                  {isSystemEstadoItem ? (
+                                    <Lock className="h-4 w-4 mr-2" />
+                                  ) : (
+                                    <Edit className="h-4 w-4 mr-2" />
+                                  )}
+                                  {isSystemEstadoItem ? 'Protegido' : 'Editar'}
+                                </DropdownMenuItem>
+                                {!isSystemEstadoItem && (
+                                  <>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem 
+                                      onClick={() => handleDeleteClick(estado)}
+                                      className="text-red-600"
+                                    >
+                                      <Trash2 className="h-4 w-4 mr-2" />
+                                      Eliminar
+                                    </DropdownMenuItem>
+                                  </>
+                                )}
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+
+              {/* Pagination Info and Controls */}
+              {filteredData.length > 0 && (
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4">
+                  {/* Info section */}
+                  <div className="flex items-center text-sm text-muted-foreground">
+                    <span>
+                      Mostrando {startIndex + 1} a {Math.min(endIndex, filteredData.length)} de {filteredData.length} elementos
+                    </span>
+                  </div>
+
+                  {/* Pagination */}
+                  {totalPages > 1 && (
+                    <Pagination>
+                      <PaginationContent>
+                        <PaginationItem>
+                          <PaginationPrevious 
+                            onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
+                            className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                          />
+                        </PaginationItem>
+                        
+                        {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+                          let pageNumber;
+                          if (totalPages <= 5) {
+                            pageNumber = i + 1;
+                          } else if (currentPage <= 3) {
+                            pageNumber = i + 1;
+                          } else if (currentPage >= totalPages - 2) {
+                            pageNumber = totalPages - 4 + i;
+                          } else {
+                            pageNumber = currentPage - 2 + i;
+                          }
+                          
+                          return (
+                            <PaginationItem key={pageNumber}>
+                              <PaginationLink
+                                onClick={() => handlePageChange(pageNumber)}
+                                isActive={currentPage === pageNumber}
+                                className="cursor-pointer"
+                              >
+                                {pageNumber}
+                              </PaginationLink>
+                            </PaginationItem>
+                          );
+                        })}
+                        
+                        <PaginationItem>
+                          <PaginationNext 
+                            onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
+                            className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                          />
+                        </PaginationItem>
+                      </PaginationContent>
+                    </Pagination>
+                  )}
+                </div>
+              )}
+            </>
           )}
         </CardContent>
       </Card>
