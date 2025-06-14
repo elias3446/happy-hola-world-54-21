@@ -29,6 +29,7 @@ export const SearchCombobox: React.FC<SearchComboboxProps> = ({
   placeholder = "Buscar reportes..."
 }) => {
   const [open, setOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const handleSelect = (selectedValue: string) => {
     onValueChange(selectedValue);
@@ -36,9 +37,22 @@ export const SearchCombobox: React.FC<SearchComboboxProps> = ({
   };
 
   const selectedReporte = reportes.find(reporte => 
-    reporte.titulo.toLowerCase().includes(value.toLowerCase()) ||
-    reporte.descripcion.toLowerCase().includes(value.toLowerCase())
+    reporte.titulo === value || reporte.id === value
   );
+
+  // Filtrar reportes basado en la búsqueda interna del componente, no en el valor seleccionado
+  const filteredReportes = reportes.filter(reporte => {
+    if (!searchQuery) return true;
+    
+    const query = searchQuery.toLowerCase();
+    return (
+      reporte.titulo.toLowerCase().includes(query) ||
+      reporte.descripcion.toLowerCase().includes(query) ||
+      reporte.estado.toLowerCase().includes(query) ||
+      reporte.categoria.toLowerCase().includes(query) ||
+      reporte.prioridad.toLowerCase().includes(query)
+    );
+  });
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -63,13 +77,13 @@ export const SearchCombobox: React.FC<SearchComboboxProps> = ({
         <Command>
           <CommandInput 
             placeholder="Buscar reportes..." 
-            value={value}
-            onValueChange={onValueChange}
+            value={searchQuery}
+            onValueChange={setSearchQuery}
           />
           <CommandList className="max-h-60">
             <CommandEmpty>No se encontraron reportes.</CommandEmpty>
             <CommandGroup>
-              {reportes.map((reporte) => (
+              {filteredReportes.map((reporte) => (
                 <CommandItem
                   key={reporte.id}
                   value={reporte.titulo}
@@ -78,10 +92,7 @@ export const SearchCombobox: React.FC<SearchComboboxProps> = ({
                   <Check
                     className={cn(
                       "mr-2 h-4 w-4",
-                      (value === reporte.titulo || 
-                       reporte.titulo.toLowerCase().includes(value.toLowerCase())) 
-                        ? "opacity-100" 
-                        : "opacity-0"
+                      value === reporte.titulo ? "opacity-100" : "opacity-0"
                     )}
                   />
                   <div className="flex flex-col flex-1 min-w-0">
