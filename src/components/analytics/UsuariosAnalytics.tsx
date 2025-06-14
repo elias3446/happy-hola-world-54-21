@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,11 +9,15 @@ import { AdvancedFiltersPanel } from './AdvancedFiltersPanel';
 import { AdvancedFilters } from '@/hooks/useAdvancedFilters';
 import { useQueryClient } from '@tanstack/react-query';
 import { useUsers } from '@/hooks/useUsers';
+import { useUserRoles } from '@/hooks/useUserRoles';
+import { useRoles } from '@/hooks/useRoles';
 import { useToast } from '@/hooks/use-toast';
 
 const UsuariosAnalyticsContent = () => {
   const { data: stats, isLoading, error, refetch } = useDashboardStats();
   const { users } = useUsers();
+  const { userRoles } = useUserRoles();
+  const { roles } = useRoles();
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [appliedFilters, setAppliedFilters] = useState<AdvancedFilters | null>(null);
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
@@ -133,19 +136,32 @@ const UsuariosAnalyticsContent = () => {
 
       case 'prioridad': // roles
         if (appliedFilters.priority.length > 0) {
-          filteredUsers = filteredUsers.filter(user => {
-            // Verificar si el usuario tiene alguno de los roles seleccionados
-            if (!user.role || user.role.length === 0) return false;
-            
-            // Los roles seleccionados en el filtro son nombres de roles
-            // El usuario tiene un array de roles en user.role
-            return appliedFilters.priority.some(selectedRoleName => 
-              user.role.includes(selectedRoleName)
-            );
-          });
+          const selectedRoleNames = appliedFilters.priority;
+          console.log('Roles seleccionados:', selectedRoleNames);
+          console.log('UserRoles disponibles:', userRoles);
+          console.log('Roles disponibles:', roles);
+          
+          // Obtener los IDs de los roles seleccionados
+          const selectedRoleIds = roles?.filter(role => 
+            selectedRoleNames.includes(role.nombre)
+          ).map(role => role.id) || [];
+          
+          console.log('IDs de roles seleccionados:', selectedRoleIds);
+          
+          // Obtener los IDs de usuarios que tienen alguno de los roles seleccionados
+          const userIdsWithSelectedRoles = userRoles?.filter(userRole => 
+            selectedRoleIds.includes(userRole.role_id) && !userRole.deleted_at
+          ).map(userRole => userRole.user_id) || [];
+          
+          console.log('IDs de usuarios con roles seleccionados:', userIdsWithSelectedRoles);
+          
+          // Filtrar usuarios que tienen alguno de los roles seleccionados
+          filteredUsers = filteredUsers.filter(user => 
+            userIdsWithSelectedRoles.includes(user.id)
+          );
+          
           console.log(`Filtro de roles aplicado: ${filteredUsers.length} usuarios con roles seleccionados`);
-          console.log('Roles buscados:', appliedFilters.priority);
-          console.log('Usuarios encontrados con roles:', filteredUsers.map(u => ({ id: u.id, email: u.email, roles: u.role })));
+          console.log('Usuarios encontrados con roles:', filteredUsers.map(u => ({ id: u.id, email: u.email })));
         }
         break;
 
