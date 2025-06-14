@@ -238,7 +238,6 @@ export const ReportesList = ({ onCreateReporte, onEditReporte, onViewReporte, on
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
-    clearSelection(); // Clear selection when changing pages
   };
 
   if (isLoading) {
