@@ -222,6 +222,7 @@ const UsuariosAnalyticsContent = () => {
         onFiltersChange={handleFiltersChange}
         onMultipleReportSelection={handleUserSelection}
         selectedReportIds={selectedUserIds}
+        context="usuarios"
       />
 
       {/* Indicador de filtros aplicados */}

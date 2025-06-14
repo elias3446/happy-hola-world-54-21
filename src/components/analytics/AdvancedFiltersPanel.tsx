@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -12,15 +13,17 @@ import {
   Calendar as CalendarIcon, 
   RotateCcw,
   Search,
-  AlertTriangle,
+  Shield,
   CheckCircle,
-  Folder
+  Users
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { AdvancedFilters, useAdvancedFilters } from '@/hooks/useAdvancedFilters';
 import { useDashboardStats } from '@/hooks/useDashboardStats';
 import { useReportes } from '@/hooks/useReportes';
+import { useRoles } from '@/hooks/useRoles';
+import { useUsers } from '@/hooks/useUsers';
 import { SearchCombobox } from './SearchCombobox';
 
 const priorityOptions = [
@@ -30,12 +33,23 @@ const priorityOptions = [
   { value: 'bajo', label: 'Bajo', color: '#059669' },
 ];
 
+const confirmacionOptions = [
+  { value: 'confirmado', label: 'Confirmado', color: '#10B981' },
+  { value: 'no_confirmado', label: 'No Confirmado', color: '#EF4444' },
+];
+
+const activacionOptions = [
+  { value: 'activo', label: 'Activo', color: '#10B981' },
+  { value: 'inactivo', label: 'Inactivo', color: '#EF4444' },
+];
+
 interface AdvancedFiltersPanelProps {
   isOpen: boolean;
   onToggle: () => void;
   onFiltersChange: (filters: AdvancedFilters) => void;
   onMultipleReportSelection?: (reportIds: string[]) => void;
   selectedReportIds?: string[];
+  context?: 'reportes' | 'usuarios';
 }
 
 export const AdvancedFiltersPanel: React.FC<AdvancedFiltersPanelProps> = ({
@@ -44,10 +58,13 @@ export const AdvancedFiltersPanel: React.FC<AdvancedFiltersPanelProps> = ({
   onFiltersChange,
   onMultipleReportSelection,
   selectedReportIds = [],
+  context = 'reportes',
 }) => {
   const { filters, updateFilter, resetFilters, hasActiveFilters, isValidForComparison } = useAdvancedFilters();
   const { data: stats } = useDashboardStats();
   const { reportes } = useReportes();
+  const { roles } = useRoles();
+  const { users } = useUsers();
 
   React.useEffect(() => {
     onFiltersChange(filters);
@@ -74,15 +91,50 @@ export const AdvancedFiltersPanel: React.FC<AdvancedFiltersPanelProps> = ({
     updateFilter('categorias', newCategorias);
   };
 
-  // Transform reportes data for the SearchCombobox
-  const reportesForSearch = reportes?.map(reporte => ({
-    id: reporte.id,
-    titulo: reporte.nombre,
-    descripcion: reporte.descripcion || '',
-    estado: reporte.estado?.nombre || 'Sin estado',
-    categoria: reporte.categoria?.nombre || 'Sin categoría',
-    prioridad: reporte.priority || 'medio'
-  })) || [];
+  // Transform data for the SearchCombobox based on context
+  const searchData = React.useMemo(() => {
+    if (context === 'usuarios') {
+      return users?.map(user => ({
+        id: user.id,
+        titulo: `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.email,
+        descripcion: user.email,
+        estado: user.asset ? 'Activo' : 'Inactivo',
+        categoria: user.confirmed ? 'Confirmado' : 'No Confirmado',
+        prioridad: user.role?.includes('admin') ? 'admin' : 'user'
+      })) || [];
+    } else {
+      return reportes?.map(reporte => ({
+        id: reporte.id,
+        titulo: reporte.nombre,
+        descripcion: reporte.descripcion || '',
+        estado: reporte.estado?.nombre || 'Sin estado',
+        categoria: reporte.categoria?.nombre || 'Sin categoría',
+        prioridad: reporte.priority || 'medio'
+      })) || [];
+    }
+  }, [context, users, reportes]);
+
+  const getTabsForContext = () => {
+    if (context === 'usuarios') {
+      return [
+        { value: 'busqueda', label: 'Búsqueda', icon: Search },
+        { value: 'fechas', label: 'Fechas', icon: CalendarIcon },
+        { value: 'prioridad', label: 'Roles', icon: Shield },
+        { value: 'estados', label: 'Activación', icon: Users },
+        { value: 'categorias', label: 'Confirmación', icon: CheckCircle },
+      ];
+    } else {
+      return [
+        { value: 'busqueda', label: 'Búsqueda', icon: Search },
+        { value: 'fechas', label: 'Fechas', icon: CalendarIcon },
+        { value: 'prioridad', label: 'Prioridad', icon: Shield },
+        { value: 'estados', label: 'Estados', icon: CheckCircle },
+        { value: 'categorias', label: 'Categorías', icon: Users },
+      ];
+    }
+  };
+
+  const tabs = getTabsForContext();
 
   if (!isOpen) {
     return (
@@ -149,8 +201,8 @@ export const AdvancedFiltersPanel: React.FC<AdvancedFiltersPanelProps> = ({
         {!isValidForComparison && hasActiveFilters && (
           <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mt-2">
             <p className="text-sm text-amber-800">
-              <AlertTriangle className="h-4 w-4 inline mr-1" />
-              Para realizar comparaciones, selecciona al menos 2 reportes en Búsqueda, o selecciona criterios en las otras pestañas.
+              <Shield className="h-4 w-4 inline mr-1" />
+              Para realizar comparaciones, selecciona al menos 2 {context === 'usuarios' ? 'usuarios' : 'reportes'} en Búsqueda, o selecciona criterios en las otras pestañas.
             </p>
           </div>
         )}
@@ -162,35 +214,21 @@ export const AdvancedFiltersPanel: React.FC<AdvancedFiltersPanelProps> = ({
           className="w-full"
         >
           <TabsList className="grid w-full grid-cols-5 lg:grid-cols-5 md:grid-cols-3 sm:grid-cols-2 overflow-x-auto">
-            <TabsTrigger value="busqueda" className="flex items-center gap-1 min-w-0 text-xs sm:text-sm">
-              <Search className="h-3 w-3 flex-shrink-0" />
-              <span className="truncate">Búsqueda</span>
-            </TabsTrigger>
-            <TabsTrigger value="fechas" className="flex items-center gap-1 min-w-0 text-xs sm:text-sm">
-              <CalendarIcon className="h-3 w-3 flex-shrink-0" />
-              <span className="truncate">Fechas</span>
-            </TabsTrigger>
-            <TabsTrigger value="prioridad" className="flex items-center gap-1 min-w-0 text-xs sm:text-sm">
-              <AlertTriangle className="h-3 w-3 flex-shrink-0" />
-              <span className="truncate">Prioridad</span>
-            </TabsTrigger>
-            <TabsTrigger value="estados" className="flex items-center gap-1 min-w-0 text-xs sm:text-sm">
-              <CheckCircle className="h-3 w-3 flex-shrink-0" />
-              <span className="truncate">Estados</span>
-            </TabsTrigger>
-            <TabsTrigger value="categorias" className="flex items-center gap-1 min-w-0 text-xs sm:text-sm">
-              <Folder className="h-3 w-3 flex-shrink-0" />
-              <span className="truncate">Categorías</span>
-            </TabsTrigger>
+            {tabs.map((tab) => (
+              <TabsTrigger key={tab.value} value={tab.value} className="flex items-center gap-1 min-w-0 text-xs sm:text-sm">
+                <tab.icon className="h-3 w-3 flex-shrink-0" />
+                <span className="truncate">{tab.label}</span>
+              </TabsTrigger>
+            ))}
           </TabsList>
 
           <TabsContent value="busqueda" className="space-y-4">
             <div className="space-y-2">
               <label className="text-sm font-medium">
-                Selecciona Reportes para Comparar (mínimo 2)
+                Selecciona {context === 'usuarios' ? 'Usuarios' : 'Reportes'} para Comparar (mínimo 2)
               </label>
               <SearchCombobox
-                reportes={reportesForSearch}
+                reportes={searchData}
                 value={filters.searchTerm}
                 onValueChange={(value) => {
                   updateFilter('searchTerm', value);
@@ -198,12 +236,12 @@ export const AdvancedFiltersPanel: React.FC<AdvancedFiltersPanelProps> = ({
                     onMultipleReportSelection(value);
                   }
                 }}
-                placeholder="Buscar reportes para comparar..."
+                placeholder={`Buscar ${context === 'usuarios' ? 'usuarios' : 'reportes'} para comparar...`}
               />
               {filters.searchTerm.length > 0 && (
                 <div className="flex items-center gap-2 flex-wrap">
                   <Badge variant={filters.searchTerm.length >= 2 ? "default" : "secondary"}>
-                    {filters.searchTerm.length} reporte(s) seleccionado(s)
+                    {filters.searchTerm.length} {context === 'usuarios' ? 'usuario(s)' : 'reporte(s)'} seleccionado(s)
                   </Badge>
                   {filters.searchTerm.length >= 2 && (
                     <Badge variant="default" className="bg-green-100 text-green-800">
@@ -266,62 +304,96 @@ export const AdvancedFiltersPanel: React.FC<AdvancedFiltersPanelProps> = ({
           </TabsContent>
 
           <TabsContent value="prioridad" className="space-y-4">
-            <div className="space-y-3">
-              <label className="text-sm font-medium">
-                Selecciona Prioridades para Comparar
-              </label>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {priorityOptions.map((option) => (
-                  <div key={option.value} className="flex items-center space-x-2">
-                    <Checkbox
-                      id={`priority-${option.value}`}
-                      checked={filters.priority.includes(option.value)}
-                      onCheckedChange={() => handlePriorityToggle(option.value)}
-                    />
-                    <label
-                      htmlFor={`priority-${option.value}`}
-                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-2"
-                    >
-                      <div
-                        className="w-3 h-3 rounded-full flex-shrink-0"
-                        style={{ backgroundColor: option.color }}
+            {context === 'usuarios' ? (
+              <div className="space-y-3">
+                <label className="text-sm font-medium">
+                  Selecciona Roles para Comparar
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {roles?.map((role) => (
+                    <div key={role.id} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`role-${role.id}`}
+                        checked={filters.priority.includes(role.nombre)}
+                        onCheckedChange={() => handlePriorityToggle(role.nombre)}
                       />
-                      <span className="truncate">{option.label}</span>
-                    </label>
-                  </div>
-                ))}
+                      <label
+                        htmlFor={`role-${role.id}`}
+                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-2"
+                      >
+                        <div
+                          className="w-3 h-3 rounded-full flex-shrink-0"
+                          style={{ backgroundColor: role.color }}
+                        />
+                        <span className="truncate">{role.nombre}</span>
+                      </label>
+                    </div>
+                  )) || []}
+                </div>
+                {filters.priority.length > 0 && (
+                  <Badge variant="default" className="bg-green-100 text-green-800">
+                    ✓ {filters.priority.length} rol(es) seleccionado(s)
+                  </Badge>
+                )}
               </div>
-              {filters.priority.length > 0 && (
-                <Badge variant="default" className="bg-green-100 text-green-800">
-                  ✓ {filters.priority.length} prioridad(es) seleccionada(s)
-                </Badge>
-              )}
-            </div>
+            ) : (
+              <div className="space-y-3">
+                <label className="text-sm font-medium">
+                  Selecciona Prioridades para Comparar
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {priorityOptions.map((option) => (
+                    <div key={option.value} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`priority-${option.value}`}
+                        checked={filters.priority.includes(option.value)}
+                        onCheckedChange={() => handlePriorityToggle(option.value)}
+                      />
+                      <label
+                        htmlFor={`priority-${option.value}`}
+                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-2"
+                      >
+                        <div
+                          className="w-3 h-3 rounded-full flex-shrink-0"
+                          style={{ backgroundColor: option.color }}
+                        />
+                        <span className="truncate">{option.label}</span>
+                      </label>
+                    </div>
+                  ))}
+                </div>
+                {filters.priority.length > 0 && (
+                  <Badge variant="default" className="bg-green-100 text-green-800">
+                    ✓ {filters.priority.length} prioridad(es) seleccionada(s)
+                  </Badge>
+                )}
+              </div>
+            )}
           </TabsContent>
 
           <TabsContent value="estados" className="space-y-4">
-            {stats && stats.reportes.porEstado.length > 0 && (
+            {context === 'usuarios' ? (
               <div className="space-y-3">
                 <label className="text-sm font-medium">
-                  Selecciona Estados para Comparar
+                  Selecciona Estados de Activación para Comparar
                 </label>
-                <div className="grid grid-cols-1 gap-2 max-h-64 overflow-y-auto">
-                  {stats.reportes.porEstado.map((estado) => (
-                    <div key={estado.estado} className="flex items-center space-x-2">
+                <div className="grid grid-cols-1 gap-2">
+                  {activacionOptions.map((option) => (
+                    <div key={option.value} className="flex items-center space-x-2">
                       <Checkbox
-                        id={`estado-${estado.estado}`}
-                        checked={filters.estados.includes(estado.estado)}
-                        onCheckedChange={() => handleEstadoToggle(estado.estado)}
+                        id={`activacion-${option.value}`}
+                        checked={filters.estados.includes(option.label)}
+                        onCheckedChange={() => handleEstadoToggle(option.label)}
                       />
                       <label
-                        htmlFor={`estado-${estado.estado}`}
+                        htmlFor={`activacion-${option.value}`}
                         className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-2 min-w-0 flex-1"
                       >
                         <div
                           className="w-3 h-3 rounded-full flex-shrink-0"
-                          style={{ backgroundColor: estado.color }}
+                          style={{ backgroundColor: option.color }}
                         />
-                        <span className="truncate">{estado.estado} ({estado.count})</span>
+                        <span className="truncate">{option.label}</span>
                       </label>
                     </div>
                   ))}
@@ -332,42 +404,110 @@ export const AdvancedFiltersPanel: React.FC<AdvancedFiltersPanelProps> = ({
                   </Badge>
                 )}
               </div>
+            ) : (
+              stats && stats.reportes.porEstado.length > 0 && (
+                <div className="space-y-3">
+                  <label className="text-sm font-medium">
+                    Selecciona Estados para Comparar
+                  </label>
+                  <div className="grid grid-cols-1 gap-2 max-h-64 overflow-y-auto">
+                    {stats.reportes.porEstado.map((estado) => (
+                      <div key={estado.estado} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`estado-${estado.estado}`}
+                          checked={filters.estados.includes(estado.estado)}
+                          onCheckedChange={() => handleEstadoToggle(estado.estado)}
+                        />
+                        <label
+                          htmlFor={`estado-${estado.estado}`}
+                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-2 min-w-0 flex-1"
+                        >
+                          <div
+                            className="w-3 h-3 rounded-full flex-shrink-0"
+                            style={{ backgroundColor: estado.color }}
+                          />
+                          <span className="truncate">{estado.estado} ({estado.count})</span>
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                  {filters.estados.length > 0 && (
+                    <Badge variant="default" className="bg-green-100 text-green-800">
+                      ✓ {filters.estados.length} estado(s) seleccionado(s)
+                    </Badge>
+                  )}
+                </div>
+              )
             )}
           </TabsContent>
 
           <TabsContent value="categorias" className="space-y-4">
-            {stats && stats.reportes.porCategoria.length > 0 && (
+            {context === 'usuarios' ? (
               <div className="space-y-3">
                 <label className="text-sm font-medium">
-                  Selecciona Categorías para Comparar
+                  Selecciona Estados de Confirmación para Comparar
                 </label>
-                <div className="grid grid-cols-1 gap-2 max-h-64 overflow-y-auto">
-                  {stats.reportes.porCategoria.map((categoria) => (
-                    <div key={categoria.categoria} className="flex items-center space-x-2">
+                <div className="grid grid-cols-1 gap-2">
+                  {confirmacionOptions.map((option) => (
+                    <div key={option.value} className="flex items-center space-x-2">
                       <Checkbox
-                        id={`categoria-${categoria.categoria}`}
-                        checked={filters.categorias.includes(categoria.categoria)}
-                        onCheckedChange={() => handleCategoriaToggle(categoria.categoria)}
+                        id={`confirmacion-${option.value}`}
+                        checked={filters.categorias.includes(option.label)}
+                        onCheckedChange={() => handleCategoriaToggle(option.label)}
                       />
                       <label
-                        htmlFor={`categoria-${categoria.categoria}`}
+                        htmlFor={`confirmacion-${option.value}`}
                         className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-2 min-w-0 flex-1"
                       >
                         <div
                           className="w-3 h-3 rounded-full flex-shrink-0"
-                          style={{ backgroundColor: categoria.color }}
+                          style={{ backgroundColor: option.color }}
                         />
-                        <span className="truncate">{categoria.categoria} ({categoria.count})</span>
+                        <span className="truncate">{option.label}</span>
                       </label>
                     </div>
                   ))}
                 </div>
                 {filters.categorias.length > 0 && (
                   <Badge variant="default" className="bg-green-100 text-green-800">
-                    ✓ {filters.categorias.length} categoría(s) seleccionada(s)
+                    ✓ {filters.categorias.length} estado(s) seleccionado(s)
                   </Badge>
                 )}
               </div>
+            ) : (
+              stats && stats.reportes.porCategoria.length > 0 && (
+                <div className="space-y-3">
+                  <label className="text-sm font-medium">
+                    Selecciona Categorías para Comparar
+                  </label>
+                  <div className="grid grid-cols-1 gap-2 max-h-64 overflow-y-auto">
+                    {stats.reportes.porCategoria.map((categoria) => (
+                      <div key={categoria.categoria} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`categoria-${categoria.categoria}`}
+                          checked={filters.categorias.includes(categoria.categoria)}
+                          onCheckedChange={() => handleCategoriaToggle(categoria.categoria)}
+                        />
+                        <label
+                          htmlFor={`categoria-${categoria.categoria}`}
+                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-2 min-w-0 flex-1"
+                        >
+                          <div
+                            className="w-3 h-3 rounded-full flex-shrink-0"
+                            style={{ backgroundColor: categoria.color }}
+                          />
+                          <span className="truncate">{categoria.categoria} ({categoria.count})</span>
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                  {filters.categorias.length > 0 && (
+                    <Badge variant="default" className="bg-green-100 text-green-800">
+                      ✓ {filters.categorias.length} categoría(s) seleccionada(s)
+                    </Badge>
+                  )}
+                </div>
+              )
             )}
           </TabsContent>
         </Tabs>
