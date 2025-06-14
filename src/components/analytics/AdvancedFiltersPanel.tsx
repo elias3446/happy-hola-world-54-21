@@ -162,26 +162,26 @@ export const AdvancedFiltersPanel: React.FC<AdvancedFiltersPanelProps> = ({
           onValueChange={(value) => updateFilter('activeTab', value as any)}
           className="w-full"
         >
-          <TabsList className="grid w-full grid-cols-5">
-            <TabsTrigger value="busqueda" className="flex items-center gap-1">
-              <Search className="h-3 w-3" />
-              Búsqueda
+          <TabsList className="grid w-full grid-cols-5 lg:grid-cols-5 md:grid-cols-3 sm:grid-cols-2 overflow-x-auto">
+            <TabsTrigger value="busqueda" className="flex items-center gap-1 min-w-0 text-xs sm:text-sm">
+              <Search className="h-3 w-3 flex-shrink-0" />
+              <span className="truncate">Búsqueda</span>
             </TabsTrigger>
-            <TabsTrigger value="fechas" className="flex items-center gap-1">
-              <CalendarIcon className="h-3 w-3" />
-              Fechas
+            <TabsTrigger value="fechas" className="flex items-center gap-1 min-w-0 text-xs sm:text-sm">
+              <CalendarIcon className="h-3 w-3 flex-shrink-0" />
+              <span className="truncate">Fechas</span>
             </TabsTrigger>
-            <TabsTrigger value="prioridad" className="flex items-center gap-1">
-              <AlertTriangle className="h-3 w-3" />
-              Prioridad
+            <TabsTrigger value="prioridad" className="flex items-center gap-1 min-w-0 text-xs sm:text-sm">
+              <AlertTriangle className="h-3 w-3 flex-shrink-0" />
+              <span className="truncate">Prioridad</span>
             </TabsTrigger>
-            <TabsTrigger value="estados" className="flex items-center gap-1">
-              <CheckCircle className="h-3 w-3" />
-              Estados
+            <TabsTrigger value="estados" className="flex items-center gap-1 min-w-0 text-xs sm:text-sm">
+              <CheckCircle className="h-3 w-3 flex-shrink-0" />
+              <span className="truncate">Estados</span>
             </TabsTrigger>
-            <TabsTrigger value="categorias" className="flex items-center gap-1">
-              <Folder className="h-3 w-3" />
-              Categorías
+            <TabsTrigger value="categorias" className="flex items-center gap-1 min-w-0 text-xs sm:text-sm">
+              <Folder className="h-3 w-3 flex-shrink-0" />
+              <span className="truncate">Categorías</span>
             </TabsTrigger>
           </TabsList>
 
@@ -203,7 +203,7 @@ export const AdvancedFiltersPanel: React.FC<AdvancedFiltersPanelProps> = ({
                 maxSelections={10}
               />
               {filters.searchTerm.length > 0 && (
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <Badge variant={filters.searchTerm.length >= 2 ? "default" : "secondary"}>
                     {filters.searchTerm.length} reporte(s) seleccionado(s)
                   </Badge>
@@ -228,12 +228,14 @@ export const AdvancedFiltersPanel: React.FC<AdvancedFiltersPanelProps> = ({
                     variant="outline"
                     className="w-full justify-start text-left font-normal"
                   >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {filters.dateRange ? (
-                      `${format(filters.dateRange.from, 'dd/MM/yyyy', { locale: es })} - ${format(filters.dateRange.to, 'dd/MM/yyyy', { locale: es })}`
-                    ) : (
-                      'Seleccionar rango de fechas'
-                    )}
+                    <CalendarIcon className="mr-2 h-4 w-4 flex-shrink-0" />
+                    <span className="truncate">
+                      {filters.dateRange ? (
+                        `${format(filters.dateRange.from, 'dd/MM/yyyy', { locale: es })} - ${format(filters.dateRange.to, 'dd/MM/yyyy', { locale: es })}`
+                      ) : (
+                        'Seleccionar rango de fechas'
+                      )}
+                    </span>
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
@@ -270,7 +272,7 @@ export const AdvancedFiltersPanel: React.FC<AdvancedFiltersPanelProps> = ({
               <label className="text-sm font-medium">
                 Selecciona Prioridades para Comparar
               </label>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {priorityOptions.map((option) => (
                   <div key={option.value} className="flex items-center space-x-2">
                     <Checkbox
@@ -283,10 +285,10 @@ export const AdvancedFiltersPanel: React.FC<AdvancedFiltersPanelProps> = ({
                       className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-2"
                     >
                       <div
-                        className="w-3 h-3 rounded-full"
+                        className="w-3 h-3 rounded-full flex-shrink-0"
                         style={{ backgroundColor: option.color }}
                       />
-                      {option.label}
+                      <span className="truncate">{option.label}</span>
                     </label>
                   </div>
                 ))}
@@ -315,13 +317,13 @@ export const AdvancedFiltersPanel: React.FC<AdvancedFiltersPanelProps> = ({
                       />
                       <label
                         htmlFor={`estado-${estado.estado}`}
-                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-2"
+                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-2 min-w-0 flex-1"
                       >
                         <div
-                          className="w-3 h-3 rounded-full"
+                          className="w-3 h-3 rounded-full flex-shrink-0"
                           style={{ backgroundColor: estado.color }}
                         />
-                        {estado.estado} ({estado.count})
+                        <span className="truncate">{estado.estado} ({estado.count})</span>
                       </label>
                     </div>
                   ))}
@@ -351,13 +353,13 @@ export const AdvancedFiltersPanel: React.FC<AdvancedFiltersPanelProps> = ({
                       />
                       <label
                         htmlFor={`categoria-${categoria.categoria}`}
-                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-2"
+                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-2 min-w-0 flex-1"
                       >
                         <div
-                          className="w-3 h-3 rounded-full"
+                          className="w-3 h-3 rounded-full flex-shrink-0"
                           style={{ backgroundColor: categoria.color }}
                         />
-                        {categoria.categoria} ({categoria.count})
+                        <span className="truncate">{categoria.categoria} ({categoria.count})</span>
                       </label>
                     </div>
                   ))}
