@@ -14,7 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 
 const ReportesAnalyticsContent = () => {
   const { data: stats, isLoading, error, refetch } = useDashboardStats();
-  const { reportes } = useReportes(false); // false = incluir todos los reportes, no solo públicos
+  const { reportes } = useReportes(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [appliedFilters, setAppliedFilters] = useState<AdvancedFilters | null>(null);
   const [selectedReportIds, setSelectedReportIds] = useState<string[]>([]);
@@ -224,7 +224,6 @@ const ReportesAnalyticsContent = () => {
     );
   }
 
-  // Ensure all required arrays exist with default values
   const safeStats = {
     ...filteredStats,
     reportes: {

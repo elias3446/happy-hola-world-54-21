@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -16,7 +17,6 @@ import { useToast } from '@/hooks/use-toast';
 
 const UsuariosAnalyticsContent = () => {
   const { data: stats, isLoading, error, refetch } = useDashboardStats();
-  // Include current user in analytics
   const { users } = useUsers(true);
   const { userRoles } = useUserRoles();
   const { roles } = useRoles();
@@ -84,11 +84,11 @@ const UsuariosAnalyticsContent = () => {
         return filters.searchTerm.length >= 2;
       case 'fechas':
         return filters.dateRange !== null;
-      case 'prioridad': // roles
+      case 'prioridad':
         return filters.priority.length > 0;
-      case 'estados': // activación
+      case 'estados':
         return filters.estados.length > 0;
-      case 'categorias': // confirmación
+      case 'categorias':
         return filters.categorias.length > 0;
       default:
         return false;
@@ -98,7 +98,6 @@ const UsuariosAnalyticsContent = () => {
   const hasValidFilters = appliedFilters && isValidForComparison(appliedFilters);
 
   const getFilteredStats = () => {
-    // Always return stats from database - no simulation or mock data
     if (!stats || !users) return null;
     
     if (!hasValidFilters) {
@@ -114,7 +113,6 @@ const UsuariosAnalyticsContent = () => {
       usuarioActual: currentUser?.id
     });
 
-    // Use only real database data - filter the actual users array (including current user)
     let filteredUsers = [...users];
     console.log('Usuarios reales iniciales (incluyendo usuario actual):', filteredUsers.length);
 
@@ -139,34 +137,20 @@ const UsuariosAnalyticsContent = () => {
         }
         break;
 
-      case 'prioridad': // roles
+      case 'prioridad':
         if (appliedFilters.priority.length > 0) {
           const selectedRoleNames = appliedFilters.priority;
-          console.log('Roles seleccionados:', selectedRoleNames);
-          console.log('UserRoles disponibles:', userRoles);
-          console.log('Roles disponibles:', roles);
-          console.log('Usuario actual:', currentUser?.id);
           
-          // Obtener los IDs de los roles seleccionados
           const selectedRoleIds = roles?.filter(role => 
             selectedRoleNames.includes(role.nombre)
           ).map(role => role.id) || [];
           
-          console.log('IDs de roles seleccionados:', selectedRoleIds);
-          
-          // Obtener los IDs de usuarios que tienen alguno de los roles seleccionados
           const userIdsWithSelectedRoles = userRoles?.filter(userRole => 
             selectedRoleIds.includes(userRole.role_id) && !userRole.deleted_at
           ).map(userRole => userRole.user_id) || [];
           
-          console.log('IDs de usuarios con roles seleccionados:', userIdsWithSelectedRoles);
-          
-          // Filtrar usuarios que tienen alguno de los roles seleccionados
           filteredUsers = filteredUsers.filter(user => {
-            // Verificar en user_roles table
             const hasRoleInTable = userIdsWithSelectedRoles.includes(user.id);
-            
-            // Verificar en el campo role del perfil
             const hasRoleInProfile = user.role && Array.isArray(user.role) && 
               selectedRoleNames.some(roleName => user.role.includes(roleName));
             
@@ -174,11 +158,10 @@ const UsuariosAnalyticsContent = () => {
           });
           
           console.log(`Filtro de roles aplicado: ${filteredUsers.length} usuarios con roles seleccionados`);
-          console.log('Usuarios encontrados con roles:', filteredUsers.map(u => ({ id: u.id, email: u.email })));
         }
         break;
 
-      case 'estados': // activación
+      case 'estados':
         if (appliedFilters.estados.length > 0) {
           filteredUsers = filteredUsers.filter(user => {
             const isActive = user.asset;
@@ -189,7 +172,7 @@ const UsuariosAnalyticsContent = () => {
         }
         break;
 
-      case 'categorias': // confirmación
+      case 'categorias':
         if (appliedFilters.categorias.length > 0) {
           filteredUsers = filteredUsers.filter(user => {
             const isConfirmed = user.confirmed;
@@ -208,19 +191,16 @@ const UsuariosAnalyticsContent = () => {
       incluyeUsuarioActual: currentUser?.id ? filteredUsers.some(u => u.id === currentUser.id) : false
     });
 
-    // Recalculate statistics based on real filtered data only
     const totalFiltrado = filteredUsers.length;
     const activosFiltrado = filteredUsers.filter(u => u.asset === true).length;
     const confirmadosFiltrado = filteredUsers.filter(u => u.confirmed === true).length;
     
-    // Calculate recent users (last 7 days) from real filtered data
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
     const recientesFiltrado = filteredUsers.filter(u => 
       new Date(u.created_at) >= sevenDaysAgo
     ).length;
 
-    // Recalculate groupings based on real data only
     const porEstadoActivacion = [
       { estado: 'Activos', count: activosFiltrado, color: '#10B981' },
       { estado: 'Inactivos', count: totalFiltrado - activosFiltrado, color: '#EF4444' }
@@ -241,7 +221,7 @@ const UsuariosAnalyticsContent = () => {
         recientes: recientesFiltrado,
         porEstadoActivacion,
         porConfirmacion,
-        datosCompletos: filteredUsers, // Real filtered data only
+        datosCompletos: filteredUsers,
       }
     };
   };
@@ -349,7 +329,7 @@ const UsuariosAnalyticsContent = () => {
         </div>
       )}
 
-      {/* Métricas en Tiempo Real - Solo datos reales, sin gráficos de barras */}
+      {/* Métricas en Tiempo Real */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <RealTimeMetrics
           title="Total Usuarios"
@@ -400,7 +380,7 @@ const UsuariosAnalyticsContent = () => {
         />
       </div>
 
-      {/* Gráficos Interactivos - Solo datos reales */}
+      {/* Gráficos Interactivos */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <InteractiveCharts
           title="Distribución por Estado de Activación"
@@ -423,7 +403,7 @@ const UsuariosAnalyticsContent = () => {
         />
       </div>
 
-      {/* Análisis detallado - Solo datos reales */}
+      {/* Análisis detallado */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
@@ -520,7 +500,7 @@ const UsuariosAnalyticsContent = () => {
         </Card>
       </div>
 
-      {/* Métricas adicionales - Solo datos reales */}
+      {/* Métricas adicionales */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card>
           <CardHeader>
