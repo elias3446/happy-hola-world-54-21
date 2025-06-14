@@ -10,6 +10,13 @@ interface ReporteWithDates {
   estado: { nombre: string; color: string } | null;
 }
 
+interface UserWithDates {
+  id: string;
+  asset: boolean;
+  confirmed: boolean;
+  created_at: string;
+}
+
 interface DashboardStats {
   reportes: {
     total: number;
@@ -25,6 +32,9 @@ interface DashboardStats {
     activos: number;
     confirmados: number;
     recientes: number; // últimos 7 días
+    porEstadoActivacion: { estado: string; count: number; color: string }[];
+    porConfirmacion: { categoria: string; count: number; color: string }[];
+    datosCompletos: UserWithDates[];
   };
   roles: {
     total: number;
@@ -65,7 +75,7 @@ export const useDashboardStats = () => {
         throw reportesError;
       }
 
-      // Obtener estadísticas de usuarios
+      // Obtener estadísticas de usuarios con datos completos
       const { data: usuarios, error: usuariosError } = await supabase
         .from('profiles')
         .select('id, asset, confirmed, created_at')
@@ -185,6 +195,26 @@ export const useDashboardStats = () => {
         new Date(u.created_at) >= sevenDaysAgo
       ) || [];
 
+      // Guardar datos completos de usuarios para filtrado posterior
+      const usuariosCompletos: UserWithDates[] = usuarios?.map(u => ({
+        id: u.id,
+        asset: u.asset || false,
+        confirmed: u.confirmed || false,
+        created_at: u.created_at
+      })) || [];
+
+      // Agrupar usuarios por estado de activación
+      const usuariosPorEstadoActivacion = [
+        { estado: 'Activos', count: usuariosActivos.length, color: '#10B981' },
+        { estado: 'Inactivos', count: (usuarios?.length || 0) - usuariosActivos.length, color: '#EF4444' }
+      ];
+
+      // Agrupar usuarios por confirmación
+      const usuariosPorConfirmacion = [
+        { categoria: 'Confirmados', count: usuariosConfirmados.length, color: '#3B82F6' },
+        { categoria: 'No confirmados', count: (usuarios?.length || 0) - usuariosConfirmados.length, color: '#F59E0B' }
+      ];
+
       // Estadísticas de roles
       const rolesActivos = roles?.filter(r => r.activo) || [];
 
@@ -209,6 +239,9 @@ export const useDashboardStats = () => {
           activos: usuariosActivos.length,
           confirmados: usuariosConfirmados.length,
           recientes: usuariosRecientes.length,
+          porEstadoActivacion: usuariosPorEstadoActivacion,
+          porConfirmacion: usuariosPorConfirmacion,
+          datosCompletos: usuariosCompletos,
         },
         roles: {
           total: roles?.length || 0,
