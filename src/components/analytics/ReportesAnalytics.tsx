@@ -40,21 +40,22 @@ const ReportesAnalyticsContent = () => {
   const handleFiltersChange = useCallback((filters: AdvancedFilters) => {
     setAppliedFilters(filters);
     
-    // Actualizar reportes seleccionados basado en el filtro de búsqueda
+    // Update selected report IDs based on search terms
     if (filters.searchTerm && filters.searchTerm.length > 0) {
-      setSelectedReportIds([filters.searchTerm]);
+      setSelectedReportIds(filters.searchTerm);
     } else if (filters.searchTerm.length === 0 && selectedReportIds.length > 0) {
-      // Si se limpia la búsqueda, mantener las selecciones actuales
+      // If search is cleared, clear selections
+      setSelectedReportIds([]);
     }
     
     console.log('Filtros aplicados:', filters);
   }, [selectedReportIds]);
 
-  // Función para manejar selección múltiple de reportes
+  // Function to handle multiple report selection
   const handleReportSelection = useCallback((reportTitles: string[]) => {
     if (!reportes) return;
     
-    // Convertir títulos a IDs
+    // Convert titles to IDs
     const reportIds = reportTitles.map(title => {
       const reporte = reportes.find(r => r.nombre === title);
       return reporte?.id || title;
@@ -62,31 +63,31 @@ const ReportesAnalyticsContent = () => {
     
     setSelectedReportIds(reportIds);
     
-    // Actualizar filtros para mantener sincronización
+    // Update filters to maintain synchronization
     if (appliedFilters) {
       setAppliedFilters({
         ...appliedFilters,
-        searchTerm: reportTitles.join(', ') // Para compatibilidad con filtros existentes
+        searchTerm: reportTitles
       });
     }
   }, [reportes, appliedFilters]);
 
-  // Función corregida para verificar si una fecha está en el rango especificado
+  // Function to check if a date is within a specified range
   const isDateInRange = (dateString: string, dateRange: { from: Date; to: Date }) => {
     const reportDate = new Date(dateString);
     
-    // Crear nuevas fechas para el rango sin modificar las originales
+    // Create new dates for the range without modifying the original ones
     const fromDate = new Date(dateRange.from);
     const toDate = new Date(dateRange.to);
     
-    // Establecer las horas para comparación completa del día
+    // Set hours to compare the full day
     fromDate.setHours(0, 0, 0, 0);
     toDate.setHours(23, 59, 59, 999);
     
     return reportDate >= fromDate && reportDate <= toDate;
   };
 
-  // Función mejorada para filtrar por reportes seleccionados específicos
+  // Function to filter reports based on selected report IDs
   const filterBySelectedReports = (filteredReportes: any[], selectedIds: string[]) => {
     if (selectedIds.length === 0) return filteredReportes;
 
@@ -97,11 +98,11 @@ const ReportesAnalyticsContent = () => {
     return result;
   };
 
-  // Filtrar datos usando los datos reales de la base de datos
+  // Function to filter data using real database data
   const getFilteredStats = () => {
     if (!stats) return stats;
 
-    // Verificar si hay filtros activos (incluyendo selección de reportes)
+    // Check if there are active filters (including selected reports)
     const hasActiveFilters = 
       (appliedFilters && (
         appliedFilters.dateRange !== null ||
@@ -123,18 +124,18 @@ const ReportesAnalyticsContent = () => {
       reportesSeleccionados: selectedReportIds
     });
 
-    // Usar los datos completos reales de la base de datos
+    // Use real database data for filtered reports
     let filteredReportes = [...stats.reportes.datosCompletos];
     console.log('Reportes iniciales:', filteredReportes.length);
 
-    // Aplicar filtro de reportes seleccionados PRIMERO
+    // Apply filter for selected reports first
     if (selectedReportIds.length > 0) {
       filteredReportes = filterBySelectedReports(filteredReportes, selectedReportIds);
     }
 
-    // Aplicar otros filtros solo si appliedFilters existe
+    // Apply other filters only if appliedFilters exists
     if (appliedFilters) {
-      // Aplicar filtro de rango de fechas
+      // Apply date range filter
       if (appliedFilters.dateRange) {
         const reportesAntesDelFiltro = filteredReportes.length;
         filteredReportes = filteredReportes.filter(reporte => 
@@ -143,7 +144,7 @@ const ReportesAnalyticsContent = () => {
         console.log(`Filtro de fecha aplicado: ${filteredReportes.length}/${reportesAntesDelFiltro} reportes en el rango`);
       }
 
-      // Aplicar filtro de prioridades
+      // Apply priority filter
       if (appliedFilters.priority.length > 0) {
         const reportesAntesDelFiltro = filteredReportes.length;
         filteredReportes = filteredReportes.filter(reporte => 
@@ -152,7 +153,7 @@ const ReportesAnalyticsContent = () => {
         console.log(`Filtro de prioridad aplicado: ${filteredReportes.length}/${reportesAntesDelFiltro} reportes`);
       }
 
-      // Aplicar filtro de estados
+      // Apply state filter
       if (appliedFilters.estados.length > 0) {
         const reportesAntesDelFiltro = filteredReportes.length;
         filteredReportes = filteredReportes.filter(reporte => 
@@ -161,7 +162,7 @@ const ReportesAnalyticsContent = () => {
         console.log(`Filtro de estado aplicado: ${filteredReportes.length}/${reportesAntesDelFiltro} reportes`);
       }
 
-      // Aplicar filtro de categorías
+      // Apply category filter
       if (appliedFilters.categorias.length > 0) {
         const reportesAntesDelFiltro = filteredReportes.length;
         filteredReportes = filteredReportes.filter(reporte => 
@@ -176,18 +177,18 @@ const ReportesAnalyticsContent = () => {
       reportesFiltrados: filteredReportes.length
     });
 
-    // Recalcular estadísticas basadas en los datos filtrados reales
+    // Recalculate statistics based on real filtered data
     const totalFiltrado = filteredReportes.length;
     const activosFiltrado = filteredReportes.filter(r => r.activo).length;
     
-    // Calcular reportes recientes (últimos 7 días) en los datos filtrados
+    // Calculate recent reports (last 7 days) in the filtered data
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
     const recientesFiltrado = filteredReportes.filter(r => 
       new Date(r.created_at) >= sevenDaysAgo
     ).length;
 
-    // Reagrupar por estado basado en datos filtrados
+    // Re-group by state based on filtered data
     const porEstadoFiltrado = filteredReportes.reduce((acc, reporte) => {
       const estadoNombre = reporte.estado?.nombre || 'Sin estado';
       const estadoColor = reporte.estado?.color || '#6B7280';
@@ -200,7 +201,7 @@ const ReportesAnalyticsContent = () => {
       return acc;
     }, [] as { estado: string; count: number; color: string }[]);
 
-    // Reagrupar por categoría basado en datos filtrados
+    // Re-group by category based on filtered data
     const porCategoriaFiltrado = filteredReportes.reduce((acc, reporte) => {
       const categoriaNombre = reporte.categoria?.nombre || 'Sin categoría';
       const categoriaColor = reporte.categoria?.color || '#6B7280';
@@ -213,7 +214,7 @@ const ReportesAnalyticsContent = () => {
       return acc;
     }, [] as { categoria: string; count: number; color: string }[]);
 
-    // Reagrupar por prioridad basado en datos filtrados
+    // Re-group by priority based on filtered data
     const porPrioridadFiltrado = filteredReportes.reduce((acc, reporte) => {
       const prioridad = reporte.priority;
       const existing = acc.find(item => item.priority === prioridad);
@@ -242,7 +243,7 @@ const ReportesAnalyticsContent = () => {
 
   const filteredStats = getFilteredStats();
 
-  // Preparar datos para comparación múltiple
+  // Prepare data for multiple report comparison
   const reportesParaComparacion = selectedReportIds.length > 0 && reportes ? 
     reportes
       .filter(r => selectedReportIds.includes(r.id))

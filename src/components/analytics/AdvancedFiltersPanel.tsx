@@ -33,12 +33,16 @@ interface AdvancedFiltersPanelProps {
   isOpen: boolean;
   onToggle: () => void;
   onFiltersChange: (filters: AdvancedFilters) => void;
+  onMultipleReportSelection?: (reportTitles: string[]) => void;
+  selectedReportIds?: string[];
 }
 
 export const AdvancedFiltersPanel: React.FC<AdvancedFiltersPanelProps> = ({
   isOpen,
   onToggle,
   onFiltersChange,
+  onMultipleReportSelection,
+  selectedReportIds = [],
 }) => {
   const { filters, updateFilter, resetFilters, hasActiveFilters } = useAdvancedFilters();
   const { data: stats } = useDashboardStats();
@@ -144,12 +148,17 @@ export const AdvancedFiltersPanel: React.FC<AdvancedFiltersPanelProps> = ({
           <SearchCombobox
             reportes={reportesForSearch}
             value={filters.searchTerm}
-            onValueChange={(value) => updateFilter('searchTerm', value)}
+            onValueChange={(value) => {
+              updateFilter('searchTerm', value);
+              if (onMultipleReportSelection) {
+                onMultipleReportSelection(value);
+              }
+            }}
             placeholder="Buscar reportes..."
           />
-          {filters.searchTerm && (
+          {filters.searchTerm.length > 0 && (
             <p className="text-xs text-muted-foreground">
-              Buscando: "{filters.searchTerm}"
+              {filters.searchTerm.length} reporte(s) seleccionado(s)
             </p>
           )}
         </div>

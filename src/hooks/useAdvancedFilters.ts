@@ -11,7 +11,7 @@ export interface AdvancedFilters {
   priority: string[];
   estados: string[];
   categorias: string[];
-  searchTerm: string;
+  searchTerm: string[]; // Changed from string to string[]
   sortBy: 'created_at' | 'priority' | 'estado' | 'categoria';
   sortOrder: 'asc' | 'desc';
 }
@@ -21,7 +21,7 @@ const defaultFilters: AdvancedFilters = {
   priority: [],
   estados: [],
   categorias: [],
-  searchTerm: '',
+  searchTerm: [], // Changed from '' to []
   sortBy: 'created_at',
   sortOrder: 'desc',
 };
@@ -46,7 +46,7 @@ export const useAdvancedFilters = () => {
       filters.priority.length > 0 ||
       filters.estados.length > 0 ||
       filters.categorias.length > 0 ||
-      filters.searchTerm.length > 0
+      filters.searchTerm.length > 0 // Changed from filters.searchTerm.length > 0
     );
   }, [filters]);
 
