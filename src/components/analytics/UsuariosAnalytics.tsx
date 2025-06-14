@@ -16,7 +16,7 @@ import { useToast } from '@/hooks/use-toast';
 
 const UsuariosAnalyticsContent = () => {
   const { data: stats, isLoading, error, refetch } = useDashboardStats();
-  // Include current user in analytics
+  // Include current user in analytics by passing true
   const { users } = useUsers(true);
   const { userRoles } = useUserRoles();
   const { roles } = useRoles();
