@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -303,11 +304,6 @@ const ReportesAnalyticsContent = () => {
         onMultipleReportSelection={handleReportSelection}
         selectedReportIds={selectedReportIds}
       />
-
-      {/* Comparación múltiple de reportes - Solo mostrar cuando hay reportes seleccionados */}
-      {reportesParaComparacion.length > 0 && (
-        <MultiReportComparison reportesSeleccionados={reportesParaComparacion} />
-      )}
 
       {/* Indicador de filtros aplicados */}
       {hasValidFilters && (
