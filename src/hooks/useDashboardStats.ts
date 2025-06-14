@@ -35,7 +35,7 @@ interface DashboardStats {
     recientes: number; // últimos 7 días
     porEstadoActivacion: { estado: string; count: number; color: string }[];
     porConfirmacion: { categoria: string; count: number; color: string }[];
-    porRoles: { name: string; value: number; color: string }[]; // Nombres específicos de roles desde user_roles
+    porRoles: { name: string; value: number; color: string }[]; // Combinaciones específicas de roles
     porTipoUsuario: { name: string; value: number; color: string }[]; // Desde profiles.role
     datosCompletos: UserWithDates[];
   };
@@ -225,7 +225,7 @@ export const useDashboardStats = () => {
         { categoria: 'No confirmados', count: (usuarios?.length || 0) - usuariosConfirmados.length, color: '#F59E0B' }
       ];
 
-      // Calcular distribución por ROLES ESPECÍFICOS Y MÚLTIPLES ROLES
+      // Calcular distribución por COMBINACIONES ESPECÍFICAS DE ROLES REALES
       const userRoleAssignments: { [userId: string]: string[] } = {};
       
       // Obtener todos los roles asignados por usuario desde user_roles
@@ -239,49 +239,39 @@ export const useDashboardStats = () => {
         }
       });
 
-      // Contar usuarios por roles específicos y múltiples roles
-      const roleDistribution: { [key: string]: number } = {};
+      // Contar usuarios por combinaciones específicas de roles
+      const rolesCombinations: { [combination: string]: number } = {};
       
       Object.values(userRoleAssignments).forEach(userRoles => {
-        if (userRoles.length === 1) {
-          // Usuario con un solo rol - mostrar el nombre del rol
-          const roleName = userRoles[0];
-          roleDistribution[roleName] = (roleDistribution[roleName] || 0) + 1;
-        } else if (userRoles.length === 2) {
-          // Usuario con exactamente 2 roles
-          roleDistribution['Con 2 Roles'] = (roleDistribution['Con 2 Roles'] || 0) + 1;
-        } else if (userRoles.length > 2) {
-          // Usuario con más de 2 roles
-          roleDistribution['Con Más de 2 Roles'] = (roleDistribution['Con Más de 2 Roles'] || 0) + 1;
+        if (userRoles.length > 0) {
+          // Ordenar roles alfabéticamente para crear combinaciones consistentes
+          const sortedRoles = userRoles.sort();
+          const combination = sortedRoles.join(' y '); // Usar " y " como separador
+          rolesCombinations[combination] = (rolesCombinations[combination] || 0) + 1;
         }
       });
 
       // Agregar usuarios sin roles asignados
       const usersWithoutRoles = (usuarios?.length || 0) - Object.keys(userRoleAssignments).length;
       if (usersWithoutRoles > 0) {
-        roleDistribution['Sin Roles'] = usersWithoutRoles;
+        rolesCombinations['Sin Roles'] = usersWithoutRoles;
       }
 
-      // Convertir a formato de gráfico
-      const porRoles = Object.entries(roleDistribution).map(([categoryName, count], index) => {
+      // Convertir combinaciones a formato de gráfico
+      const porRoles = Object.entries(rolesCombinations).map(([combination, count], index) => {
         let color: string;
         
-        // Si es un rol específico, usar su color
-        const role = roles?.find(r => r.nombre === categoryName);
-        if (role) {
-          color = role.color;
+        if (combination === 'Sin Roles') {
+          color = '#6B7280';
         } else {
-          // Para categorías especiales, usar colores predefinidos
-          const specialColors: { [key: string]: string } = {
-            'Con 2 Roles': '#7C3AED',
-            'Con Más de 2 Roles': '#F59E0B',
-            'Sin Roles': '#6B7280'
-          };
-          color = specialColors[categoryName] || `hsl(${index * 45}, 70%, 60%)`;
+          // Para combinaciones de roles, usar el color del primer rol o un color generado
+          const firstRoleName = combination.split(' y ')[0];
+          const firstRole = roles?.find(r => r.nombre === firstRoleName);
+          color = firstRole?.color || `hsl(${index * 45}, 70%, 60%)`;
         }
         
         return {
-          name: categoryName,
+          name: combination,
           value: count as number,
           color
         };
@@ -338,7 +328,7 @@ export const useDashboardStats = () => {
           recientes: usuariosRecientes.length,
           porEstadoActivacion: usuariosPorEstadoActivacion,
           porConfirmacion: usuariosPorConfirmacion,
-          porRoles, // Distribución por nombres específicos de roles desde user_roles
+          porRoles, // Combinaciones específicas de roles reales de la BD
           porTipoUsuario, // Tipos de usuario desde profiles.role
           datosCompletos: usuariosCompletos,
         },
