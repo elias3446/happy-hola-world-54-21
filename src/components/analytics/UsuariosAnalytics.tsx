@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -91,22 +92,24 @@ const UsuariosAnalyticsContent = () => {
   const hasValidFilters = appliedFilters && isValidForComparison(appliedFilters);
 
   const getFilteredStats = () => {
-    if (!stats || !users) return stats;
+    // Always return stats from database - no simulation or mock data
+    if (!stats || !users) return null;
     
     if (!hasValidFilters) {
-      console.log('Sin filtros válidos - mostrando datos en tiempo real');
+      console.log('Sin filtros válidos - mostrando datos reales de la base de datos');
       return stats;
     }
 
-    console.log('Aplicando filtros de comparación:', {
+    console.log('Aplicando filtros de comparación sobre datos reales:', {
       totalUsuarios: stats.usuarios.total,
       usuariosCompletos: users.length,
       filtros: appliedFilters,
       tabActiva: appliedFilters.activeTab
     });
 
+    // Use only real database data - filter the actual users array
     let filteredUsers = [...users];
-    console.log('Usuarios iniciales:', filteredUsers.length);
+    console.log('Usuarios reales iniciales:', filteredUsers.length);
 
     switch (appliedFilters.activeTab) {
       case 'busqueda':
@@ -163,31 +166,30 @@ const UsuariosAnalyticsContent = () => {
         break;
     }
 
-    console.log('Resultado final del filtrado:', {
+    console.log('Resultado final del filtrado sobre datos reales:', {
       usuariosOriginales: stats.usuarios.total,
       usuariosFiltrados: filteredUsers.length,
       tabActiva: appliedFilters.activeTab
     });
 
-    // Recalcular estadísticas basadas en datos filtrados reales
+    // Recalculate statistics based on real filtered data only
     const totalFiltrado = filteredUsers.length;
-    const activosFiltrado = filteredUsers.filter(u => u.asset).length;
-    const confirmadosFiltrado = filteredUsers.filter(u => u.confirmed).length;
+    const activosFiltrado = filteredUsers.filter(u => u.asset === true).length;
+    const confirmadosFiltrado = filteredUsers.filter(u => u.confirmed === true).length;
     
-    // Calcular usuarios recientes (últimos 7 días) en los datos filtrados
+    // Calculate recent users (last 7 days) from real filtered data
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
     const recientesFiltrado = filteredUsers.filter(u => 
       new Date(u.created_at) >= sevenDaysAgo
     ).length;
 
-    // Re-agrupar por estado de activación
+    // Recalculate groupings based on real data only
     const porEstadoActivacion = [
       { estado: 'Activos', count: activosFiltrado, color: '#10B981' },
       { estado: 'Inactivos', count: totalFiltrado - activosFiltrado, color: '#EF4444' }
     ];
 
-    // Re-agrupar por confirmación
     const porConfirmacion = [
       { categoria: 'Confirmados', count: confirmadosFiltrado, color: '#3B82F6' },
       { categoria: 'No confirmados', count: totalFiltrado - confirmadosFiltrado, color: '#F59E0B' }
@@ -203,7 +205,7 @@ const UsuariosAnalyticsContent = () => {
         recientes: recientesFiltrado,
         porEstadoActivacion,
         porConfirmacion,
-        datosCompletos: filteredUsers,
+        datosCompletos: filteredUsers, // Real filtered data only
       }
     };
   };
@@ -215,7 +217,7 @@ const UsuariosAnalyticsContent = () => {
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <Activity className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
-          <p className="text-muted-foreground">Cargando estadísticas...</p>
+          <p className="text-muted-foreground">Cargando estadísticas desde la base de datos...</p>
         </div>
       </div>
     );
@@ -224,7 +226,7 @@ const UsuariosAnalyticsContent = () => {
   if (error || !filteredStats) {
     return (
       <div className="text-center">
-        <p className="text-destructive">Error al cargar las estadísticas</p>
+        <p className="text-destructive">Error al cargar las estadísticas de la base de datos</p>
         <Button onClick={handleRefreshData} className="mt-2">
           <RefreshCw className="h-4 w-4 mr-2" />
           Reintentar
@@ -239,12 +241,12 @@ const UsuariosAnalyticsContent = () => {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold text-foreground mb-2">
-            {hasValidFilters ? 'Análisis Comparativo de Usuarios' : 'Análisis de Usuarios en Tiempo Real'}
+            {hasValidFilters ? 'Análisis Comparativo de Usuarios (Datos Reales)' : 'Análisis de Usuarios en Tiempo Real (Datos Reales)'}
           </h2>
           <p className="text-muted-foreground">
             {hasValidFilters 
-              ? 'Dashboard interactivo con filtros de comparación aplicados'
-              : 'Dashboard en tiempo real mostrando todos los usuarios del sistema'
+              ? 'Dashboard con filtros aplicados sobre datos reales de la base de datos'
+              : 'Dashboard en tiempo real con datos reales de la base de datos'
             }
           </p>
         </div>
@@ -267,7 +269,7 @@ const UsuariosAnalyticsContent = () => {
       {/* Indicador de filtros aplicados */}
       {hasValidFilters && (
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <h3 className="text-sm font-medium text-blue-900 mb-2">Comparación activa:</h3>
+          <h3 className="text-sm font-medium text-blue-900 mb-2">Comparación activa sobre datos reales:</h3>
           <div className="flex flex-wrap gap-2 text-sm text-blue-700">
             {appliedFilters.activeTab === 'busqueda' && appliedFilters.searchTerm.length >= 2 && (
               <span className="bg-blue-100 px-2 py-1 rounded">
@@ -296,7 +298,7 @@ const UsuariosAnalyticsContent = () => {
             )}
           </div>
           <div className="mt-2 text-xs text-blue-600">
-            Comparando {filteredStats.usuarios.total} de {stats?.usuarios.total} usuarios
+            Datos reales: {filteredStats.usuarios.total} de {stats?.usuarios.total} usuarios
           </div>
         </div>
       )}
@@ -304,14 +306,14 @@ const UsuariosAnalyticsContent = () => {
       {/* Indicador de vista en tiempo real */}
       {!hasValidFilters && (
         <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-          <h3 className="text-sm font-medium text-green-900 mb-2">Vista en Tiempo Real:</h3>
+          <h3 className="text-sm font-medium text-green-900 mb-2">Vista en Tiempo Real (Datos Reales):</h3>
           <div className="text-sm text-green-700">
-            Mostrando todos los usuarios del sistema ({stats?.usuarios.total} usuarios)
+            Mostrando todos los usuarios reales de la base de datos ({stats?.usuarios.total} usuarios)
           </div>
         </div>
       )}
 
-      {/* Métricas en Tiempo Real */}
+      {/* Métricas en Tiempo Real - Solo datos reales */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <RealTimeMetrics
           title="Total Usuarios"
@@ -358,15 +360,12 @@ const UsuariosAnalyticsContent = () => {
         />
       </div>
 
-      {/* Gráficos Interactivos */}
+      {/* Gráficos Interactivos - Solo datos reales */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <InteractiveCharts
-          title="Distribución por Estado"
-          description={hasValidFilters ? "Usuarios filtrados clasificados según su estado de activación" : "Todos los usuarios clasificados según su estado de activación"}
-          data={(filteredStats.usuarios.porEstadoActivacion || [
-            { estado: 'Activos', count: filteredStats.usuarios.activos, color: '#10B981' },
-            { estado: 'Inactivos', count: filteredStats.usuarios.total - filteredStats.usuarios.activos, color: '#EF4444' }
-          ]).map(item => ({
+          title="Distribución por Estado de Activación"
+          description={hasValidFilters ? "Usuarios filtrados según su estado de activación (datos reales)" : "Todos los usuarios según su estado de activación (datos reales)"}
+          data={filteredStats.usuarios.porEstadoActivacion.map(item => ({
             name: item.estado,
             value: item.count,
             color: item.color,
@@ -374,12 +373,9 @@ const UsuariosAnalyticsContent = () => {
         />
         
         <InteractiveCharts
-          title="Distribución por Confirmación"
-          description={hasValidFilters ? "Usuarios filtrados clasificados según su estado de confirmación" : "Todos los usuarios clasificados según su estado de confirmación"}
-          data={(filteredStats.usuarios.porConfirmacion || [
-            { categoria: 'Confirmados', count: filteredStats.usuarios.confirmados, color: '#3B82F6' },
-            { categoria: 'No confirmados', count: filteredStats.usuarios.total - filteredStats.usuarios.confirmados, color: '#F59E0B' }
-          ]).map(item => ({
+          title="Distribución por Confirmación de Email"
+          description={hasValidFilters ? "Usuarios filtrados según su confirmación de email (datos reales)" : "Todos los usuarios según su confirmación de email (datos reales)"}
+          data={filteredStats.usuarios.porConfirmacion.map(item => ({
             name: item.categoria,
             value: item.count,
             color: item.color,
@@ -387,16 +383,16 @@ const UsuariosAnalyticsContent = () => {
         />
       </div>
 
-      {/* Análisis detallado */}
+      {/* Análisis detallado - Solo datos reales */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <UserCheck className="h-5 w-5" />
-              Análisis de Activación
+              Análisis de Activación (Datos Reales)
             </CardTitle>
             <CardDescription>
-              {hasValidFilters ? "Métricas de activación en usuarios filtrados" : "Métricas detalladas de activación de usuarios basadas en datos reales"}
+              {hasValidFilters ? "Métricas de activación en usuarios filtrados (datos reales)" : "Métricas detalladas de activación basadas en datos reales de la base de datos"}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -407,7 +403,7 @@ const UsuariosAnalyticsContent = () => {
                   <div>
                     <span className="font-medium">Usuarios Activos</span>
                     <div className="text-xs text-muted-foreground">
-                      {Math.round((filteredStats.usuarios.activos / Math.max(filteredStats.usuarios.total, 1)) * 100)}% del total
+                      {Math.round((filteredStats.usuarios.activos / Math.max(filteredStats.usuarios.total, 1)) * 100)}% del total real
                     </div>
                   </div>
                 </div>
@@ -423,7 +419,7 @@ const UsuariosAnalyticsContent = () => {
                   <div>
                     <span className="font-medium">Usuarios Inactivos</span>
                     <div className="text-xs text-muted-foreground">
-                      {Math.round(((filteredStats.usuarios.total - filteredStats.usuarios.activos) / Math.max(filteredStats.usuarios.total, 1)) * 100)}% del total
+                      {Math.round(((filteredStats.usuarios.total - filteredStats.usuarios.activos) / Math.max(filteredStats.usuarios.total, 1)) * 100)}% del total real
                     </div>
                   </div>
                 </div>
@@ -440,10 +436,10 @@ const UsuariosAnalyticsContent = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Shield className="h-5 w-5" />
-              Análisis de Confirmación
+              Análisis de Confirmación (Datos Reales)
             </CardTitle>
             <CardDescription>
-              {hasValidFilters ? "Métricas de confirmación en usuarios filtrados" : "Métricas detalladas de confirmación de email basadas en datos reales"}
+              {hasValidFilters ? "Métricas de confirmación en usuarios filtrados (datos reales)" : "Métricas detalladas de confirmación de email basadas en datos reales de la base de datos"}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -454,7 +450,7 @@ const UsuariosAnalyticsContent = () => {
                   <div>
                     <span className="font-medium">Email Confirmado</span>
                     <div className="text-xs text-muted-foreground">
-                      {Math.round((filteredStats.usuarios.confirmados / Math.max(filteredStats.usuarios.total, 1)) * 100)}% del total
+                      {Math.round((filteredStats.usuarios.confirmados / Math.max(filteredStats.usuarios.total, 1)) * 100)}% del total real
                     </div>
                   </div>
                 </div>
@@ -470,7 +466,7 @@ const UsuariosAnalyticsContent = () => {
                   <div>
                     <span className="font-medium">Email Pendiente</span>
                     <div className="text-xs text-muted-foreground">
-                      {Math.round(((filteredStats.usuarios.total - filteredStats.usuarios.confirmados) / Math.max(filteredStats.usuarios.total, 1)) * 100)}% del total
+                      {Math.round(((filteredStats.usuarios.total - filteredStats.usuarios.confirmados) / Math.max(filteredStats.usuarios.total, 1)) * 100)}% del total real
                     </div>
                   </div>
                 </div>
@@ -484,31 +480,31 @@ const UsuariosAnalyticsContent = () => {
         </Card>
       </div>
 
-      {/* Métricas adicionales */}
+      {/* Métricas adicionales - Solo datos reales */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card>
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">
               <Users className="h-4 w-4 text-blue-600" />
-              Resumen de Actividad
+              Resumen de Actividad (Datos Reales)
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
               <div className="flex justify-between">
-                <span className="text-sm text-muted-foreground">Tasa de activación</span>
+                <span className="text-sm text-muted-foreground">Tasa de activación real</span>
                 <span className="text-sm font-medium">
                   {Math.round((filteredStats.usuarios.activos / Math.max(filteredStats.usuarios.total, 1)) * 100)}%
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-sm text-muted-foreground">Tasa de confirmación</span>
+                <span className="text-sm text-muted-foreground">Tasa de confirmación real</span>
                 <span className="text-sm font-medium">
                   {Math.round((filteredStats.usuarios.confirmados / Math.max(filteredStats.usuarios.total, 1)) * 100)}%
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-sm text-muted-foreground">Usuarios recientes</span>
+                <span className="text-sm text-muted-foreground">Usuarios recientes (BD)</span>
                 <span className="text-sm font-medium text-green-600">
                   {filteredStats.usuarios.recientes}
                 </span>
@@ -521,23 +517,23 @@ const UsuariosAnalyticsContent = () => {
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">
               <Activity className="h-4 w-4 text-green-600" />
-              Distribución Temporal
+              Distribución Temporal (Datos Reales)
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
               <div className="flex justify-between">
-                <span className="text-sm text-muted-foreground">Esta semana</span>
+                <span className="text-sm text-muted-foreground">Esta semana (BD)</span>
                 <span className="text-sm font-medium">{filteredStats.usuarios.recientes}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-sm text-muted-foreground">Promedio diario</span>
+                <span className="text-sm text-muted-foreground">Promedio diario real</span>
                 <span className="text-sm font-medium">
                   {Math.round(filteredStats.usuarios.recientes / 7)}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-sm text-muted-foreground">{hasValidFilters ? 'Total filtrado' : 'Total histórico'}</span>
+                <span className="text-sm text-muted-foreground">{hasValidFilters ? 'Total filtrado (BD)' : 'Total histórico (BD)'}</span>
                 <span className="text-sm font-medium">{filteredStats.usuarios.total}</span>
               </div>
             </div>
@@ -548,27 +544,27 @@ const UsuariosAnalyticsContent = () => {
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">
               <Shield className="h-4 w-4 text-purple-600" />
-              Eficiencia del Sistema
+              Eficiencia del Sistema (Datos Reales)
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
               <div className="flex justify-between">
-                <span className="text-sm text-muted-foreground">Usuarios por rol</span>
+                <span className="text-sm text-muted-foreground">Usuarios por rol (BD)</span>
                 <span className="text-sm font-medium">
-                  {(filteredStats.usuarios.total / Math.max(filteredStats.roles.total, 1)).toFixed(1)}
+                  {(filteredStats.usuarios.total / Math.max(stats?.roles.total || 1, 1)).toFixed(1)}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-sm text-muted-foreground">Asignaciones activas</span>
+                <span className="text-sm text-muted-foreground">Asignaciones activas (BD)</span>
                 <span className="text-sm font-medium">
-                  {filteredStats.roles.asignaciones}
+                  {stats?.roles.asignaciones || 0}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-sm text-muted-foreground">Roles activos</span>
+                <span className="text-sm text-muted-foreground">Roles activos (BD)</span>
                 <span className="text-sm font-medium">
-                  {Math.round((filteredStats.roles.activos / Math.max(filteredStats.roles.total, 1)) * 100)}%
+                  {Math.round(((stats?.roles.activos || 0) / Math.max(stats?.roles.total || 1, 1)) * 100)}%
                 </span>
               </div>
             </div>
