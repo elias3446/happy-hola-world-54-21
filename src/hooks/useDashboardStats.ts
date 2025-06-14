@@ -34,6 +34,8 @@ interface DashboardStats {
     recientes: number; // últimos 7 días
     porEstadoActivacion: { estado: string; count: number; color: string }[];
     porConfirmacion: { categoria: string; count: number; color: string }[];
+    porRoles?: { name: string; value: number; color: string }[];
+    porTipoUsuario?: { name: string; value: number; color: string }[];
     datosCompletos: UserWithDates[];
   };
   roles: {
