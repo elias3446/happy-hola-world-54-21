@@ -1,30 +1,9 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { 
-  Trash2, 
-  Download, 
-  X, 
-  ToggleLeft,
-  Shield,
-  Tag,
-  Circle,
-  UserCheck,
-  UserX,
-  ChevronDown,
-  Ban,
-  Mail
-} from 'lucide-react';
-
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Trash2, Download, X, ToggleLeft, Shield, Tag, Circle, UserCheck, UserX, ChevronDown, Ban, Mail } from 'lucide-react';
 interface BulkActionsBarProps {
   selectedCount: number;
   onClearSelection: () => void;
@@ -58,7 +37,6 @@ interface BulkActionsBarProps {
   showResendConfirmation?: boolean;
   customActions?: React.ReactNode;
 }
-
 export const BulkActionsBar: React.FC<BulkActionsBarProps> = ({
   selectedCount,
   onClearSelection,
@@ -90,25 +68,17 @@ export const BulkActionsBar: React.FC<BulkActionsBarProps> = ({
   showEstadoChange = false,
   showAssignmentChange = false,
   showResendConfirmation = false,
-  customActions,
+  customActions
 }) => {
   if (selectedCount === 0) return null;
-
   const isAnyStatusActionLoading = isActivating || isDeactivating || isToggling || isBlocking;
-
-  return (
-    <Card className="p-3 mb-4 border-blue-200 bg-blue-50">
+  return <Card className="p-3 mb-4 border-blue-200 bg-blue-50">
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <Badge variant="secondary" className="px-3 py-1">
             {selectedCount} elemento{selectedCount !== 1 ? 's' : ''} seleccionado{selectedCount !== 1 ? 's' : ''}
           </Badge>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onClearSelection}
-            className="h-8 px-2"
-          >
+          <Button variant="ghost" size="sm" onClick={onClearSelection} className="h-8 px-2">
             <X className="h-4 w-4" />
             Limpiar
           </Button>
@@ -117,165 +87,73 @@ export const BulkActionsBar: React.FC<BulkActionsBarProps> = ({
         <div className="flex items-center gap-2 flex-wrap">
           {customActions}
           
-          {onBulkExport && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onBulkExport}
-              className="h-8"
-            >
-              <Download className="h-4 w-4" />
-              Exportar
-            </Button>
-          )}
+          {onBulkExport}
 
-          {showResendConfirmation && onBulkResendConfirmation && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onBulkResendConfirmation}
-              disabled={isResendingConfirmation}
-              className="h-8"
-            >
+          {showResendConfirmation && onBulkResendConfirmation && <Button variant="outline" size="sm" onClick={onBulkResendConfirmation} disabled={isResendingConfirmation} className="h-8">
               <Mail className="h-4 w-4" />
               {isResendingConfirmation ? 'Enviando...' : 'Reenviar Confirmación'}
-            </Button>
-          )}
+            </Button>}
 
           {/* User-specific actions grouped in dropdown - con opción de bloqueo en acciones masivas */}
-          {showUserActions && (onBulkActivate || onBulkDeactivate || onBulkBlock) && (
-            <DropdownMenu>
+          {showUserActions && (onBulkActivate || onBulkDeactivate || onBulkBlock) && <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={isAnyStatusActionLoading}
-                  className="h-8"
-                >
+                <Button variant="outline" size="sm" disabled={isAnyStatusActionLoading} className="h-8">
                   <UserCheck className="h-4 w-4" />
                   {isAnyStatusActionLoading ? 'Procesando...' : 'Cambiar Estado'}
                   <ChevronDown className="h-4 w-4 ml-1" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                {onBulkActivate && (
-                  <DropdownMenuItem
-                    onClick={onBulkActivate}
-                    disabled={isActivating}
-                    className="text-green-600 hover:text-green-700"
-                  >
+                {onBulkActivate && <DropdownMenuItem onClick={onBulkActivate} disabled={isActivating} className="text-green-600 hover:text-green-700">
                     <UserCheck className="h-4 w-4 mr-2" />
                     {isActivating ? 'Activando...' : 'Activar'}
-                  </DropdownMenuItem>
-                )}
+                  </DropdownMenuItem>}
                 
-                {onBulkDeactivate && (
-                  <DropdownMenuItem
-                    onClick={onBulkDeactivate}
-                    disabled={isDeactivating}
-                    className="text-orange-600 hover:text-orange-700"
-                  >
+                {onBulkDeactivate && <DropdownMenuItem onClick={onBulkDeactivate} disabled={isDeactivating} className="text-orange-600 hover:text-orange-700">
                     <UserX className="h-4 w-4 mr-2" />
                     {isDeactivating ? 'Desactivando...' : 'Desactivar'}
-                  </DropdownMenuItem>
-                )}
+                  </DropdownMenuItem>}
 
-                {onBulkBlock && (
-                  <>
+                {onBulkBlock && <>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      onClick={onBulkBlock}
-                      disabled={isBlocking}
-                      className="text-red-600 hover:text-red-700"
-                    >
+                    <DropdownMenuItem onClick={onBulkBlock} disabled={isBlocking} className="text-red-600 hover:text-red-700">
                       <Ban className="h-4 w-4 mr-2" />
                       {isBlocking ? 'Bloqueando...' : 'Bloquear'}
                     </DropdownMenuItem>
-                  </>
-                )}
+                  </>}
               </DropdownMenuContent>
-            </DropdownMenu>
-          )}
+            </DropdownMenu>}
           
-          {showRoleChange && onBulkChangeRoles && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onBulkChangeRoles}
-              disabled={isChangingRoles}
-              className="h-8"
-            >
+          {showRoleChange && onBulkChangeRoles && <Button variant="outline" size="sm" onClick={onBulkChangeRoles} disabled={isChangingRoles} className="h-8">
               <Shield className="h-4 w-4" />
               {isChangingRoles ? 'Cambiando...' : 'Cambiar Roles'}
-            </Button>
-          )}
+            </Button>}
 
-          {showCategoryChange && onBulkChangeCategory && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onBulkChangeCategory}
-              disabled={isChangingCategory}
-              className="h-8"
-            >
+          {showCategoryChange && onBulkChangeCategory && <Button variant="outline" size="sm" onClick={onBulkChangeCategory} disabled={isChangingCategory} className="h-8">
               <Tag className="h-4 w-4" />
               {isChangingCategory ? 'Cambiando...' : 'Cambiar Categoría'}
-            </Button>
-          )}
+            </Button>}
 
-          {showEstadoChange && onBulkChangeEstado && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onBulkChangeEstado}
-              disabled={isChangingEstado}
-              className="h-8"
-            >
+          {showEstadoChange && onBulkChangeEstado && <Button variant="outline" size="sm" onClick={onBulkChangeEstado} disabled={isChangingEstado} className="h-8">
               <Circle className="h-4 w-4" />
               {isChangingEstado ? 'Cambiando...' : 'Cambiar Estado'}
-            </Button>
-          )}
+            </Button>}
 
-          {showAssignmentChange && onBulkChangeAssignment && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onBulkChangeAssignment}
-              disabled={isChangingAssignment}
-              className="h-8"
-            >
+          {showAssignmentChange && onBulkChangeAssignment && <Button variant="outline" size="sm" onClick={onBulkChangeAssignment} disabled={isChangingAssignment} className="h-8">
               <UserCheck className="h-4 w-4" />
               {isChangingAssignment ? 'Cambiando...' : 'Cambiar Asignación'}
-            </Button>
-          )}
+            </Button>}
           
-          {showStatusToggle && onBulkToggleStatus && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onBulkToggleStatus}
-              disabled={isToggling}
-              className="h-8"
-            >
+          {showStatusToggle && onBulkToggleStatus && <Button variant="outline" size="sm" onClick={onBulkToggleStatus} disabled={isToggling} className="h-8">
               <ToggleLeft className="h-4 w-4" />
               {isToggling ? 'Cambiando...' : 'Cambiar Estado'}
-            </Button>
-          )}
+            </Button>}
           
-          {onBulkDelete && (
-            <Button
-              variant="destructive"
-              size="sm"
-              onClick={onBulkDelete}
-              disabled={isDeleting}
-              className="h-8"
-            >
+          {onBulkDelete && <Button variant="destructive" size="sm" onClick={onBulkDelete} disabled={isDeleting} className="h-8">
               <Trash2 className="h-4 w-4" />
               {isDeleting ? 'Eliminando...' : 'Eliminar'}
-            </Button>
-          )}
+            </Button>}
         </div>
       </div>
-    </Card>
-  );
+    </Card>;
 };
