@@ -395,7 +395,7 @@ const UsuariosAnalyticsContent = () => {
         onMultipleReportSelection={handleUserSelection}
         selectedReportIds={selectedUserIds}
         context="usuarios"
-        availableUsers={users} // Pass the complete users array including current user
+        availableUsers={users}
       />
 
       {/* Indicador de filtros aplicados */}
