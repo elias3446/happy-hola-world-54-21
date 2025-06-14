@@ -1,12 +1,14 @@
-
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { useEstados } from '@/hooks/useEstados';
+import { useReportes } from '@/hooks/useReportes';
 import type { Estado } from '@/types/estados';
 import { EstadoAuditoria } from './EstadoAuditoria';
+import { EstadoReportesList } from './EstadoReportesList';
+import { ReporteDetail } from '@/components/reportes/ReporteDetail';
 import { 
   ArrowLeft, 
   Edit, 
@@ -34,7 +36,9 @@ const isSystemEstado = (estadoName: string): boolean => {
 
 export const EstadoDetail = ({ estado: initialEstado, onEdit, onBack }: EstadoDetailProps) => {
   const { toggleEstadoStatus, isToggling, estados } = useEstados();
+  const { reportes } = useReportes();
   const [currentEstado, setCurrentEstado] = useState(initialEstado);
+  const [selectedReporteId, setSelectedReporteId] = useState<string | null>(null);
 
   const isSystemEstadoItem = isSystemEstado(currentEstado.nombre);
 
@@ -55,6 +59,33 @@ export const EstadoDetail = ({ estado: initialEstado, onEdit, onBack }: EstadoDe
     if (isSystemEstadoItem) return;
     onEdit(currentEstado);
   };
+
+  const handleViewReporte = (reporteId: string) => {
+    setSelectedReporteId(reporteId);
+  };
+
+  const handleBackFromReporteDetail = () => {
+    setSelectedReporteId(null);
+  };
+
+  const handleEditReporte = (reporte: any) => {
+    // This could be extended to handle reporte editing if needed
+    console.log('Edit reporte:', reporte);
+  };
+
+  // If viewing reporte detail, show ReporteDetail component
+  if (selectedReporteId) {
+    const selectedReporte = reportes.find(r => r.id === selectedReporteId);
+    if (selectedReporte) {
+      return (
+        <ReporteDetail
+          reporte={selectedReporte}
+          onEdit={handleEditReporte}
+          onBack={handleBackFromReporteDetail}
+        />
+      );
+    }
+  }
 
   return (
     <div className="container mx-auto px-4 py-6">
@@ -119,6 +150,7 @@ export const EstadoDetail = ({ estado: initialEstado, onEdit, onBack }: EstadoDe
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Información General */}
         <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -180,6 +212,7 @@ export const EstadoDetail = ({ estado: initialEstado, onEdit, onBack }: EstadoDe
           </CardContent>
         </Card>
 
+        {/* Información Adicional */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -216,6 +249,7 @@ export const EstadoDetail = ({ estado: initialEstado, onEdit, onBack }: EstadoDe
           </CardContent>
         </Card>
 
+        {/* Vista Previa Visual */}
         <Card className="lg:col-span-3">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -271,6 +305,11 @@ export const EstadoDetail = ({ estado: initialEstado, onEdit, onBack }: EstadoDe
             </div>
           </CardContent>
         </Card>
+
+        {/* Reportes con este Estado */}
+        <div className="lg:col-span-2">
+          <EstadoReportesList estado={currentEstado} onViewReporte={handleViewReporte} />
+        </div>
 
         {/* Auditoría del Estado */}
         <div className="lg:col-span-1">
