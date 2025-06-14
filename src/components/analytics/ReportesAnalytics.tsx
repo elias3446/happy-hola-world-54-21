@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,7 +6,6 @@ import { useDashboardStats } from '@/hooks/useDashboardStats';
 import { RealTimeMetrics } from './RealTimeMetrics';
 import { InteractiveCharts } from './InteractiveCharts';
 import { AdvancedFiltersPanel } from './AdvancedFiltersPanel';
-import { MultiReportComparison } from './MultiReportComparison';
 import { AdvancedFilters } from '@/hooks/useAdvancedFilters';
 import { useQueryClient } from '@tanstack/react-query';
 import { useReportes } from '@/hooks/useReportes';
