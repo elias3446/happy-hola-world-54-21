@@ -11,6 +11,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useUsers } from '@/hooks/useUsers';
 import { useUserRoles } from '@/hooks/useUserRoles';
 import { useRoles } from '@/hooks/useRoles';
+import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 
 const UsuariosAnalyticsContent = () => {
@@ -18,6 +19,7 @@ const UsuariosAnalyticsContent = () => {
   const { users } = useUsers();
   const { userRoles } = useUserRoles();
   const { roles } = useRoles();
+  const { user: currentUser } = useAuth();
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [appliedFilters, setAppliedFilters] = useState<AdvancedFilters | null>(null);
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
@@ -107,7 +109,8 @@ const UsuariosAnalyticsContent = () => {
       totalUsuarios: stats.usuarios.total,
       usuariosCompletos: users.length,
       filtros: appliedFilters,
-      tabActiva: appliedFilters.activeTab
+      tabActiva: appliedFilters.activeTab,
+      usuarioActual: currentUser?.id
     });
 
     // Use only real database data - filter the actual users array
@@ -140,6 +143,7 @@ const UsuariosAnalyticsContent = () => {
           console.log('Roles seleccionados:', selectedRoleNames);
           console.log('UserRoles disponibles:', userRoles);
           console.log('Roles disponibles:', roles);
+          console.log('Usuario actual:', currentUser?.id);
           
           // Obtener los IDs de los roles seleccionados
           const selectedRoleIds = roles?.filter(role => 
@@ -153,7 +157,22 @@ const UsuariosAnalyticsContent = () => {
             selectedRoleIds.includes(userRole.role_id) && !userRole.deleted_at
           ).map(userRole => userRole.user_id) || [];
           
-          console.log('IDs de usuarios con roles seleccionados:', userIdsWithSelectedRoles);
+          // Incluir también el usuario logueado actual si tiene los roles en su perfil
+          if (currentUser?.id) {
+            const currentUserProfile = users.find(u => u.id === currentUser.id);
+            if (currentUserProfile?.role && Array.isArray(currentUserProfile.role)) {
+              const currentUserHasSelectedRole = selectedRoleNames.some(roleName => 
+                currentUserProfile.role.includes(roleName)
+              );
+              
+              if (currentUserHasSelectedRole && !userIdsWithSelectedRoles.includes(currentUser.id)) {
+                userIdsWithSelectedRoles.push(currentUser.id);
+                console.log('Usuario actual agregado por roles en perfil:', currentUser.id);
+              }
+            }
+          }
+          
+          console.log('IDs de usuarios con roles seleccionados (incluyendo usuario actual):', userIdsWithSelectedRoles);
           
           // Filtrar usuarios que tienen alguno de los roles seleccionados
           filteredUsers = filteredUsers.filter(user => 
