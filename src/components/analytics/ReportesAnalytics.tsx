@@ -38,17 +38,25 @@ const ReportesAnalyticsContent = () => {
     console.log('Filtros aplicados:', filters);
   }, []);
 
-  // Función para verificar si una fecha está en el rango especificado
-  const isDateInRange = (date: string, dateRange: { from: Date; to: Date }) => {
-    const checkDate = new Date(date);
+  // Función mejorada para verificar si una fecha está en el rango especificado
+  const isDateInRange = (dateString: string, dateRange: { from: Date; to: Date }) => {
+    const reportDate = new Date(dateString);
     const fromDate = new Date(dateRange.from);
     const toDate = new Date(dateRange.to);
     
-    // Configurar horas para comparación adecuada
-    fromDate.setHours(0, 0, 0, 0);
-    toDate.setHours(23, 59, 59, 999);
+    // Normalizar las fechas para comparación (solo fecha, sin tiempo)
+    const reportDateOnly = new Date(reportDate.getFullYear(), reportDate.getMonth(), reportDate.getDate());
+    const fromDateOnly = new Date(fromDate.getFullYear(), fromDate.getMonth(), fromDate.getDate());
+    const toDateOnly = new Date(toDate.getFullYear(), toDate.getMonth(), toDate.getDate());
     
-    return checkDate >= fromDate && checkDate <= toDate;
+    console.log('Comparando fechas:', {
+      reporte: reportDateOnly.toISOString().split('T')[0],
+      desde: fromDateOnly.toISOString().split('T')[0],
+      hasta: toDateOnly.toISOString().split('T')[0],
+      enRango: reportDateOnly >= fromDateOnly && reportDateOnly <= toDateOnly
+    });
+    
+    return reportDateOnly >= fromDateOnly && reportDateOnly <= toDateOnly;
   };
 
   // Filtrar datos usando los datos reales de la base de datos
@@ -63,48 +71,80 @@ const ReportesAnalyticsContent = () => {
       appliedFilters.categorias.length > 0 ||
       appliedFilters.searchTerm.length > 0;
 
-    if (!hasActiveFilters) return stats;
+    if (!hasActiveFilters) {
+      console.log('No hay filtros activos, retornando datos originales');
+      return stats;
+    }
+
+    console.log('Aplicando filtros a datos:', {
+      totalReportes: stats.reportes.total,
+      datosCompletos: stats.reportes.datosCompletos.length,
+      filtros: appliedFilters
+    });
 
     // Usar los datos completos reales de la base de datos
     let filteredReportes = [...stats.reportes.datosCompletos];
+    console.log('Reportes iniciales:', filteredReportes.length);
 
     // Aplicar filtro de rango de fechas usando datos reales
     if (appliedFilters.dateRange) {
-      filteredReportes = filteredReportes.filter(reporte => 
-        isDateInRange(reporte.created_at, appliedFilters.dateRange!)
-      );
-      console.log(`Filtro de fecha aplicado: ${filteredReportes.length}/${stats.reportes.total} reportes en el rango`);
+      console.log('Aplicando filtro de fecha:', {
+        desde: appliedFilters.dateRange.from.toISOString().split('T')[0],
+        hasta: appliedFilters.dateRange.to.toISOString().split('T')[0]
+      });
+      
+      const reportesAntesDelFiltro = filteredReportes.length;
+      filteredReportes = filteredReportes.filter(reporte => {
+        const estaEnRango = isDateInRange(reporte.created_at, appliedFilters.dateRange!);
+        console.log(`Reporte ${reporte.id} (${reporte.created_at}) está en rango: ${estaEnRango}`);
+        return estaEnRango;
+      });
+      
+      console.log(`Filtro de fecha aplicado: ${filteredReportes.length}/${reportesAntesDelFiltro} reportes en el rango`);
     }
 
     // Aplicar filtro de prioridades
     if (appliedFilters.priority.length > 0) {
+      const reportesAntesDelFiltro = filteredReportes.length;
       filteredReportes = filteredReportes.filter(reporte => 
         appliedFilters.priority.includes(reporte.priority)
       );
+      console.log(`Filtro de prioridad aplicado: ${filteredReportes.length}/${reportesAntesDelFiltro} reportes`);
     }
 
     // Aplicar filtro de estados
     if (appliedFilters.estados.length > 0) {
+      const reportesAntesDelFiltro = filteredReportes.length;
       filteredReportes = filteredReportes.filter(reporte => 
         reporte.estado && appliedFilters.estados.includes(reporte.estado.nombre)
       );
+      console.log(`Filtro de estado aplicado: ${filteredReportes.length}/${reportesAntesDelFiltro} reportes`);
     }
 
     // Aplicar filtro de categorías
     if (appliedFilters.categorias.length > 0) {
+      const reportesAntesDelFiltro = filteredReportes.length;
       filteredReportes = filteredReportes.filter(reporte => 
         reporte.categoria && appliedFilters.categorias.includes(reporte.categoria.nombre)
       );
+      console.log(`Filtro de categoría aplicado: ${filteredReportes.length}/${reportesAntesDelFiltro} reportes`);
     }
 
     // Aplicar filtro de búsqueda (simulación básica en el nombre/descripción)
     if (appliedFilters.searchTerm.length > 0) {
       // Para el término de búsqueda, como no tenemos nombre/descripción en los datos básicos,
       // aplicamos una reducción proporcional basada en la longitud del término
+      const reportesAntesDelFiltro = filteredReportes.length;
       const searchReduction = Math.min(0.7, appliedFilters.searchTerm.length * 0.08);
       const targetCount = Math.round(filteredReportes.length * (1 - searchReduction));
       filteredReportes = filteredReportes.slice(0, targetCount);
+      console.log(`Filtro de búsqueda aplicado: ${filteredReportes.length}/${reportesAntesDelFiltro} reportes`);
     }
+
+    console.log('Resultado final del filtrado:', {
+      reportesOriginales: stats.reportes.total,
+      reportesFiltrados: filteredReportes.length
+    });
 
     // Recalcular estadísticas basadas en los datos filtrados reales
     const totalFiltrado = filteredReportes.length;
@@ -242,6 +282,9 @@ const ReportesAnalyticsContent = () => {
             {appliedFilters.categorias.length > 0 && (
               <span className="bg-blue-100 px-2 py-1 rounded">Categorías: {appliedFilters.categorias.join(', ')}</span>
             )}
+          </div>
+          <div className="mt-2 text-xs text-blue-600">
+            Mostrando {filteredStats.reportes.total} de {stats?.reportes.total} reportes
           </div>
         </div>
       )}
