@@ -1,9 +1,10 @@
+
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Trash2, Download, X, ToggleLeft, Shield, Tag, Circle, UserCheck, UserX, ChevronDown, Ban, Mail } from 'lucide-react';
+import { Trash2, X, ToggleLeft, Shield, Tag, Circle, UserCheck, UserX, ChevronDown, Ban, Mail } from 'lucide-react';
 interface BulkActionsBarProps {
   selectedCount: number;
   onClearSelection: () => void;
@@ -88,13 +89,6 @@ export const BulkActionsBar: React.FC<BulkActionsBarProps> = ({
         
         <div className="flex items-center gap-2 flex-wrap">
           {customActions}
-          
-          {onBulkExport && (
-            <Button variant="outline" size="sm" onClick={onBulkExport} disabled={isExporting} className="h-8">
-              <Download className="h-4 w-4" />
-              {isExporting ? 'Exportando...' : 'Exportar'}
-            </Button>
-          )}
 
           {showResendConfirmation && onBulkResendConfirmation && <Button variant="outline" size="sm" onClick={onBulkResendConfirmation} disabled={isResendingConfirmation} className="h-8">
               <Mail className="h-4 w-4" />
