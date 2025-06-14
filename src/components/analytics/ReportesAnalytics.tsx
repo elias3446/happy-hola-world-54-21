@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -557,7 +556,7 @@ const ReportesAnalyticsContent = () => {
               <div className="flex justify-between">
                 <span className="text-sm text-muted-foreground">Categorías activas (BD)</span>
                 <span className="text-sm font-medium">
-                  {Math.round(((stats?.categorias.activos || 0) / Math.max(stats?.categorias.total || 1, 1)) * 100)}%
+                  {Math.round(((stats?.categorias.activas || 0) / Math.max(stats?.categorias.total || 1, 1)) * 100)}%
                 </span>
               </div>
             </div>
