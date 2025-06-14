@@ -134,12 +134,18 @@ const UsuariosAnalyticsContent = () => {
       case 'prioridad': // roles
         if (appliedFilters.priority.length > 0) {
           filteredUsers = filteredUsers.filter(user => {
+            // Verificar si el usuario tiene alguno de los roles seleccionados
             if (!user.role || user.role.length === 0) return false;
-            return appliedFilters.priority.some(selectedRole => 
-              user.role?.includes(selectedRole)
+            
+            // Los roles seleccionados en el filtro son nombres de roles
+            // El usuario tiene un array de roles en user.role
+            return appliedFilters.priority.some(selectedRoleName => 
+              user.role.includes(selectedRoleName)
             );
           });
           console.log(`Filtro de roles aplicado: ${filteredUsers.length} usuarios con roles seleccionados`);
+          console.log('Roles buscados:', appliedFilters.priority);
+          console.log('Usuarios encontrados con roles:', filteredUsers.map(u => ({ id: u.id, email: u.email, roles: u.role })));
         }
         break;
 
