@@ -313,7 +313,7 @@ const UsuariosAnalyticsContent = () => {
         </div>
       )}
 
-      {/* Métricas en Tiempo Real - Solo datos reales */}
+      {/* Métricas en Tiempo Real - Solo datos reales, sin gráficos de barras */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <RealTimeMetrics
           title="Total Usuarios"
@@ -324,6 +324,7 @@ const UsuariosAnalyticsContent = () => {
           color="text-blue-600"
           onRefresh={() => queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] })}
           showHourlyChart={false}
+          showSparkline={false}
         />
         
         <RealTimeMetrics
@@ -335,6 +336,7 @@ const UsuariosAnalyticsContent = () => {
           color="text-green-600"
           onRefresh={() => queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] })}
           showHourlyChart={false}
+          showSparkline={false}
         />
         
         <RealTimeMetrics
@@ -346,6 +348,7 @@ const UsuariosAnalyticsContent = () => {
           color="text-purple-600"
           onRefresh={() => queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] })}
           showHourlyChart={false}
+          showSparkline={false}
         />
         
         <RealTimeMetrics
@@ -357,6 +360,7 @@ const UsuariosAnalyticsContent = () => {
           color="text-orange-600"
           onRefresh={() => queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] })}
           showHourlyChart={false}
+          showSparkline={false}
         />
       </div>
 

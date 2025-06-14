@@ -27,6 +27,7 @@ interface RealTimeMetricsProps {
   showHourlyChart?: boolean;
   hourlyData?: any[];
   chartColor?: string;
+  showSparkline?: boolean; // Nueva prop para controlar la visualización del sparkline
 }
 
 export const RealTimeMetrics: React.FC<RealTimeMetricsProps> = ({
@@ -41,7 +42,8 @@ export const RealTimeMetrics: React.FC<RealTimeMetricsProps> = ({
   onRefresh,
   showHourlyChart = false,
   hourlyData = [],
-  chartColor = '#3b82f6'
+  chartColor = '#3b82f6',
+  showSparkline = false // Por defecto no mostrar sparkline
 }) => {
   const [metricHistory, setMetricHistory] = useState<MetricValue[]>([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -78,8 +80,10 @@ export const RealTimeMetrics: React.FC<RealTimeMetricsProps> = ({
     return () => clearInterval(interval);
   }, [refreshInterval, onRefresh, value, title, formatValue, metricHistory, toast]);
 
-  // Update history when value changes
+  // Update history when value changes (solo si showSparkline está habilitado)
   useEffect(() => {
+    if (!showSparkline) return;
+    
     if (metricHistory.length === 0 || metricHistory[metricHistory.length - 1].current !== value) {
       setMetricHistory(prev => [
         ...prev.slice(-9), // Keep last 10 values
@@ -90,7 +94,7 @@ export const RealTimeMetrics: React.FC<RealTimeMetricsProps> = ({
         }
       ]);
     }
-  }, [value, previousValue, metricHistory]);
+  }, [value, previousValue, metricHistory, showSparkline]);
 
   const handleManualRefresh = async () => {
     if (!onRefresh) return;
@@ -184,8 +188,8 @@ export const RealTimeMetrics: React.FC<RealTimeMetricsProps> = ({
           </p>
         )}
         
-        {/* Mini sparkline */}
-        {metricHistory.length > 1 && (
+        {/* Mini sparkline - solo mostrar si showSparkline está habilitado */}
+        {showSparkline && metricHistory.length > 1 && (
           <div className="mt-2">
             <div className="h-8 flex items-end gap-1">
               {metricHistory.slice(-8).map((metric, index) => {
