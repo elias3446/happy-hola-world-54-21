@@ -21,7 +21,6 @@ interface SearchComboboxProps {
   value: string[];
   onValueChange: (value: string[]) => void;
   placeholder?: string;
-  maxSelections?: number;
 }
 
 export const SearchCombobox: React.FC<SearchComboboxProps> = ({
@@ -29,7 +28,6 @@ export const SearchCombobox: React.FC<SearchComboboxProps> = ({
   value,
   onValueChange,
   placeholder = "Buscar reportes...",
-  maxSelections = 5
 }) => {
   const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -41,10 +39,8 @@ export const SearchCombobox: React.FC<SearchComboboxProps> = ({
       // Remover si ya está seleccionado
       onValueChange(value.filter(v => v !== selectedValue));
     } else {
-      // Agregar si no está seleccionado y no se ha alcanzado el límite
-      if (value.length < maxSelections) {
-        onValueChange([...value, selectedValue]);
-      }
+      // Agregar si no está seleccionado
+      onValueChange([...value, selectedValue]);
     }
   };
 
@@ -106,22 +102,17 @@ export const SearchCombobox: React.FC<SearchComboboxProps> = ({
               <CommandEmpty>No se encontraron reportes.</CommandEmpty>
               <CommandGroup>
                 <div className="px-2 py-1.5 text-xs text-muted-foreground">
-                  {value.length}/{maxSelections} reportes seleccionados
+                  {value.length}/{reportes.length} reportes seleccionados
                 </div>
                 {filteredReportes.map((reporte) => {
                   const isSelected = value.includes(reporte.titulo);
-                  const isMaxReached = value.length >= maxSelections && !isSelected;
                   
                   return (
                     <CommandItem
                       key={reporte.id}
                       value={reporte.titulo}
                       onSelect={() => handleSelect(reporte.titulo)}
-                      disabled={isMaxReached}
-                      className={cn(
-                        "cursor-pointer",
-                        isMaxReached && "opacity-50 cursor-not-allowed"
-                      )}
+                      className="cursor-pointer"
                     >
                       <Check
                         className={cn(
