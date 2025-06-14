@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { LucideIcon, TrendingUp, TrendingDown, Minus, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
+import { HourlyActivityChart } from './HourlyActivityChart';
 
 interface MetricValue {
   current: number;
@@ -22,6 +23,10 @@ interface RealTimeMetricsProps {
   formatValue?: (value: number) => string;
   refreshInterval?: number;
   onRefresh?: () => void;
+  // Nuevas props para gráficos de actividad
+  showHourlyChart?: boolean;
+  hourlyData?: any[];
+  chartColor?: string;
 }
 
 export const RealTimeMetrics: React.FC<RealTimeMetricsProps> = ({
@@ -34,6 +39,9 @@ export const RealTimeMetrics: React.FC<RealTimeMetricsProps> = ({
   formatValue = (val) => val.toLocaleString(),
   refreshInterval = 30000, // 30 seconds
   onRefresh,
+  showHourlyChart = false,
+  hourlyData = [],
+  chartColor = '#3b82f6'
 }) => {
   const [metricHistory, setMetricHistory] = useState<MetricValue[]>([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -116,6 +124,18 @@ export const RealTimeMetrics: React.FC<RealTimeMetricsProps> = ({
         return 'text-gray-600 bg-gray-50 border-gray-200';
     }
   };
+
+  // Si showHourlyChart es true, renderizar el gráfico en lugar de la tarjeta normal
+  if (showHourlyChart) {
+    return (
+      <HourlyActivityChart
+        data={hourlyData}
+        title={`Actividad por Hora - ${title}`}
+        subtitle={`${value} reportes total - ${subtitle || ''}`}
+        color={chartColor}
+      />
+    );
+  }
 
   return (
     <Card className="hover:shadow-md transition-all duration-200 relative overflow-hidden">

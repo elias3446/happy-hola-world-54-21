@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -372,7 +373,7 @@ const ReportesAnalyticsContent = () => {
         </div>
       )}
 
-      {/* Métricas en Tiempo Real */}
+      {/* Métricas en Tiempo Real con Gráficos de Actividad por Horas */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <RealTimeMetrics
           title="Total Reportes"
@@ -382,6 +383,9 @@ const ReportesAnalyticsContent = () => {
           icon={FileText}
           color="text-blue-600"
           onRefresh={() => queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] })}
+          showHourlyChart={true}
+          hourlyData={filteredStats.reportes.datosCompletos}
+          chartColor="#3b82f6"
         />
         
         <RealTimeMetrics
@@ -392,6 +396,9 @@ const ReportesAnalyticsContent = () => {
           icon={TrendingUp}
           color="text-green-600"
           onRefresh={() => queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] })}
+          showHourlyChart={true}
+          hourlyData={filteredStats.reportes.datosCompletos.filter(r => r.activo)}
+          chartColor="#059669"
         />
         
         <RealTimeMetrics
@@ -402,6 +409,13 @@ const ReportesAnalyticsContent = () => {
           icon={Activity}
           color="text-orange-600"
           onRefresh={() => queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] })}
+          showHourlyChart={true}
+          hourlyData={filteredStats.reportes.datosCompletos.filter(r => {
+            const sevenDaysAgo = new Date();
+            sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+            return new Date(r.created_at) >= sevenDaysAgo;
+          })}
+          chartColor="#ea580c"
         />
         
         <RealTimeMetrics
@@ -412,6 +426,9 @@ const ReportesAnalyticsContent = () => {
           icon={AlertTriangle}
           color="text-purple-600"
           onRefresh={() => queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] })}
+          showHourlyChart={true}
+          hourlyData={filteredStats.reportes.datosCompletos}
+          chartColor="#9333ea"
         />
       </div>
 
