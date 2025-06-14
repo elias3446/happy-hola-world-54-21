@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -38,6 +37,7 @@ import {
   Upload
 } from 'lucide-react';
 import { BulkRoleActionsDialog, type BulkRoleActionType } from './dialogs/BulkRoleActionsDialog';
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
 
 interface RolesListProps {
   onCreateRole: () => void;
@@ -53,6 +53,8 @@ const isSystemRole = (roleName: string): boolean => {
   return SYSTEM_ROLES.includes(roleName);
 };
 
+const ITEMS_PER_PAGE = 5;
+
 export const RolesList = ({ onCreateRole, onEditRole, onViewRole, onBulkUpload }: RolesListProps) => {
   const { 
     roles, 
@@ -66,6 +68,7 @@ export const RolesList = ({ onCreateRole, onEditRole, onViewRole, onBulkUpload }
   const isMobile = useIsMobile();
   const [filters, setFilters] = useDataTableFilters();
   const [filteredData, setFilteredData] = useState<any[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
   
   // Estados para diálogos de confirmación
   const [deleteDialog, setDeleteDialog] = useState({ open: false, role: null as Role | null });
@@ -81,7 +84,18 @@ export const RolesList = ({ onCreateRole, onEditRole, onViewRole, onBulkUpload }
   // Filter non-system roles for bulk selection
   const nonSystemRoles = filteredData.filter(role => !isSystemRole(role.nombre));
 
-  // Bulk selection hook - only for non-system roles
+  // Calculate pagination values
+  const totalPages = Math.ceil(filteredData.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const endIndex = startIndex + ITEMS_PER_PAGE;
+  const paginatedData = filteredData.slice(startIndex, endIndex);
+
+  // Reset to first page when filtered data changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filteredData.length]);
+
+  // Bulk selection hook - only for non-system roles and paginated data
   const {
     selectedItems,
     isAllSelected,
@@ -91,7 +105,7 @@ export const RolesList = ({ onCreateRole, onEditRole, onViewRole, onBulkUpload }
     clearSelection,
     getSelectedData,
     selectedCount,
-  } = useBulkSelection(nonSystemRoles);
+  } = useBulkSelection(paginatedData.filter(role => !isSystemRole(role.nombre)));
 
   // Define columns for the table
   const columns: DataTableColumn[] = [
@@ -244,6 +258,10 @@ export const RolesList = ({ onCreateRole, onEditRole, onViewRole, onBulkUpload }
     document.body.removeChild(link);
   };
 
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
   if (isLoading) {
     return (
       <Card>
@@ -351,7 +369,7 @@ export const RolesList = ({ onCreateRole, onEditRole, onViewRole, onBulkUpload }
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredData.map((role) => {
+                    {paginatedData.map((role) => {
                       const isSystemRoleItem = isSystemRole(role.nombre);
                       
                       return (
@@ -473,6 +491,64 @@ export const RolesList = ({ onCreateRole, onEditRole, onViewRole, onBulkUpload }
                   </TableBody>
                 </Table>
               </div>
+
+              {/* Pagination Info and Controls */}
+              {filteredData.length > 0 && (
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4">
+                  {/* Info section */}
+                  <div className="flex items-center text-sm text-muted-foreground">
+                    <span>
+                      Mostrando {startIndex + 1} a {Math.min(endIndex, filteredData.length)} de {filteredData.length} elementos
+                    </span>
+                  </div>
+
+                  {/* Pagination */}
+                  {totalPages > 1 && (
+                    <Pagination>
+                      <PaginationContent>
+                        <PaginationItem>
+                          <PaginationPrevious 
+                            onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
+                            className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                          />
+                        </PaginationItem>
+                        
+                        {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+                          let pageNumber;
+                          if (totalPages <= 5) {
+                            pageNumber = i + 1;
+                          } else if (currentPage <= 3) {
+                            pageNumber = i + 1;
+                          } else if (currentPage >= totalPages - 2) {
+                            pageNumber = totalPages - 4 + i;
+                          } else {
+                            pageNumber = currentPage - 2 + i;
+                          }
+                          
+                          return (
+                            <PaginationItem key={pageNumber}>
+                              <PaginationLink
+                                onClick={() => handlePageChange(pageNumber)}
+                                isActive={currentPage === pageNumber}
+                                className="cursor-pointer"
+                              >
+                                {pageNumber}
+                              </PaginationLink>
+                            </PaginationItem>
+                          );
+                        })}
+                        
+                        <PaginationItem>
+                          <PaginationNext 
+                            onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
+                            className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                          />
+                        </PaginationItem>
+                      </PaginationContent>
+                    </Pagination>
+                  )}
+                </div>
+              )}
             </>
           )}
         </CardContent>
