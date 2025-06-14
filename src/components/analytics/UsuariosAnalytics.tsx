@@ -27,6 +27,13 @@ const UsuariosAnalyticsContent = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  console.log('UsuariosAnalytics - Users data:', {
+    totalUsers: users?.length || 0,
+    currentUserId: currentUser?.id,
+    usersIncludesCurrent: users?.some(u => u.id === currentUser?.id),
+    allUserIds: users?.map(u => u.id)
+  });
+
   const handleRefreshData = useCallback(async () => {
     try {
       await refetch();
@@ -388,6 +395,7 @@ const UsuariosAnalyticsContent = () => {
         onMultipleReportSelection={handleUserSelection}
         selectedReportIds={selectedUserIds}
         context="usuarios"
+        availableUsers={users} // Pass the complete users array including current user
       />
 
       {/* Indicador de filtros aplicados */}
@@ -453,7 +461,7 @@ const UsuariosAnalyticsContent = () => {
         <RealTimeMetrics
           title="Usuarios Activos"
           value={filteredStats.usuarios.activos}
-          subtitle={`${Math.round((filteredStats.usuarios.activos / Math.max(filteredStats.usuarios.total, 1)) * 100)}% del total`}
+          subtitle={`${Math.round((filteredStats.usuarios.activos / Math.max(filteredStats.usuarios.total, 1)) * 100}% del total`}
           icon={UserCheck}
           color="text-green-600"
           onRefresh={() => queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] })}
