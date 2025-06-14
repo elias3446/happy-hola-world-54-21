@@ -1,4 +1,3 @@
-
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -36,8 +35,8 @@ interface DashboardStats {
     recientes: number; // últimos 7 días
     porEstadoActivacion: { estado: string; count: number; color: string }[];
     porConfirmacion: { categoria: string; count: number; color: string }[];
-    porRoles: { name: string; value: number; color: string }[];
-    porTipoUsuario: { name: string; value: number; color: string }[];
+    porRoles: { name: string; value: number; color: string }[]; // Desde user_roles
+    porTipoUsuario: { name: string; value: number; color: string }[]; // Desde profiles.role
     datosCompletos: UserWithDates[];
   };
   roles: {
@@ -226,58 +225,49 @@ export const useDashboardStats = () => {
         { categoria: 'No confirmados', count: (usuarios?.length || 0) - usuariosConfirmados.length, color: '#F59E0B' }
       ];
 
-      // Calcular distribución por roles - SIEMPRE disponible
+      // CORREGIDO: Calcular distribución por ROLES del sistema (desde user_roles) - SIEMPRE disponible
       const rolesCounts: { [key: string]: number } = {};
-      const porTipoUsuario = { admin: 0, user: 0, ambas: 0 };
-
-      usuarios?.forEach(user => {
-        // Obtener roles desde user_roles table
-        const userRoleAssignments = userRoles?.filter(ur => 
-          ur.user_id === user.id && !ur.deleted_at
-        ) || [];
-        
-        const userRoleNames = userRoleAssignments.map(ur => {
-          const role = roles?.find(r => r.id === ur.role_id);
-          return role ? role.nombre : null;
-        }).filter(Boolean);
-
-        // También considerar roles del campo role en profiles
-        const profileRoles = user.role || [];
-        const allUserRoles = [...new Set([...userRoleNames, ...profileRoles])];
-
-        // Contar para gráfico de roles
-        allUserRoles.forEach(roleName => {
-          rolesCounts[roleName] = (rolesCounts[roleName] || 0) + 1;
-        });
-
-        // Contar para gráfico de tipos de usuario
-        const hasAdmin = allUserRoles.some(r => r.toLowerCase().includes('admin'));
-        const hasUser = allUserRoles.some(r => r.toLowerCase().includes('user'));
-
-        if (hasAdmin && hasUser) {
-          porTipoUsuario.ambas++;
-        } else if (hasAdmin) {
-          porTipoUsuario.admin++;
-        } else if (hasUser) {
-          porTipoUsuario.user++;
+      
+      userRoles?.forEach(userRole => {
+        const role = roles?.find(r => r.id === userRole.role_id);
+        if (role) {
+          rolesCounts[role.nombre] = (rolesCounts[role.nombre] || 0) + 1;
         }
       });
 
-      // Convertir conteos de roles a formato de gráfico - FIX: ensure number type
+      // Convertir conteos de roles del sistema a formato de gráfico
       const porRoles = Object.entries(rolesCounts).map(([roleName, count], index) => {
         const role = roles?.find(r => r.nombre === roleName);
         return {
           name: roleName,
-          value: count as number, // Explicit cast to number
+          value: count as number,
           color: role?.color || `hsl(${index * 45}, 70%, 60%)`
         };
       });
 
+      // CORREGIDO: Calcular distribución por TIPO DE USUARIO (desde profiles.role) - SIEMPRE disponible
+      const tipoUsuarioCounts = { admin: 0, user: 0, ambas: 0 };
+
+      usuarios?.forEach(user => {
+        const userRoles = user.role || [];
+        
+        const hasAdmin = userRoles.some(r => r.toLowerCase().includes('admin'));
+        const hasUser = userRoles.some(r => r.toLowerCase().includes('user'));
+
+        if (hasAdmin && hasUser) {
+          tipoUsuarioCounts.ambas++;
+        } else if (hasAdmin) {
+          tipoUsuarioCounts.admin++;
+        } else if (hasUser) {
+          tipoUsuarioCounts.user++;
+        }
+      });
+
       // Convertir tipos de usuario a formato de gráfico
-      const porTipoUsuarioChart = [
-        { name: 'Solo Admin', value: porTipoUsuario.admin, color: '#DC2626' },
-        { name: 'Solo Usuario', value: porTipoUsuario.user, color: '#059669' },
-        { name: 'Admin y Usuario', value: porTipoUsuario.ambas, color: '#7C3AED' }
+      const porTipoUsuario = [
+        { name: 'Solo Admin', value: tipoUsuarioCounts.admin, color: '#DC2626' },
+        { name: 'Solo Usuario', value: tipoUsuarioCounts.user, color: '#059669' },
+        { name: 'Admin y Usuario', value: tipoUsuarioCounts.ambas, color: '#7C3AED' }
       ].filter(item => item.value > 0);
 
       // Estadísticas de roles
@@ -306,8 +296,8 @@ export const useDashboardStats = () => {
           recientes: usuariosRecientes.length,
           porEstadoActivacion: usuariosPorEstadoActivacion,
           porConfirmacion: usuariosPorConfirmacion,
-          porRoles, // Siempre disponible
-          porTipoUsuario: porTipoUsuarioChart, // Siempre disponible
+          porRoles, // Ahora desde user_roles - roles del sistema
+          porTipoUsuario, // Ahora desde profiles.role - tipos de usuario
           datosCompletos: usuariosCompletos,
         },
         roles: {
