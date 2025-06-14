@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -396,7 +395,6 @@ const UsuariosAnalyticsContent = () => {
         onMultipleReportSelection={handleUserSelection}
         selectedReportIds={selectedUserIds}
         context="usuarios"
-        availableUsers={users}
       />
 
       {/* Indicador de filtros aplicados */}
