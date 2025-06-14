@@ -2,7 +2,6 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -13,7 +12,6 @@ import {
   Filter, 
   X, 
   Calendar as CalendarIcon, 
-  Search, 
   RotateCcw,
   SortAsc,
   SortDesc 
@@ -22,6 +20,8 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { AdvancedFilters, useAdvancedFilters } from '@/hooks/useAdvancedFilters';
 import { useDashboardStats } from '@/hooks/useDashboardStats';
+import { useReportes } from '@/hooks/useReportes';
+import { SearchCombobox } from './SearchCombobox';
 
 const priorityOptions = [
   { value: 'urgente', label: 'Urgente', color: '#DC2626' },
@@ -43,6 +43,7 @@ export const AdvancedFiltersPanel: React.FC<AdvancedFiltersPanelProps> = ({
 }) => {
   const { filters, updateFilter, resetFilters, hasActiveFilters } = useAdvancedFilters();
   const { data: stats } = useDashboardStats();
+  const { data: reportes } = useReportes();
 
   React.useEffect(() => {
     onFiltersChange(filters);
@@ -68,6 +69,16 @@ export const AdvancedFiltersPanel: React.FC<AdvancedFiltersPanelProps> = ({
       : [...filters.categorias, categoria];
     updateFilter('categorias', newCategorias);
   };
+
+  // Transform reportes data for the SearchCombobox
+  const reportesForSearch = reportes?.map(reporte => ({
+    id: reporte.id,
+    titulo: reporte.titulo,
+    descripcion: reporte.descripcion || '',
+    estado: reporte.estado?.nombre || 'Sin estado',
+    categoria: reporte.categoria?.nombre || 'Sin categoría',
+    prioridad: reporte.prioridad || 'medio'
+  })) || [];
 
   if (!isOpen) {
     return (
@@ -128,18 +139,20 @@ export const AdvancedFiltersPanel: React.FC<AdvancedFiltersPanelProps> = ({
         </div>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* Búsqueda */}
+        {/* Búsqueda con lista desplegable */}
         <div className="space-y-2">
-          <label className="text-sm font-medium">Búsqueda</label>
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Buscar reportes..."
-              value={filters.searchTerm}
-              onChange={(e) => updateFilter('searchTerm', e.target.value)}
-              className="pl-10"
-            />
-          </div>
+          <label className="text-sm font-medium">Búsqueda de Reportes</label>
+          <SearchCombobox
+            reportes={reportesForSearch}
+            value={filters.searchTerm}
+            onValueChange={(value) => updateFilter('searchTerm', value)}
+            placeholder="Buscar reportes..."
+          />
+          {filters.searchTerm && (
+            <p className="text-xs text-muted-foreground">
+              Buscando: "{filters.searchTerm}"
+            </p>
+          )}
         </div>
 
         {/* Rango de fechas */}
