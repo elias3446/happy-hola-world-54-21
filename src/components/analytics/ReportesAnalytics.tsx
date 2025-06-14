@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -39,6 +38,41 @@ const ReportesAnalyticsContent = () => {
     console.log('Filtros aplicados:', filters);
   }, []);
 
+  // Simulate report creation dates for filtering
+  const simulateReportDates = (reports: any[], totalCount: number) => {
+    const now = new Date();
+    const simulatedReports = [];
+    
+    for (let i = 0; i < totalCount; i++) {
+      // Generate random dates within the last 6 months
+      const randomDaysAgo = Math.floor(Math.random() * 180);
+      const createdDate = new Date(now.getTime() - randomDaysAgo * 24 * 60 * 60 * 1000);
+      
+      const reportIndex = i % reports.length;
+      simulatedReports.push({
+        ...reports[reportIndex],
+        simulatedCreatedAt: createdDate,
+        simulatedId: i
+      });
+    }
+    
+    return simulatedReports;
+  };
+
+  // Check if a date is within the specified range
+  const isDateInRange = (date: Date, dateRange: { from: Date; to: Date }) => {
+    const checkDate = new Date(date);
+    const fromDate = new Date(dateRange.from);
+    const toDate = new Date(dateRange.to);
+    
+    // Set times to start/end of day for proper comparison
+    fromDate.setHours(0, 0, 0, 0);
+    toDate.setHours(23, 59, 59, 999);
+    checkDate.setHours(12, 0, 0, 0); // Set to midday to avoid timezone issues
+    
+    return checkDate >= fromDate && checkDate <= toDate;
+  };
+
   // Filter data based on applied filters
   const getFilteredStats = () => {
     if (!stats || !appliedFilters) return stats;
@@ -57,6 +91,42 @@ const ReportesAnalyticsContent = () => {
     let filteredPorEstado = [...stats.reportes.porEstado];
     let filteredPorCategoria = [...stats.reportes.porCategoria];
     let filteredPorPrioridad = [...stats.reportes.porPrioridad];
+
+    // Apply date range filter first if present
+    let dateFilterReduction = 1;
+    if (appliedFilters.dateRange) {
+      // Simulate reports with creation dates
+      const totalReports = stats.reportes.total;
+      const simulatedReports = simulateReportDates(
+        [...filteredPorEstado, ...filteredPorCategoria, ...filteredPorPrioridad], 
+        totalReports
+      );
+      
+      // Filter by date range
+      const reportsInDateRange = simulatedReports.filter(report => 
+        isDateInRange(report.simulatedCreatedAt, appliedFilters.dateRange!)
+      );
+      
+      dateFilterReduction = reportsInDateRange.length / totalReports;
+      
+      console.log(`Date filter: ${reportsInDateRange.length}/${totalReports} reports in range (${Math.round(dateFilterReduction * 100)}%)`);
+      
+      // Apply date reduction to all categories
+      filteredPorEstado = filteredPorEstado.map(item => ({
+        ...item,
+        count: Math.round(item.count * dateFilterReduction)
+      })).filter(item => item.count > 0);
+
+      filteredPorCategoria = filteredPorCategoria.map(item => ({
+        ...item,
+        count: Math.round(item.count * dateFilterReduction)
+      })).filter(item => item.count > 0);
+
+      filteredPorPrioridad = filteredPorPrioridad.map(item => ({
+        ...item,
+        count: Math.round(item.count * dateFilterReduction)
+      })).filter(item => item.count > 0);
+    }
 
     // Filter by estados
     if (appliedFilters.estados.length > 0) {
@@ -85,7 +155,7 @@ const ReportesAnalyticsContent = () => {
     const totalFromPrioridad = filteredPorPrioridad.reduce((sum, item) => sum + item.count, 0);
 
     // Use the most restrictive filter (smallest count) as the base
-    let baseTotal = stats.reportes.total;
+    let baseTotal = Math.round(stats.reportes.total * dateFilterReduction);
     if (appliedFilters.estados.length > 0) baseTotal = Math.min(baseTotal, totalFromEstados);
     if (appliedFilters.categorias.length > 0) baseTotal = Math.min(baseTotal, totalFromCategorias);
     if (appliedFilters.priority.length > 0) baseTotal = Math.min(baseTotal, totalFromPrioridad);
@@ -109,27 +179,6 @@ const ReportesAnalyticsContent = () => {
       filteredPorPrioridad = filteredPorPrioridad.map(item => ({
         ...item,
         count: Math.round(item.count * (1 - searchReduction))
-      })).filter(item => item.count > 0);
-    }
-
-    // Apply date range filter (simulate temporal filtering)
-    if (appliedFilters.dateRange) {
-      const dateReduction = 0.4; // Assume 40% of reports fall outside the date range
-      baseTotal = Math.round(baseTotal * (1 - dateReduction));
-      
-      filteredPorEstado = filteredPorEstado.map(item => ({
-        ...item,
-        count: Math.round(item.count * (1 - dateReduction))
-      })).filter(item => item.count > 0);
-
-      filteredPorCategoria = filteredPorCategoria.map(item => ({
-        ...item,
-        count: Math.round(item.count * (1 - dateReduction))
-      })).filter(item => item.count > 0);
-
-      filteredPorPrioridad = filteredPorPrioridad.map(item => ({
-        ...item,
-        count: Math.round(item.count * (1 - dateReduction))
       })).filter(item => item.count > 0);
     }
 
@@ -220,7 +269,9 @@ const ReportesAnalyticsContent = () => {
               <span className="bg-blue-100 px-2 py-1 rounded">Búsqueda: "{appliedFilters.searchTerm}"</span>
             )}
             {appliedFilters.dateRange && (
-              <span className="bg-blue-100 px-2 py-1 rounded">Rango de fechas seleccionado</span>
+              <span className="bg-blue-100 px-2 py-1 rounded">
+                Fechas: {appliedFilters.dateRange.from.toLocaleDateString('es-ES')} - {appliedFilters.dateRange.to.toLocaleDateString('es-ES')}
+              </span>
             )}
             {appliedFilters.priority.length > 0 && (
               <span className="bg-blue-100 px-2 py-1 rounded">Prioridades: {appliedFilters.priority.join(', ')}</span>
