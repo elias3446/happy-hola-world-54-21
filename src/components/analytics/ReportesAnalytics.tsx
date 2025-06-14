@@ -49,6 +49,7 @@ const ReportesAnalyticsContent = () => {
   const handleFiltersChange = useCallback((filters: AdvancedFilters) => {
     setAppliedFilters(filters);
     
+    // Actualizar los IDs seleccionados cuando cambien los filtros de búsqueda
     if (filters.searchTerm && filters.searchTerm.length > 0) {
       setSelectedReportIds(filters.searchTerm);
     } else if (filters.searchTerm.length === 0 && selectedReportIds.length > 0) {
@@ -58,23 +59,16 @@ const ReportesAnalyticsContent = () => {
     console.log('Filtros aplicados:', filters);
   }, [selectedReportIds]);
 
-  const handleReportSelection = useCallback((reportTitles: string[]) => {
-    if (!reportes) return;
-    
-    const reportIds = reportTitles.map(title => {
-      const reporte = reportes.find(r => r.nombre === title);
-      return reporte?.id || title;
-    });
-    
+  const handleReportSelection = useCallback((reportIds: string[]) => {
     setSelectedReportIds(reportIds);
     
     if (appliedFilters) {
       setAppliedFilters({
         ...appliedFilters,
-        searchTerm: reportTitles
+        searchTerm: reportIds
       });
     }
-  }, [reportes, appliedFilters]);
+  }, [appliedFilters]);
 
   const isDateInRange = (dateString: string, dateRange: { from: Date; to: Date }) => {
     const reportDate = new Date(dateString);
@@ -127,11 +121,11 @@ const ReportesAnalyticsContent = () => {
     switch (appliedFilters.activeTab) {
       case 'busqueda':
         if (appliedFilters.searchTerm.length >= 2) {
-          const reporteNames = appliedFilters.searchTerm;
-          filteredReportes = filteredReportes.filter(reporte => {
-            const reporteInList = reportes?.find(r => r.id === reporte.id);
-            return reporteInList && reporteNames.includes(reporteInList.nombre);
-          });
+          // Los searchTerm ahora son IDs de reportes
+          const reportIds = appliedFilters.searchTerm;
+          filteredReportes = filteredReportes.filter(reporte => 
+            reportIds.includes(reporte.id)
+          );
           console.log(`Filtro de búsqueda aplicado: ${filteredReportes.length} reportes seleccionados`);
         }
         break;
@@ -312,7 +306,7 @@ const ReportesAnalyticsContent = () => {
         selectedReportIds={selectedReportIds}
       />
 
-      {/* Comparación múltiple de reportes */}
+      {/* Comparación múltiple de reportes - Solo mostrar cuando hay reportes seleccionados */}
       {reportesParaComparacion.length > 0 && (
         <MultiReportComparison reportesSeleccionados={reportesParaComparacion} />
       )}
