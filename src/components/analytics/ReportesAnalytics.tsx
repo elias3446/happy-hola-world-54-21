@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -346,12 +347,11 @@ const ReportesAnalyticsContent = () => {
         </div>
       )}
 
-      {/* Métricas en Tiempo Real - SIN gráficos de actividad por horas */}
+      {/* Métricas en Tiempo Real - SIN gráficos de actividad por horas y SIN comparaciones */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <RealTimeMetrics
           title="Total Reportes"
           value={filteredStats.reportes.total}
-          previousValue={hasValidFilters ? stats?.reportes.total : undefined}
           subtitle={`${filteredStats.reportes.activos} activos`}
           icon={FileText}
           color="text-blue-600"
@@ -362,7 +362,6 @@ const ReportesAnalyticsContent = () => {
         <RealTimeMetrics
           title="Reportes Activos"
           value={filteredStats.reportes.activos}
-          previousValue={hasValidFilters ? stats?.reportes.activos : undefined}
           subtitle={`${Math.round((filteredStats.reportes.activos / Math.max(filteredStats.reportes.total, 1)) * 100)}% del total`}
           icon={TrendingUp}
           color="text-green-600"
@@ -373,7 +372,6 @@ const ReportesAnalyticsContent = () => {
         <RealTimeMetrics
           title="Reportes Recientes"
           value={filteredStats.reportes.recientes}
-          previousValue={hasValidFilters ? stats?.reportes.recientes : undefined}
           subtitle="Últimos 7 días"
           icon={Activity}
           color="text-orange-600"
@@ -384,7 +382,6 @@ const ReportesAnalyticsContent = () => {
         <RealTimeMetrics
           title="Estados Únicos"
           value={filteredStats.reportes.porEstado.length}
-          previousValue={hasValidFilters ? stats?.reportes.porEstado.length : undefined}
           subtitle="Diferentes estados"
           icon={AlertTriangle}
           color="text-purple-600"

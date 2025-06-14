@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -349,12 +350,11 @@ const UsuariosAnalyticsContent = () => {
         </div>
       )}
 
-      {/* Métricas en Tiempo Real - Solo datos reales, sin gráficos de barras */}
+      {/* Métricas en Tiempo Real - Solo datos reales, sin gráficos de barras y SIN comparaciones */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <RealTimeMetrics
           title="Total Usuarios"
           value={filteredStats.usuarios.total}
-          previousValue={hasValidFilters ? stats?.usuarios.total : undefined}
           subtitle={`${filteredStats.usuarios.activos} activos`}
           icon={Users}
           color="text-blue-600"
@@ -366,7 +366,6 @@ const UsuariosAnalyticsContent = () => {
         <RealTimeMetrics
           title="Usuarios Activos"
           value={filteredStats.usuarios.activos}
-          previousValue={hasValidFilters ? stats?.usuarios.activos : undefined}
           subtitle={`${Math.round((filteredStats.usuarios.activos / Math.max(filteredStats.usuarios.total, 1)) * 100)}% del total`}
           icon={UserCheck}
           color="text-green-600"
@@ -378,7 +377,6 @@ const UsuariosAnalyticsContent = () => {
         <RealTimeMetrics
           title="Usuarios Confirmados"
           value={filteredStats.usuarios.confirmados}
-          previousValue={hasValidFilters ? stats?.usuarios.confirmados : undefined}
           subtitle="Con email verificado"
           icon={Shield}
           color="text-purple-600"
@@ -390,7 +388,6 @@ const UsuariosAnalyticsContent = () => {
         <RealTimeMetrics
           title="Nuevos Usuarios"
           value={filteredStats.usuarios.recientes}
-          previousValue={hasValidFilters ? stats?.usuarios.recientes : undefined}
           subtitle="Últimos 7 días"
           icon={UserPlus}
           color="text-orange-600"
