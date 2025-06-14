@@ -1,9 +1,10 @@
 
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
 import { Activity, Clock, User, Database, FileText } from 'lucide-react';
 import { Actividad } from '@/hooks/useAuditoria';
 import { format } from 'date-fns';
@@ -48,6 +49,20 @@ export const ActividadesList: React.FC<ActividadesListProps> = ({
   actividades, 
   isLoading 
 }) => {
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
+
+  const paginatedData = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return actividades.slice(startIndex, startIndex + itemsPerPage);
+  }, [actividades, currentPage]);
+
+  const totalPages = Math.ceil(actividades.length / itemsPerPage);
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
   if (isLoading) {
     return (
       <Card>
@@ -75,7 +90,7 @@ export const ActividadesList: React.FC<ActividadesListProps> = ({
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <ScrollArea className="h-[600px]">
+        <ScrollArea className="h-auto">
           <Table>
             <TableHeader>
               <TableRow>
@@ -87,7 +102,7 @@ export const ActividadesList: React.FC<ActividadesListProps> = ({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {actividades.map((actividad) => (
+              {paginatedData.map((actividad) => (
                 <TableRow key={actividad.id}>
                   <TableCell>
                     <Badge 
@@ -134,6 +149,52 @@ export const ActividadesList: React.FC<ActividadesListProps> = ({
             </div>
           )}
         </ScrollArea>
+
+        {totalPages > 1 && (
+          <div className="mt-4">
+            <Pagination>
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious 
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      if (currentPage > 1) handlePageChange(currentPage - 1);
+                    }}
+                    className={currentPage === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                  />
+                </PaginationItem>
+                
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                  <PaginationItem key={page}>
+                    <PaginationLink
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        handlePageChange(page);
+                      }}
+                      isActive={currentPage === page}
+                      className="cursor-pointer"
+                    >
+                      {page}
+                    </PaginationLink>
+                  </PaginationItem>
+                ))}
+                
+                <PaginationItem>
+                  <PaginationNext 
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      if (currentPage < totalPages) handlePageChange(currentPage + 1);
+                    }}
+                    className={currentPage === totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                  />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
