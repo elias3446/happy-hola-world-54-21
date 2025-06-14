@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback } from 'react';
 import { Button } from "@/components/ui/button";
 import { Activity, RefreshCw } from 'lucide-react';
@@ -177,7 +176,7 @@ const UsuariosAnalyticsContent = () => {
             )}
           </div>
           <div className="mt-2 text-xs text-blue-600">
-            Datos reales: {filteredStats.usuarios.total} de {stats?.usuarios.total} usuarios (incluyendo usuario actual)
+            Datos reales: {filteredStats.usuarios.total} de {users?.length || 0} usuarios (incluyendo usuario actual)
           </div>
         </div>
       )}

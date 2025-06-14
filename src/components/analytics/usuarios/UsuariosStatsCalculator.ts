@@ -17,7 +17,48 @@ export const getFilteredUserStats = (
   if (!hasValidFilters) {
     console.log('Sin filtros válidos - mostrando TODOS los datos reales de la base de datos incluyendo usuario actual');
     console.log('Total usuarios encontrados:', users.length);
-    return stats;
+    
+    // Recalcular las estadísticas usando TODOS los usuarios (incluyendo el actual)
+    const totalUsuarios = users.length;
+    const activosUsuarios = users.filter(u => u.asset === true).length;
+    const confirmadosUsuarios = users.filter(u => u.confirmed === true).length;
+    
+    // Calculate recent users (last 7 days) from all users
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    const recientesUsuarios = users.filter(u => 
+      new Date(u.created_at) >= sevenDaysAgo
+    ).length;
+
+    // Recalculate groupings based on ALL users
+    const porEstadoActivacion = [
+      { estado: 'Activos', count: activosUsuarios, color: '#10B981' },
+      { estado: 'Inactivos', count: totalUsuarios - activosUsuarios, color: '#EF4444' }
+    ];
+
+    const porConfirmacion = [
+      { categoria: 'Confirmados', count: confirmadosUsuarios, color: '#3B82F6' },
+      { categoria: 'No confirmados', count: totalUsuarios - confirmadosUsuarios, color: '#F59E0B' }
+    ];
+
+    const porRoles = calculateRoleDistribution(users, userRoles, roles);
+    const porTipoUsuario = calculateUserTypeDistribution(users);
+
+    return {
+      ...stats,
+      usuarios: {
+        ...stats.usuarios,
+        total: totalUsuarios,
+        activos: activosUsuarios,
+        confirmados: confirmadosUsuarios,
+        recientes: recientesUsuarios,
+        porEstadoActivacion,
+        porConfirmacion,
+        porRoles,
+        porTipoUsuario,
+        datosCompletos: users,
+      }
+    };
   }
 
   console.log('Aplicando filtros de comparación sobre datos reales (incluyendo usuario actual):', {
@@ -116,7 +157,7 @@ export const getFilteredUserStats = (
   }
 
   console.log('Resultado final del filtrado sobre TODOS los datos reales (incluyendo usuario actual):', {
-    usuariosOriginales: stats.usuarios.total,
+    usuariosOriginales: users.length, // Usar users.length en lugar de stats.usuarios.total
     usuariosFiltrados: filteredUsers.length,
     tabActiva: appliedFilters.activeTab,
     incluyeUsuarioActual: currentUser?.id ? filteredUsers.some(u => u.id === currentUser.id) : false
