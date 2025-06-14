@@ -195,7 +195,11 @@ export const AdvancedFiltersPanel: React.FC<AdvancedFiltersPanelProps> = ({
                 onValueChange={(value) => {
                   updateFilter('searchTerm', value);
                   if (onMultipleReportSelection) {
-                    onMultipleReportSelection(value);
+                    // Convertir IDs a títulos para mantener compatibilidad
+                    const selectedTitles = reportesForSearch
+                      .filter(r => value.includes(r.id))
+                      .map(r => r.titulo);
+                    onMultipleReportSelection(selectedTitles);
                   }
                 }}
                 placeholder="Buscar reportes para comparar..."
