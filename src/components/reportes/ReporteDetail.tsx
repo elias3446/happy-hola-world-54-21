@@ -1,17 +1,14 @@
 
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Switch } from '@/components/ui/switch';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
-import { useReporteHistorial } from '@/hooks/useReporteHistorial';
-import { useReportes } from '@/hooks/useReportes';
-import { MapaReporteEspecifico } from '@/components/MapaBase';
-import { ReporteAuditoria } from './ReporteAuditoria';
-import type { Reporte } from '@/types/reportes';
-import { useState } from 'react';
 import { 
   ArrowLeft, 
   Edit, 
@@ -24,8 +21,19 @@ import {
   Clock,
   FileText,
   X,
-  AlertTriangle
+  AlertTriangle,
+  Eye,
+  History,
+  BarChart3,
+  Settings
 } from 'lucide-react';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
+import { useReporteHistorial } from '@/hooks/useReporteHistorial';
+import { useReportes } from '@/hooks/useReportes';
+import { MapaReporteEspecifico } from '@/components/MapaBase';
+import { ReporteAuditoria } from './ReporteAuditoria';
+import type { Reporte } from '@/types/reportes';
 
 interface ReporteDetailProps {
   reporte: Reporte;
@@ -50,8 +58,6 @@ export const ReporteDetail = ({ reporte, onEdit, onBack }: ReporteDetailProps) =
     return `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || profile.email;
   };
 
-  const hasLocation = reporte.latitud && reporte.longitud;
-
   const handleToggleStatus = () => {
     toggleReporteStatus({ id: reporte.id, activo: !reporte.activo });
   };
@@ -64,168 +70,339 @@ export const ReporteDetail = ({ reporte, onEdit, onBack }: ReporteDetailProps) =
     setSelectedImageIndex(null);
   };
 
+  const getStatusBadge = () => {
+    if (reporte.activo) {
+      return {
+        variant: "default" as const,
+        icon: <CheckCircle className="h-3 w-3" />,
+        text: "Activo"
+      };
+    } else {
+      return {
+        variant: "secondary" as const,
+        icon: <XCircle className="h-3 w-3" />,
+        text: "Inactivo"
+      };
+    }
+  };
+
+  const statusBadge = getStatusBadge();
+
   return (
-    <div className="container mx-auto px-4 py-6">
-      <div className="mb-6">
-        <Button 
-          variant="ghost" 
-          onClick={onBack}
-          className="mb-4 flex items-center gap-2"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Volver a Reportes
-        </Button>
-        
-        <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div 
-              className="w-16 h-16 rounded-full flex items-center justify-center text-white text-2xl font-medium"
-              style={{ backgroundColor: reporte.categoria?.color || '#3B82F6' }}
-            >
-              {reporte.categoria?.icono?.charAt(0) || 'R'}
-            </div>
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-3 mb-2 flex-wrap">
-                <h1 className="text-2xl font-bold break-words">{reporte.nombre}</h1>
-                <Badge
-                  variant="secondary"
-                  className="flex items-center gap-1 flex-shrink-0"
-                  style={{ 
-                    backgroundColor: `${priorityConfig[reporte.priority]?.color || priorityConfig.urgente.color}20`,
-                    color: priorityConfig[reporte.priority]?.color || priorityConfig.urgente.color,
-                    borderColor: priorityConfig[reporte.priority]?.color || priorityConfig.urgente.color
-                  }}
-                >
-                  <AlertTriangle className="h-3 w-3" />
-                  {priorityConfig[reporte.priority]?.label || 'Urgente'}
-                </Badge>
-              </div>
-            </div>
+    <div className="space-y-4 sm:space-y-6 p-2 sm:p-4">
+      {/* Header - Responsive */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={onBack}
+            className="flex items-center gap-2 w-fit"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            <span className="hidden sm:inline">Volver</span>
+          </Button>
+          <div>
+            <h1 className="text-xl sm:text-2xl font-bold">Detalle del Reporte</h1>
+            <p className="text-sm text-muted-foreground">Información completa del reporte</p>
           </div>
-          
-          <Button onClick={() => onEdit(reporte)} className="flex items-center gap-2 flex-shrink-0">
+        </div>
+        <div className="flex items-center gap-2">
+          <Button 
+            onClick={() => onEdit(reporte)} 
+            className="flex items-center gap-2 text-sm"
+            size="sm"
+          >
             <Edit className="h-4 w-4" />
-            Editar Reporte
+            <span className="hidden sm:inline">Editar Reporte</span>
+            <span className="sm:hidden">Editar</span>
           </Button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Información Principal y Mapa */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Información del Reporte */}
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 sm:gap-6">
+        {/* Información Principal - Responsive */}
+        <div className="xl:col-span-1">
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <FileText className="h-5 w-5" />
-                Información del Reporte
-              </CardTitle>
+            <CardHeader className="text-center pb-4">
+              <div className="flex justify-center mb-4">
+                <Avatar className="h-16 w-16 sm:h-24 sm:w-24">
+                  <AvatarFallback 
+                    className="text-lg sm:text-xl text-white"
+                    style={{ backgroundColor: reporte.categoria?.color || '#3B82F6' }}
+                  >
+                    {reporte.categoria?.icono?.charAt(0) || 'R'}
+                  </AvatarFallback>
+                </Avatar>
+              </div>
+              <CardTitle className="text-lg sm:text-xl">{reporte.nombre}</CardTitle>
+              <p className="text-sm text-muted-foreground break-all">{reporte.categoria?.nombre || 'Sin categoría'}</p>
             </CardHeader>
-            <CardContent className="space-y-6">
-              <div>
-                <label className="text-sm font-medium text-gray-700">Descripción</label>
-                <p className="text-gray-900 mt-1 break-words whitespace-pre-wrap">{reporte.descripcion}</p>
+            <CardContent className="space-y-4">
+              <div className="space-y-3">
+                <div className="flex items-start gap-2">
+                  <FileText className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                  <span className="text-sm break-words">{reporte.descripcion}</span>
+                </div>
+                
+                <div className="flex items-start gap-2">
+                  <Calendar className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                  <span className="text-sm">
+                    Creado: {format(new Date(reporte.created_at), 'dd/MM/yyyy', { locale: es })}
+                  </span>
+                </div>
+                
+                <div className="flex items-start gap-2">
+                  <Clock className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                  <span className="text-sm">
+                    Actualizado: {format(new Date(reporte.updated_at), 'dd/MM/yyyy', { locale: es })}
+                  </span>
+                </div>
+
+                <div className="flex items-start gap-2">
+                  <User className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                  <span className="text-sm">
+                    Creado por: {getProfileName(reporte.created_by_profile)}
+                  </span>
+                </div>
               </div>
 
               <Separator />
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="text-sm font-medium text-gray-700">Categoría</label>
-                  <div className="flex items-center gap-3 mt-1">
-                    <div 
-                      className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-medium flex-shrink-0"
-                      style={{ backgroundColor: reporte.categoria?.color || '#3B82F6' }}
-                    >
-                      {reporte.categoria?.icono?.charAt(0)}
-                    </div>
-                    <div className="min-w-0">
-                      <p className="font-medium text-gray-900 break-words">{reporte.categoria?.nombre}</p>
-                    </div>
-                  </div>
+              <div>
+                <h4 className="font-medium mb-2 flex items-center gap-2">
+                  <AlertTriangle className="h-4 w-4 flex-shrink-0" />
+                  Prioridad
+                </h4>
+                <div className="flex flex-wrap gap-2">
+                  <Badge
+                    variant="secondary"
+                    className="flex items-center gap-1"
+                    style={{ 
+                      backgroundColor: `${priorityConfig[reporte.priority]?.color || priorityConfig.urgente.color}20`,
+                      color: priorityConfig[reporte.priority]?.color || priorityConfig.urgente.color,
+                      borderColor: priorityConfig[reporte.priority]?.color || priorityConfig.urgente.color
+                    }}
+                  >
+                    <AlertTriangle className="h-3 w-3" />
+                    {priorityConfig[reporte.priority]?.label || 'Urgente'}
+                  </Badge>
                 </div>
+              </div>
+
+              <Separator />
+
+              {/* Control de Estado del Reporte */}
+              <div className="space-y-3">
+                <h4 className="font-medium">Estado del Reporte</h4>
                 
-                <div>
-                  <label className="text-sm font-medium text-gray-700">Estado</label>
-                  <div className="flex items-center gap-3 mt-1">
-                    <div 
-                      className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-medium flex-shrink-0"
-                      style={{ backgroundColor: reporte.estado?.color || '#10B981' }}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Badge 
+                      variant={statusBadge.variant} 
+                      className="flex items-center gap-1"
                     >
-                      {reporte.estado?.icono?.charAt(0)}
-                    </div>
-                    <div className="min-w-0">
-                      <p className="font-medium text-gray-900 break-words">{reporte.estado?.nombre}</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium text-gray-700">Prioridad</label>
-                  <div className="mt-1">
-                    <Badge
-                      variant="secondary"
-                      className="flex items-center gap-1 w-fit"
-                      style={{ 
-                        backgroundColor: `${priorityConfig[reporte.priority]?.color || priorityConfig.urgente.color}20`,
-                        color: priorityConfig[reporte.priority]?.color || priorityConfig.urgente.color,
-                        borderColor: priorityConfig[reporte.priority]?.color || priorityConfig.urgente.color
-                      }}
-                    >
-                      <AlertTriangle className="h-3 w-3" />
-                      {priorityConfig[reporte.priority]?.label || 'Urgente'}
+                      {statusBadge.icon}
+                      {statusBadge.text}
                     </Badge>
                   </div>
+                  
+                  <Switch
+                    checked={reporte.activo || false}
+                    onCheckedChange={handleToggleStatus}
+                    disabled={isToggling}
+                  />
                 </div>
+              </div>
 
-                <div>
-                  <label className="text-sm font-medium text-gray-700">Estado del Reporte</label>
-                  <div className="flex items-center gap-3 mt-1">
-                    <Switch
-                      checked={reporte.activo || false}
-                      onCheckedChange={handleToggleStatus}
-                      disabled={isToggling}
-                    />
-                    <Badge variant={reporte.activo ? "default" : "secondary"} className="flex items-center gap-1">
-                      {reporte.activo ? (
-                        <CheckCircle className="h-3 w-3" />
-                      ) : (
-                        <XCircle className="h-3 w-3" />
-                      )}
-                      {reporte.activo ? 'Activo' : 'Inactivo'}
-                    </Badge>
-                  </div>
-                </div>
+              <Separator />
 
-                <div>
-                  <label className="text-sm font-medium text-gray-700">Creado por</label>
-                  <div className="flex items-center gap-2 mt-1">
-                    <User className="h-4 w-4 text-gray-400 flex-shrink-0" />
-                    <span className="text-gray-900 break-words">{getProfileName(reporte.created_by_profile)}</span>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium text-gray-700">Asignado a</label>
-                  <div className="flex items-center gap-2 mt-1">
-                    <User className="h-4 w-4 text-gray-400 flex-shrink-0" />
-                    <span className="text-gray-900 break-words">
-                      {reporte.assigned_to_profile ? getProfileName(reporte.assigned_to_profile) : 'Sin asignar'}
-                    </span>
+              <div>
+                <h4 className="font-medium mb-2 flex items-center gap-2">
+                  <User className="h-4 w-4 flex-shrink-0" />
+                  Asignación
+                </h4>
+                <div className="space-y-2">
+                  <div className="text-sm">
+                    <span className="text-muted-foreground">Asignado a: </span>
+                    <span>{reporte.assigned_to_profile ? getProfileName(reporte.assigned_to_profile) : 'Sin asignar'}</span>
                   </div>
                 </div>
               </div>
 
-              {/* Imágenes */}
-              {reporte.imagenes && reporte.imagenes.length > 0 && (
+              {reporte.latitud && reporte.longitud && (
                 <>
                   <Separator />
+                  <div className="space-y-2">
+                    <h4 className="font-medium flex items-center gap-2">
+                      <MapPin className="h-4 w-4 flex-shrink-0" />
+                      Ubicación
+                    </h4>
+                    <div className="text-sm text-muted-foreground">
+                      Lat: {reporte.latitud}, Lng: {reporte.longitud}
+                    </div>
+                  </div>
+                </>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Información Detallada - Responsive */}
+        <div className="xl:col-span-2">
+          <Tabs defaultValue="detalles" className="space-y-4">
+            {/* Responsive TabsList with scrollable layout */}
+            <div className="overflow-x-auto">
+              <TabsList className="flex w-full min-w-fit">
+                <TabsTrigger value="detalles" className="flex items-center gap-1 px-2 py-1.5 text-xs sm:text-sm sm:px-4 sm:py-2 whitespace-nowrap">
+                  <FileText className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                  <span className="hidden xs:inline sm:inline">Detalles</span>
+                </TabsTrigger>
+                {reporte.imagenes && reporte.imagenes.length > 0 && (
+                  <TabsTrigger value="evidencia" className="flex items-center gap-1 px-2 py-1.5 text-xs sm:text-sm sm:px-4 sm:py-2 whitespace-nowrap">
+                    <Eye className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                    <span className="hidden xs:inline sm:inline">Evidencia</span>
+                  </TabsTrigger>
+                )}
+                {reporte.latitud && reporte.longitud && (
+                  <TabsTrigger value="ubicacion" className="flex items-center gap-1 px-2 py-1.5 text-xs sm:text-sm sm:px-4 sm:py-2 whitespace-nowrap">
+                    <MapPin className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                    <span className="hidden xs:inline sm:inline">Ubicación</span>
+                  </TabsTrigger>
+                )}
+                <TabsTrigger value="historial" className="flex items-center gap-1 px-2 py-1.5 text-xs sm:text-sm sm:px-4 sm:py-2 whitespace-nowrap">
+                  <History className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                  <span className="hidden xs:inline sm:inline">Historial</span>
+                </TabsTrigger>
+                <TabsTrigger value="auditoria" className="flex items-center gap-1 px-2 py-1.5 text-xs sm:text-sm sm:px-4 sm:py-2 whitespace-nowrap">
+                  <Settings className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                  <span className="hidden xs:inline sm:inline">Auditoría</span>
+                </TabsTrigger>
+              </TabsList>
+            </div>
+
+            <TabsContent value="detalles">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <FileText className="h-5 w-5" />
+                    Información del Reporte
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="text-sm font-medium text-gray-700">Categoría</label>
+                      <div className="flex items-center gap-3 mt-1">
+                        <div 
+                          className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-medium flex-shrink-0"
+                          style={{ backgroundColor: reporte.categoria?.color || '#3B82F6' }}
+                        >
+                          {reporte.categoria?.icono?.charAt(0)}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-medium text-gray-900 break-words">{reporte.categoria?.nombre}</p>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <label className="text-sm font-medium text-gray-700">Estado</label>
+                      <div className="flex items-center gap-3 mt-1">
+                        <div 
+                          className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-medium flex-shrink-0"
+                          style={{ backgroundColor: reporte.estado?.color || '#10B981' }}
+                        >
+                          {reporte.estado?.icono?.charAt(0)}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-medium text-gray-900 break-words">{reporte.estado?.nombre}</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="text-sm font-medium text-gray-700">Prioridad</label>
+                      <div className="mt-1">
+                        <Badge
+                          variant="secondary"
+                          className="flex items-center gap-1 w-fit"
+                          style={{ 
+                            backgroundColor: `${priorityConfig[reporte.priority]?.color || priorityConfig.urgente.color}20`,
+                            color: priorityConfig[reporte.priority]?.color || priorityConfig.urgente.color,
+                            borderColor: priorityConfig[reporte.priority]?.color || priorityConfig.urgente.color
+                          }}
+                        >
+                          <AlertTriangle className="h-3 w-3" />
+                          {priorityConfig[reporte.priority]?.label || 'Urgente'}
+                        </Badge>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="text-sm font-medium text-gray-700">Estado del Reporte</label>
+                      <div className="flex items-center gap-3 mt-1">
+                        <Switch
+                          checked={reporte.activo || false}
+                          onCheckedChange={handleToggleStatus}
+                          disabled={isToggling}
+                        />
+                        <Badge variant={reporte.activo ? "default" : "secondary"} className="flex items-center gap-1">
+                          {reporte.activo ? (
+                            <CheckCircle className="h-3 w-3" />
+                          ) : (
+                            <XCircle className="h-3 w-3" />
+                          )}
+                          {reporte.activo ? 'Activo' : 'Inactivo'}
+                        </Badge>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="text-sm font-medium text-gray-700">Creado por</label>
+                      <div className="flex items-center gap-2 mt-1">
+                        <User className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                        <span className="text-gray-900 break-words">{getProfileName(reporte.created_by_profile)}</span>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="text-sm font-medium text-gray-700">Asignado a</label>
+                      <div className="flex items-center gap-2 mt-1">
+                        <User className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                        <span className="text-gray-900 break-words">
+                          {reporte.assigned_to_profile ? getProfileName(reporte.assigned_to_profile) : 'Sin asignar'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <Separator />
+
                   <div>
-                    <label className="text-sm font-medium text-gray-700 flex items-center gap-2 mb-4">
-                      <Image className="h-4 w-4" />
-                      Imágenes del Reporte ({reporte.imagenes.length})
-                    </label>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <label className="text-sm font-medium text-gray-700">Descripción</label>
+                    <p className="text-gray-900 mt-1 break-words whitespace-pre-wrap">{reporte.descripcion}</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {reporte.imagenes && reporte.imagenes.length > 0 && (
+              <TabsContent value="evidencia">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center justify-between text-lg font-semibold text-foreground">
+                      <div className="flex items-center gap-2">
+                        <Eye className="h-5 w-5 text-green-600 dark:text-green-400 flex-shrink-0" />
+                        <span>Evidencia Fotográfica</span>
+                      </div>
+                      <span className="text-sm font-normal text-muted-foreground flex-shrink-0">
+                        {reporte.imagenes.length} imagen{reporte.imagenes.length !== 1 ? 'es' : ''}
+                      </span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-0 p-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                       {reporte.imagenes.map((imagen, index) => (
                         <div key={index} className="relative group cursor-pointer">
                           <div 
@@ -259,120 +436,85 @@ export const ReporteDetail = ({ reporte, onEdit, onBack }: ReporteDetailProps) =
                         </div>
                       ))}
                     </div>
-                  </div>
-                </>
-              )}
-            </CardContent>
-          </Card>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            )}
 
-          {/* Mapa de Ubicación */}
-          {hasLocation && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <MapPin className="h-5 w-5" />
-                  Ubicación del Reporte
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <MapaReporteEspecifico
-                  reporte={reporte}
-                  height="h-[400px]"
-                />
-              </CardContent>
-            </Card>
-          )}
-        </div>
-
-        {/* Información Adicional y Historial */}
-        <div className="space-y-6">
-          {/* Fechas */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Calendar className="h-5 w-5" />
-                Información de Fechas
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <label className="text-sm font-medium text-gray-700">Fecha de Creación</label>
-                <p className="text-gray-900 mt-1 text-sm break-words">
-                  {new Date(reporte.created_at).toLocaleDateString('es-ES', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                  })}
-                </p>
-              </div>
-              
-              <div>
-                <label className="text-sm font-medium text-gray-700">Última Actualización</label>
-                <p className="text-gray-900 mt-1 text-sm break-words">
-                  {new Date(reporte.updated_at).toLocaleDateString('es-ES', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                  })}
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Historial de Asignaciones */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Clock className="h-5 w-5" />
-                Historial de Asignaciones
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {isLoadingHistorial ? (
-                <p className="text-gray-500 text-sm">Cargando historial...</p>
-              ) : historial.length === 0 ? (
-                <div className="text-center py-6">
-                  <Clock className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                  <p className="text-gray-500 text-sm">Sin historial de asignaciones</p>
-                </div>
-              ) : (
-                <div className="space-y-4 max-h-60 overflow-y-auto">
-                  {historial.map((entry) => (
-                    <div key={entry.id} className="border-l-2 border-gray-200 pl-4 pb-4 last:pb-0">
-                      <div className="text-sm font-medium text-gray-900 break-words">
-                        {entry.comentario}
-                      </div>
-                      <div className="text-xs text-gray-600 mt-1 space-y-1">
-                        <div className="break-words">Por: {getProfileName(entry.assigned_by_profile)}</div>
-                        {entry.assigned_from_profile && (
-                          <div className="break-words">De: {getProfileName(entry.assigned_from_profile)}</div>
-                        )}
-                        {entry.assigned_to_profile && (
-                          <div className="break-words">A: {getProfileName(entry.assigned_to_profile)}</div>
-                        )}
-                        <div className="text-gray-500">
-                          {new Date(entry.fecha_asignacion).toLocaleDateString('es-ES', {
-                            year: 'numeric',
-                            month: 'short',
-                            day: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                          })}
-                        </div>
-                      </div>
+            {reporte.latitud && reporte.longitud && (
+              <TabsContent value="ubicacion">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <MapPin className="h-5 w-5 text-red-600 dark:text-red-400 flex-shrink-0" />
+                      <span>Ubicación del Reporte</span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="rounded-lg overflow-hidden border-border border">
+                      <MapaReporteEspecifico
+                        reporte={reporte}
+                        height="h-[400px]"
+                      />
                     </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            )}
 
-          {/* Componente de Auditoría - Movido aquí */}
-          <ReporteAuditoria reporteId={reporte.id} />
+            <TabsContent value="historial">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Clock className="h-5 w-5" />
+                    Historial de Asignaciones
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {isLoadingHistorial ? (
+                    <p className="text-gray-500 text-sm">Cargando historial...</p>
+                  ) : historial.length === 0 ? (
+                    <div className="text-center py-6">
+                      <Clock className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                      <p className="text-gray-500 text-sm">Sin historial de asignaciones</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4 max-h-60 overflow-y-auto">
+                      {historial.map((entry) => (
+                        <div key={entry.id} className="border-l-2 border-gray-200 pl-4 pb-4 last:pb-0">
+                          <div className="text-sm font-medium text-gray-900 break-words">
+                            {entry.comentario}
+                          </div>
+                          <div className="text-xs text-gray-600 mt-1 space-y-1">
+                            <div className="break-words">Por: {getProfileName(entry.assigned_by_profile)}</div>
+                            {entry.assigned_from_profile && (
+                              <div className="break-words">De: {getProfileName(entry.assigned_from_profile)}</div>
+                            )}
+                            {entry.assigned_to_profile && (
+                              <div className="break-words">A: {getProfileName(entry.assigned_to_profile)}</div>
+                            )}
+                            <div className="text-gray-500">
+                              {new Date(entry.fecha_asignacion).toLocaleDateString('es-ES', {
+                                year: 'numeric',
+                                month: 'short',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="auditoria">
+              <ReporteAuditoria reporteId={reporte.id} />
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
 
