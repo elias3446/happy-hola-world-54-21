@@ -4,10 +4,12 @@ import { Switch } from '@/components/ui/switch';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { useRoles } from '@/hooks/useRoles';
+import { useUsers } from '@/hooks/useUsers';
 import type { Role } from '@/types/roles';
 import { PERMISSION_LABELS, PERMISSION_GROUPS } from '@/types/roles';
 import { RolAuditoria } from './RolAuditoria';
 import { RoleUsersList } from './RoleUsersList';
+import { UserDetail } from '@/components/users/UserDetail';
 import { 
   ArrowLeft, 
   Edit, 
@@ -35,7 +37,9 @@ const isSystemRole = (roleName: string): boolean => {
 
 export const RoleDetail = ({ role: initialRole, onEdit, onBack }: RoleDetailProps) => {
   const { toggleRoleStatus, isToggling, roles } = useRoles();
+  const { users } = useUsers();
   const [currentRole, setCurrentRole] = useState(initialRole);
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
 
   // Update currentRole when roles data changes
   useEffect(() => {
@@ -58,6 +62,33 @@ export const RoleDetail = ({ role: initialRole, onEdit, onBack }: RoleDetailProp
     }
     onEdit(currentRole);
   };
+
+  const handleViewUser = (userId: string) => {
+    setSelectedUserId(userId);
+  };
+
+  const handleBackFromUserDetail = () => {
+    setSelectedUserId(null);
+  };
+
+  const handleEditUser = (user: any) => {
+    // This could be extended to handle user editing if needed
+    console.log('Edit user:', user);
+  };
+
+  // If viewing user detail, show UserDetail component
+  if (selectedUserId) {
+    const selectedUser = users.find(u => u.id === selectedUserId);
+    if (selectedUser) {
+      return (
+        <UserDetail
+          user={selectedUser}
+          onEdit={handleEditUser}
+          onBack={handleBackFromUserDetail}
+        />
+      );
+    }
+  }
 
   const getPermissionsByGroup = () => {
     const permissionsByGroup: Record<string, string[]> = {};
@@ -279,7 +310,7 @@ export const RoleDetail = ({ role: initialRole, onEdit, onBack }: RoleDetailProp
 
         {/* Usuarios con este Rol */}
         <div className="lg:col-span-2">
-          <RoleUsersList role={currentRole} />
+          <RoleUsersList role={currentRole} onViewUser={handleViewUser} />
         </div>
 
         {/* Auditoría del Rol */}

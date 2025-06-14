@@ -12,7 +12,8 @@ import {
   Calendar,
   Mail,
   Trash2,
-  AlertCircle
+  AlertCircle,
+  Eye
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -21,9 +22,10 @@ import type { Role } from '@/types/roles';
 
 interface RoleUsersListProps {
   role: Role;
+  onViewUser?: (userId: string) => void;
 }
 
-export const RoleUsersList: React.FC<RoleUsersListProps> = ({ role }) => {
+export const RoleUsersList: React.FC<RoleUsersListProps> = ({ role, onViewUser }) => {
   const { userRoles, isLoading, removeRole, isRemoving } = useUserRoles();
 
   // Filtrar usuarios que tienen este rol específico
@@ -52,6 +54,12 @@ export const RoleUsersList: React.FC<RoleUsersListProps> = ({ role }) => {
 
   const handleRemoveRole = (userId: string) => {
     removeRole({ userId, roleId: role.id });
+  };
+
+  const handleViewUser = (userId: string) => {
+    if (onViewUser) {
+      onViewUser(userId);
+    }
   };
 
   if (isLoading) {
@@ -153,6 +161,15 @@ export const RoleUsersList: React.FC<RoleUsersListProps> = ({ role }) => {
                   </div>
                   
                   <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleViewUser(userRole.user_id)}
+                      className="flex items-center gap-1"
+                    >
+                      <Eye className="h-4 w-4" />
+                      Ver Detalle
+                    </Button>
                     <Button
                       variant="outline"
                       size="sm"
