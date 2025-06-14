@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,6 +6,7 @@ import { useDashboardStats } from '@/hooks/useDashboardStats';
 import { RealTimeMetrics } from './RealTimeMetrics';
 import { InteractiveCharts } from './InteractiveCharts';
 import { AdvancedFiltersPanel } from './AdvancedFiltersPanel';
+import { MultiReportComparison } from './MultiReportComparison';
 import { NotificationProvider, useNotifications } from './NotificationSystem';
 import { AdvancedFilters } from '@/hooks/useAdvancedFilters';
 import { useQueryClient } from '@tanstack/react-query';
@@ -24,6 +24,7 @@ const ReportesAnalyticsContent = () => {
   const { reportes } = useReportes();
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [appliedFilters, setAppliedFilters] = useState<AdvancedFilters | null>(null);
+  const [selectedReportIds, setSelectedReportIds] = useState<string[]>([]);
   const { showSuccess, showError } = useNotifications();
   const queryClient = useQueryClient();
 
@@ -38,8 +39,37 @@ const ReportesAnalyticsContent = () => {
 
   const handleFiltersChange = useCallback((filters: AdvancedFilters) => {
     setAppliedFilters(filters);
+    
+    // Actualizar reportes seleccionados basado en el filtro de búsqueda
+    if (filters.searchTerm && filters.searchTerm.length > 0) {
+      setSelectedReportIds([filters.searchTerm]);
+    } else if (filters.searchTerm.length === 0 && selectedReportIds.length > 0) {
+      // Si se limpia la búsqueda, mantener las selecciones actuales
+    }
+    
     console.log('Filtros aplicados:', filters);
-  }, []);
+  }, [selectedReportIds]);
+
+  // Función para manejar selección múltiple de reportes
+  const handleReportSelection = useCallback((reportTitles: string[]) => {
+    if (!reportes) return;
+    
+    // Convertir títulos a IDs
+    const reportIds = reportTitles.map(title => {
+      const reporte = reportes.find(r => r.nombre === title);
+      return reporte?.id || title;
+    });
+    
+    setSelectedReportIds(reportIds);
+    
+    // Actualizar filtros para mantener sincronización
+    if (appliedFilters) {
+      setAppliedFilters({
+        ...appliedFilters,
+        searchTerm: reportTitles.join(', ') // Para compatibilidad con filtros existentes
+      });
+    }
+  }, [reportes, appliedFilters]);
 
   // Función corregida para verificar si una fecha está en el rango especificado
   const isDateInRange = (dateString: string, dateRange: { from: Date; to: Date }) => {
@@ -53,67 +83,33 @@ const ReportesAnalyticsContent = () => {
     fromDate.setHours(0, 0, 0, 0);
     toDate.setHours(23, 59, 59, 999);
     
-    console.log('Comparando fechas:', {
-      reporte: reportDate.toISOString(),
-      reporteFormatted: reportDate.toLocaleDateString('es-ES'),
-      desde: fromDate.toISOString(),
-      desdeFormatted: fromDate.toLocaleDateString('es-ES'),
-      hasta: toDate.toISOString(),
-      hastaFormatted: toDate.toLocaleDateString('es-ES'),
-      enRango: reportDate >= fromDate && reportDate <= toDate
-    });
-    
     return reportDate >= fromDate && reportDate <= toDate;
   };
 
-  // Función mejorada para filtrar por término de búsqueda específico
-  const filterBySearchTerm = (filteredReportes: any[], searchTerm: string) => {
-    if (!searchTerm || !reportes) return filteredReportes;
+  // Función mejorada para filtrar por reportes seleccionados específicos
+  const filterBySelectedReports = (filteredReportes: any[], selectedIds: string[]) => {
+    if (selectedIds.length === 0) return filteredReportes;
 
-    console.log('Aplicando filtro de búsqueda:', searchTerm);
+    console.log('Aplicando filtro de reportes seleccionados:', selectedIds);
     
-    // Encontrar el reporte específico seleccionado en el SearchCombobox
-    const selectedReporte = reportes.find(reporte => 
-      reporte.id === searchTerm || 
-      reporte.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      reporte.descripcion?.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-
-    if (selectedReporte) {
-      console.log('Reporte específico encontrado:', selectedReporte.id);
-      // Filtrar solo por el reporte específico seleccionado
-      const result = filteredReportes.filter(reporte => reporte.id === selectedReporte.id);
-      console.log(`Filtro de búsqueda específica aplicado: ${result.length} reportes (solo el seleccionado)`);
-      return result;
-    } else {
-      // Si no se encuentra un reporte específico, buscar por texto en campos relevantes
-      const result = filteredReportes.filter(reporte => {
-        const matchesId = reporte.id.toLowerCase().includes(searchTerm.toLowerCase());
-        // Como no tenemos acceso directo al nombre/descripción en datosCompletos,
-        // buscamos en los datos completos de reportes si están disponibles
-        const reporteCompleto = reportes?.find(r => r.id === reporte.id);
-        const matchesNombre = reporteCompleto?.nombre?.toLowerCase().includes(searchTerm.toLowerCase()) || false;
-        const matchesDescripcion = reporteCompleto?.descripcion?.toLowerCase().includes(searchTerm.toLowerCase()) || false;
-        
-        return matchesId || matchesNombre || matchesDescripcion;
-      });
-      
-      console.log(`Filtro de búsqueda por texto aplicado: ${result.length} reportes encontrados`);
-      return result;
-    }
+    const result = filteredReportes.filter(reporte => selectedIds.includes(reporte.id));
+    console.log(`Filtro de reportes específicos aplicado: ${result.length} reportes`);
+    return result;
   };
 
   // Filtrar datos usando los datos reales de la base de datos
   const getFilteredStats = () => {
-    if (!stats || !appliedFilters) return stats;
+    if (!stats) return stats;
 
-    // Verificar si hay filtros activos
+    // Verificar si hay filtros activos (incluyendo selección de reportes)
     const hasActiveFilters = 
-      appliedFilters.dateRange !== null ||
-      appliedFilters.priority.length > 0 ||
-      appliedFilters.estados.length > 0 ||
-      appliedFilters.categorias.length > 0 ||
-      appliedFilters.searchTerm.length > 0;
+      (appliedFilters && (
+        appliedFilters.dateRange !== null ||
+        appliedFilters.priority.length > 0 ||
+        appliedFilters.estados.length > 0 ||
+        appliedFilters.categorias.length > 0
+      )) ||
+      selectedReportIds.length > 0;
 
     if (!hasActiveFilters) {
       console.log('No hay filtros activos, retornando datos originales');
@@ -123,61 +119,56 @@ const ReportesAnalyticsContent = () => {
     console.log('Aplicando filtros a datos:', {
       totalReportes: stats.reportes.total,
       datosCompletos: stats.reportes.datosCompletos.length,
-      filtros: appliedFilters
+      filtros: appliedFilters,
+      reportesSeleccionados: selectedReportIds
     });
 
     // Usar los datos completos reales de la base de datos
     let filteredReportes = [...stats.reportes.datosCompletos];
     console.log('Reportes iniciales:', filteredReportes.length);
 
-    // Aplicar filtro de rango de fechas usando datos reales
-    if (appliedFilters.dateRange) {
-      console.log('Aplicando filtro de fecha:', {
-        desde: appliedFilters.dateRange.from.toLocaleDateString('es-ES'),
-        hasta: appliedFilters.dateRange.to.toLocaleDateString('es-ES'),
-        totalReportesAntesFiltro: filteredReportes.length
-      });
-      
-      const reportesAntesDelFiltro = filteredReportes.length;
-      filteredReportes = filteredReportes.filter(reporte => {
-        const estaEnRango = isDateInRange(reporte.created_at, appliedFilters.dateRange!);
-        console.log(`Reporte ${reporte.id} creado el ${new Date(reporte.created_at).toLocaleDateString('es-ES')} está en rango: ${estaEnRango}`);
-        return estaEnRango;
-      });
-      
-      console.log(`Filtro de fecha aplicado: ${filteredReportes.length}/${reportesAntesDelFiltro} reportes en el rango`);
+    // Aplicar filtro de reportes seleccionados PRIMERO
+    if (selectedReportIds.length > 0) {
+      filteredReportes = filterBySelectedReports(filteredReportes, selectedReportIds);
     }
 
-    // Aplicar filtro de prioridades
-    if (appliedFilters.priority.length > 0) {
-      const reportesAntesDelFiltro = filteredReportes.length;
-      filteredReportes = filteredReportes.filter(reporte => 
-        appliedFilters.priority.includes(reporte.priority)
-      );
-      console.log(`Filtro de prioridad aplicado: ${filteredReportes.length}/${reportesAntesDelFiltro} reportes`);
-    }
+    // Aplicar otros filtros solo si appliedFilters existe
+    if (appliedFilters) {
+      // Aplicar filtro de rango de fechas
+      if (appliedFilters.dateRange) {
+        const reportesAntesDelFiltro = filteredReportes.length;
+        filteredReportes = filteredReportes.filter(reporte => 
+          isDateInRange(reporte.created_at, appliedFilters.dateRange!)
+        );
+        console.log(`Filtro de fecha aplicado: ${filteredReportes.length}/${reportesAntesDelFiltro} reportes en el rango`);
+      }
 
-    // Aplicar filtro de estados
-    if (appliedFilters.estados.length > 0) {
-      const reportesAntesDelFiltro = filteredReportes.length;
-      filteredReportes = filteredReportes.filter(reporte => 
-        reporte.estado && appliedFilters.estados.includes(reporte.estado.nombre)
-      );
-      console.log(`Filtro de estado aplicado: ${filteredReportes.length}/${reportesAntesDelFiltro} reportes`);
-    }
+      // Aplicar filtro de prioridades
+      if (appliedFilters.priority.length > 0) {
+        const reportesAntesDelFiltro = filteredReportes.length;
+        filteredReportes = filteredReportes.filter(reporte => 
+          appliedFilters.priority.includes(reporte.priority)
+        );
+        console.log(`Filtro de prioridad aplicado: ${filteredReportes.length}/${reportesAntesDelFiltro} reportes`);
+      }
 
-    // Aplicar filtro de categorías
-    if (appliedFilters.categorias.length > 0) {
-      const reportesAntesDelFiltro = filteredReportes.length;
-      filteredReportes = filteredReportes.filter(reporte => 
-        reporte.categoria && appliedFilters.categorias.includes(reporte.categoria.nombre)
-      );
-      console.log(`Filtro de categoría aplicado: ${filteredReportes.length}/${reportesAntesDelFiltro} reportes`);
-    }
+      // Aplicar filtro de estados
+      if (appliedFilters.estados.length > 0) {
+        const reportesAntesDelFiltro = filteredReportes.length;
+        filteredReportes = filteredReportes.filter(reporte => 
+          reporte.estado && appliedFilters.estados.includes(reporte.estado.nombre)
+        );
+        console.log(`Filtro de estado aplicado: ${filteredReportes.length}/${reportesAntesDelFiltro} reportes`);
+      }
 
-    // Aplicar filtro de búsqueda específica usando la función mejorada
-    if (appliedFilters.searchTerm.length > 0) {
-      filteredReportes = filterBySearchTerm(filteredReportes, appliedFilters.searchTerm);
+      // Aplicar filtro de categorías
+      if (appliedFilters.categorias.length > 0) {
+        const reportesAntesDelFiltro = filteredReportes.length;
+        filteredReportes = filteredReportes.filter(reporte => 
+          reporte.categoria && appliedFilters.categorias.includes(reporte.categoria.nombre)
+        );
+        console.log(`Filtro de categoría aplicado: ${filteredReportes.length}/${reportesAntesDelFiltro} reportes`);
+      }
     }
 
     console.log('Resultado final del filtrado:', {
@@ -251,6 +242,20 @@ const ReportesAnalyticsContent = () => {
 
   const filteredStats = getFilteredStats();
 
+  // Preparar datos para comparación múltiple
+  const reportesParaComparacion = selectedReportIds.length > 0 && reportes ? 
+    reportes
+      .filter(r => selectedReportIds.includes(r.id))
+      .map(r => ({
+        id: r.id,
+        titulo: r.nombre,
+        estado: r.estado?.nombre || 'Sin estado',
+        categoria: r.categoria?.nombre || 'Sin categoría',
+        prioridad: r.priority,
+        fechaCreacion: r.created_at,
+        activo: r.activo
+      })) : [];
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -283,7 +288,7 @@ const ReportesAnalyticsContent = () => {
             Análisis Avanzado de Reportes
           </h2>
           <p className="text-muted-foreground">
-            Dashboard interactivo con métricas en tiempo real y análisis detallado
+            Dashboard interactivo con métricas en tiempo real y análisis comparativo
           </p>
         </div>
         <Button onClick={handleRefreshData} variant="outline" className="w-fit">
@@ -292,33 +297,42 @@ const ReportesAnalyticsContent = () => {
         </Button>
       </div>
 
-      {/* Filtros Avanzados */}
+      {/* Filtros Avanzados - Actualizado para soportar selección múltiple */}
       <AdvancedFiltersPanel
         isOpen={filtersOpen}
         onToggle={() => setFiltersOpen(!filtersOpen)}
         onFiltersChange={handleFiltersChange}
+        onMultipleReportSelection={handleReportSelection}
+        selectedReportIds={selectedReportIds}
       />
 
+      {/* Comparación múltiple de reportes */}
+      {reportesParaComparacion.length > 0 && (
+        <MultiReportComparison reportesSeleccionados={reportesParaComparacion} />
+      )}
+
       {/* Indicador de filtros aplicados */}
-      {appliedFilters && (appliedFilters.priority.length > 0 || appliedFilters.estados.length > 0 || appliedFilters.categorias.length > 0 || appliedFilters.searchTerm.length > 0 || appliedFilters.dateRange) && (
+      {(appliedFilters && (appliedFilters.priority.length > 0 || appliedFilters.estados.length > 0 || appliedFilters.categorias.length > 0 || appliedFilters.dateRange)) || selectedReportIds.length > 0 ? (
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <h3 className="text-sm font-medium text-blue-900 mb-2">Filtros aplicados (datos reales):</h3>
+          <h3 className="text-sm font-medium text-blue-900 mb-2">Filtros aplicados:</h3>
           <div className="flex flex-wrap gap-2 text-sm text-blue-700">
-            {appliedFilters.searchTerm && (
-              <span className="bg-blue-100 px-2 py-1 rounded">Búsqueda: "{appliedFilters.searchTerm}"</span>
+            {selectedReportIds.length > 0 && (
+              <span className="bg-blue-100 px-2 py-1 rounded">
+                Reportes seleccionados: {selectedReportIds.length}
+              </span>
             )}
-            {appliedFilters.dateRange && (
+            {appliedFilters?.dateRange && (
               <span className="bg-blue-100 px-2 py-1 rounded">
                 Fechas: {appliedFilters.dateRange.from.toLocaleDateString('es-ES')} - {appliedFilters.dateRange.to.toLocaleDateString('es-ES')}
               </span>
             )}
-            {appliedFilters.priority.length > 0 && (
+            {appliedFilters?.priority.length > 0 && (
               <span className="bg-blue-100 px-2 py-1 rounded">Prioridades: {appliedFilters.priority.join(', ')}</span>
             )}
-            {appliedFilters.estados.length > 0 && (
+            {appliedFilters?.estados.length > 0 && (
               <span className="bg-blue-100 px-2 py-1 rounded">Estados: {appliedFilters.estados.join(', ')}</span>
             )}
-            {appliedFilters.categorias.length > 0 && (
+            {appliedFilters?.categorias.length > 0 && (
               <span className="bg-blue-100 px-2 py-1 rounded">Categorías: {appliedFilters.categorias.join(', ')}</span>
             )}
           </div>
@@ -326,7 +340,7 @@ const ReportesAnalyticsContent = () => {
             Mostrando {filteredStats.reportes.total} de {stats?.reportes.total} reportes
           </div>
         </div>
-      )}
+      ) : null}
 
       {/* Métricas en Tiempo Real - Siempre visibles */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -380,7 +394,7 @@ const ReportesAnalyticsContent = () => {
             name: item.estado,
             value: item.count,
             color: item.color,
-            trend: Math.random() * 20 - 10, // Simulamos tendencia
+            trend: Math.random() * 20 - 10,
           }))}
           showTrends={true}
         />
@@ -392,7 +406,7 @@ const ReportesAnalyticsContent = () => {
             name: item.categoria,
             value: item.count,
             color: item.color,
-            trend: Math.random() * 15 - 7.5, // Simulamos tendencia
+            trend: Math.random() * 15 - 7.5,
           }))}
           showTrends={true}
         />
@@ -408,7 +422,7 @@ const ReportesAnalyticsContent = () => {
               name: priorityConfig[item.priority as keyof typeof priorityConfig]?.label || item.priority,
               value: item.count,
               color: priorityConfig[item.priority as keyof typeof priorityConfig]?.color || '#6B7280',
-              trend: Math.random() * 25 - 12.5, // Simulamos tendencia
+              trend: Math.random() * 25 - 12.5,
             }))}
             showTrends={true}
           />
@@ -428,7 +442,7 @@ const ReportesAnalyticsContent = () => {
                 {filteredStats.reportes.porPrioridad.map((item) => {
                   const config = priorityConfig[item.priority as keyof typeof priorityConfig];
                   const percentage = Math.round((item.count / Math.max(filteredStats.reportes.total, 1)) * 100);
-                  const trend = Math.random() * 20 - 10; // Simulamos tendencia
+                  const trend = Math.random() * 20 - 10;
                   
                   return (
                     <div key={item.priority} className="flex items-center justify-between p-3 rounded-lg border">
