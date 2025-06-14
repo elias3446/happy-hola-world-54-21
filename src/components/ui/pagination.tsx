@@ -21,7 +21,7 @@ const PaginationContent = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <ul
     ref={ref}
-    className={cn("flex flex-row items-center gap-2", className)}
+    className={cn("flex flex-row items-center gap-1 sm:gap-2 overflow-x-auto scrollbar-hide", className)}
     {...props}
   />
 ))
@@ -53,7 +53,7 @@ const PaginationLink = ({
         variant: isActive ? "default" : "ghost",
         size,
       }),
-      "h-10 w-10 border",
+      "h-8 w-8 sm:h-10 sm:w-10 border text-xs sm:text-sm",
       isActive
         ? "bg-primary text-primary-foreground border-primary"
         : "bg-background hover:bg-accent border-border",
@@ -71,11 +71,12 @@ const PaginationPrevious = ({
   <PaginationLink
     aria-label="Go to previous page"
     size="default"
-    className={cn("gap-1 pl-2.5 pr-2.5 h-10 hover:bg-accent mr-8 border-0 bg-transparent", className)}
+    className={cn("gap-1 px-2 sm:px-2.5 h-8 sm:h-10 hover:bg-accent mr-2 sm:mr-4 border-0 bg-transparent text-xs sm:text-sm", className)}
     {...props}
   >
-    <ChevronLeft className="h-4 w-4" />
-    <span>Anterior</span>
+    <ChevronLeft className="h-3 w-3 sm:h-4 sm:w-4" />
+    <span className="hidden sm:inline">Anterior</span>
+    <span className="sm:hidden">Ant</span>
   </PaginationLink>
 )
 PaginationPrevious.displayName = "PaginationPrevious"
@@ -87,11 +88,12 @@ const PaginationNext = ({
   <PaginationLink
     aria-label="Go to next page"
     size="default"
-    className={cn("gap-1 pl-2.5 pr-2.5 h-10 hover:bg-accent ml-8 border-0 bg-transparent", className)}
+    className={cn("gap-1 px-2 sm:px-2.5 h-8 sm:h-10 hover:bg-accent ml-2 sm:ml-4 border-0 bg-transparent text-xs sm:text-sm", className)}
     {...props}
   >
-    <span>Siguiente</span>
-    <ChevronRight className="h-4 w-4" />
+    <span className="hidden sm:inline">Siguiente</span>
+    <span className="sm:hidden">Sig</span>
+    <ChevronRight className="h-3 w-3 sm:h-4 sm:w-4" />
   </PaginationLink>
 )
 PaginationNext.displayName = "PaginationNext"
