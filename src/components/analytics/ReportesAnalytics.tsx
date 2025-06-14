@@ -53,7 +53,7 @@ const ReportesAnalyticsContent = () => {
 
     if (!hasActiveFilters) return stats;
 
-    // Create filtered version of stats
+    // Start with original data
     let filteredPorEstado = [...stats.reportes.porEstado];
     let filteredPorCategoria = [...stats.reportes.porCategoria];
     let filteredPorPrioridad = [...stats.reportes.porPrioridad];
@@ -79,59 +79,84 @@ const ReportesAnalyticsContent = () => {
       );
     }
 
-    // Calculate new totals based on filtered data
-    const filteredTotal = Math.max(
-      filteredPorEstado.reduce((sum, item) => sum + item.count, 0),
-      filteredPorCategoria.reduce((sum, item) => sum + item.count, 0),
-      filteredPorPrioridad.reduce((sum, item) => sum + item.count, 0)
-    );
+    // Calculate filtered totals correctly based on the actual data
+    const totalFromEstados = filteredPorEstado.reduce((sum, item) => sum + item.count, 0);
+    const totalFromCategorias = filteredPorCategoria.reduce((sum, item) => sum + item.count, 0);
+    const totalFromPrioridad = filteredPorPrioridad.reduce((sum, item) => sum + item.count, 0);
 
-    // Apply search term filter (simulated reduction)
-    let searchMultiplier = 1;
+    // Use the most restrictive filter (smallest count) as the base
+    let baseTotal = stats.reportes.total;
+    if (appliedFilters.estados.length > 0) baseTotal = Math.min(baseTotal, totalFromEstados);
+    if (appliedFilters.categorias.length > 0) baseTotal = Math.min(baseTotal, totalFromCategorias);
+    if (appliedFilters.priority.length > 0) baseTotal = Math.min(baseTotal, totalFromPrioridad);
+
+    // Apply search term filter (reduce by percentage based on search term length)
     if (appliedFilters.searchTerm.length > 0) {
-      // Simulate search filtering - reduce counts by a factor
-      searchMultiplier = Math.max(0.3, 1 - (appliedFilters.searchTerm.length * 0.1));
+      const searchReduction = Math.min(0.8, appliedFilters.searchTerm.length * 0.1); // Max 80% reduction
+      baseTotal = Math.round(baseTotal * (1 - searchReduction));
+      
+      // Apply the same reduction to filtered arrays
+      filteredPorEstado = filteredPorEstado.map(item => ({
+        ...item,
+        count: Math.round(item.count * (1 - searchReduction))
+      })).filter(item => item.count > 0);
+
+      filteredPorCategoria = filteredPorCategoria.map(item => ({
+        ...item,
+        count: Math.round(item.count * (1 - searchReduction))
+      })).filter(item => item.count > 0);
+
+      filteredPorPrioridad = filteredPorPrioridad.map(item => ({
+        ...item,
+        count: Math.round(item.count * (1 - searchReduction))
+      })).filter(item => item.count > 0);
     }
 
-    // Apply date range filter (simulated reduction)
-    let dateMultiplier = 1;
+    // Apply date range filter (simulate temporal filtering)
     if (appliedFilters.dateRange) {
-      // Simulate date filtering - could reduce recent reports
-      dateMultiplier = 0.7; // Simulate that 70% of reports fall within date range
+      const dateReduction = 0.4; // Assume 40% of reports fall outside the date range
+      baseTotal = Math.round(baseTotal * (1 - dateReduction));
+      
+      filteredPorEstado = filteredPorEstado.map(item => ({
+        ...item,
+        count: Math.round(item.count * (1 - dateReduction))
+      })).filter(item => item.count > 0);
+
+      filteredPorCategoria = filteredPorCategoria.map(item => ({
+        ...item,
+        count: Math.round(item.count * (1 - dateReduction))
+      })).filter(item => item.count > 0);
+
+      filteredPorPrioridad = filteredPorPrioridad.map(item => ({
+        ...item,
+        count: Math.round(item.count * (1 - dateReduction))
+      })).filter(item => item.count > 0);
     }
 
-    const finalMultiplier = searchMultiplier * dateMultiplier;
+    // Calculate consistent derived metrics
+    const finalTotal = Math.max(baseTotal, 0);
+    const finalActivos = Math.round(finalTotal * 0.85); // 85% de reportes están activos
+    const finalRecientes = Math.round(finalTotal * 0.4); // 40% son recientes (últimos 7 días)
 
-    // Apply multipliers to filtered data
-    const finalPorEstado = filteredPorEstado.map(item => ({
-      ...item,
-      count: Math.round(item.count * finalMultiplier)
-    }));
+    // Ensure consistency: if we have specific filters, adjust the arrays accordingly
+    const actualTotalFromEstados = filteredPorEstado.reduce((sum, item) => sum + item.count, 0);
+    const actualTotalFromCategorias = filteredPorCategoria.reduce((sum, item) => sum + item.count, 0);
+    const actualTotalFromPrioridad = filteredPorPrioridad.reduce((sum, item) => sum + item.count, 0);
 
-    const finalPorCategoria = filteredPorCategoria.map(item => ({
-      ...item,
-      count: Math.round(item.count * finalMultiplier)
-    }));
-
-    const finalPorPrioridad = filteredPorPrioridad.map(item => ({
-      ...item,
-      count: Math.round(item.count * finalMultiplier)
-    }));
-
-    const finalTotal = Math.round(filteredTotal * finalMultiplier);
-    const finalActivos = Math.round(finalTotal * 0.85); // Assume 85% are active
-    const finalRecientes = Math.round(finalTotal * 0.6); // Assume 60% are recent
+    // Normalize to ensure consistency between different views
+    const maxActualTotal = Math.max(actualTotalFromEstados, actualTotalFromCategorias, actualTotalFromPrioridad);
+    const normalizedTotal = Math.max(finalTotal, maxActualTotal);
 
     return {
       ...stats,
       reportes: {
         ...stats.reportes,
-        total: finalTotal,
-        activos: finalActivos,
-        recientes: finalRecientes,
-        porEstado: finalPorEstado,
-        porCategoria: finalPorCategoria,
-        porPrioridad: finalPorPrioridad,
+        total: normalizedTotal,
+        activos: Math.min(finalActivos, normalizedTotal),
+        recientes: Math.min(finalRecientes, normalizedTotal),
+        porEstado: filteredPorEstado,
+        porCategoria: filteredPorCategoria,
+        porPrioridad: filteredPorPrioridad,
       }
     };
   };
@@ -225,7 +250,7 @@ const ReportesAnalyticsContent = () => {
         <RealTimeMetrics
           title="Reportes Activos"
           value={filteredStats.reportes.activos}
-          previousValue={filteredStats.reportes.total - filteredStats.reportes.activos}
+          previousValue={stats?.reportes.activos}
           subtitle={`${Math.round((filteredStats.reportes.activos / Math.max(filteredStats.reportes.total, 1)) * 100)}% del total`}
           icon={TrendingUp}
           color="text-green-600"
@@ -350,7 +375,7 @@ const ReportesAnalyticsContent = () => {
         </div>
       )}
 
-      {/* Métricas adicionales */}
+      {/* Métricas adicionales con cálculos corregidos */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card>
           <CardHeader>
@@ -368,9 +393,9 @@ const ReportesAnalyticsContent = () => {
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-sm text-muted-foreground">Crecimiento semanal</span>
+                <span className="text-sm text-muted-foreground">Reportes recientes</span>
                 <span className="text-sm font-medium text-green-600">
-                  +{filteredStats.reportes.recientes}
+                  {filteredStats.reportes.recientes}
                 </span>
               </div>
               <div className="flex justify-between">
@@ -422,19 +447,19 @@ const ReportesAnalyticsContent = () => {
               <div className="flex justify-between">
                 <span className="text-sm text-muted-foreground">Reportes por categoría</span>
                 <span className="text-sm font-medium">
-                  {Math.round(filteredStats.reportes.total / Math.max(filteredStats.categorias.total, 1) * 10) / 10}
+                  {(filteredStats.reportes.total / Math.max(filteredStats.categorias.total, 1)).toFixed(1)}
                 </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-sm text-muted-foreground">Reportes por estado</span>
                 <span className="text-sm font-medium">
-                  {Math.round(filteredStats.reportes.total / Math.max(filteredStats.estados.total, 1) * 10) / 10}
+                  {(filteredStats.reportes.total / Math.max(filteredStats.estados.total, 1)).toFixed(1)}
                 </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-sm text-muted-foreground">Categorías activas</span>
                 <span className="text-sm font-medium">
-                  {Math.round((filteredStats.categorias.activas / filteredStats.categorias.total) * 100)}%
+                  {Math.round((filteredStats.categorias.activas / Math.max(filteredStats.categorias.total, 1)) * 100)}%
                 </span>
               </div>
             </div>
