@@ -49,7 +49,7 @@ export interface UpdateUserData {
   role_ids?: string[];
 }
 
-export const useUsers = () => {
+export const useUsers = (includeCurrentUser: boolean = false) => {
   const queryClient = useQueryClient();
 
   const {
@@ -57,11 +57,11 @@ export const useUsers = () => {
     isLoading,
     error,
   } = useQuery({
-    queryKey: ['users'],
+    queryKey: ['users', includeCurrentUser],
     queryFn: async () => {
-      console.log('Fetching users...');
+      console.log('Fetching users with includeCurrentUser:', includeCurrentUser);
       
-      // Get current user ID to filter it out
+      // Get current user ID
       const { data: { user: currentUser } } = await supabase.auth.getUser();
       
       const { data: usersWithRoles, error: rolesError } = await supabase
@@ -106,19 +106,19 @@ export const useUsers = () => {
           user_roles: []
         }));
         
-        // Filter out current user
-        const filteredUsers = transformedUsers.filter(user => 
-          !currentUser || user.id !== currentUser.id
-        );
+        // Filter current user only if not including them
+        const filteredUsers = includeCurrentUser 
+          ? transformedUsers
+          : transformedUsers.filter(user => !currentUser || user.id !== currentUser.id);
         
         console.log('Fetched users without roles (filtered):', filteredUsers);
         return filteredUsers as User[];
       }
 
-      // Filter out current user
-      const filteredUsers = (usersWithRoles || []).filter(user => 
-        !currentUser || user.id !== currentUser.id
-      );
+      // Filter current user only if not including them
+      const filteredUsers = includeCurrentUser 
+        ? (usersWithRoles || [])
+        : (usersWithRoles || []).filter(user => !currentUser || user.id !== currentUser.id);
 
       console.log('Fetched users with roles (filtered):', filteredUsers);
       return filteredUsers as User[];

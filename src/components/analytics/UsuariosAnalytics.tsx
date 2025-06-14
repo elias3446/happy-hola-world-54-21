@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -17,7 +16,8 @@ import { useToast } from '@/hooks/use-toast';
 
 const UsuariosAnalyticsContent = () => {
   const { data: stats, isLoading, error, refetch } = useDashboardStats();
-  const { users } = useUsers();
+  // Include current user in analytics
+  const { users } = useUsers(true);
   const { userRoles } = useUserRoles();
   const { roles } = useRoles();
   const { user: currentUser } = useAuth();
@@ -102,11 +102,11 @@ const UsuariosAnalyticsContent = () => {
     if (!stats || !users) return null;
     
     if (!hasValidFilters) {
-      console.log('Sin filtros válidos - mostrando datos reales de la base de datos');
+      console.log('Sin filtros válidos - mostrando datos reales de la base de datos incluyendo usuario actual');
       return stats;
     }
 
-    console.log('Aplicando filtros de comparación sobre datos reales:', {
+    console.log('Aplicando filtros de comparación sobre datos reales (incluyendo usuario actual):', {
       totalUsuarios: stats.usuarios.total,
       usuariosCompletos: users.length,
       filtros: appliedFilters,
@@ -114,30 +114,19 @@ const UsuariosAnalyticsContent = () => {
       usuarioActual: currentUser?.id
     });
 
-    // Use only real database data - filter the actual users array
+    // Use only real database data - filter the actual users array (including current user)
     let filteredUsers = [...users];
-    console.log('Usuarios reales iniciales:', filteredUsers.length);
-
-    // Always ensure current user is included in the dataset if they exist
-    if (currentUser?.id && !filteredUsers.find(u => u.id === currentUser.id)) {
-      console.log('Usuario actual no está en la lista de usuarios, verificando si debería incluirse');
-    }
+    console.log('Usuarios reales iniciales (incluyendo usuario actual):', filteredUsers.length);
 
     switch (appliedFilters.activeTab) {
       case 'busqueda':
         if (appliedFilters.searchTerm.length >= 2) {
           const userIds = [...appliedFilters.searchTerm];
           
-          // Incluir al usuario actual si no está en la selección pero debería estar
-          if (currentUser?.id && !userIds.includes(currentUser.id)) {
-            userIds.push(currentUser.id);
-            console.log('Usuario actual agregado a la búsqueda:', currentUser.id);
-          }
-          
           filteredUsers = filteredUsers.filter(user => 
             userIds.includes(user.id)
           );
-          console.log(`Filtro de búsqueda aplicado: ${filteredUsers.length} usuarios seleccionados (incluyendo usuario actual)`);
+          console.log(`Filtro de búsqueda aplicado: ${filteredUsers.length} usuarios seleccionados`);
         }
         break;
 
@@ -146,19 +135,7 @@ const UsuariosAnalyticsContent = () => {
           filteredUsers = filteredUsers.filter(user => 
             isDateInRange(user.created_at, appliedFilters.dateRange!)
           );
-          
-          // Verificar si el usuario actual debería estar incluido en el rango de fechas
-          if (currentUser?.id) {
-            const currentUserInUsers = users.find(u => u.id === currentUser.id);
-            if (currentUserInUsers && !filteredUsers.find(u => u.id === currentUser.id)) {
-              if (isDateInRange(currentUserInUsers.created_at, appliedFilters.dateRange!)) {
-                filteredUsers.push(currentUserInUsers);
-                console.log('Usuario actual agregado al filtro de fechas:', currentUser.id);
-              }
-            }
-          }
-          
-          console.log(`Filtro de fecha aplicado: ${filteredUsers.length} usuarios en el rango (incluyendo usuario actual si aplica)`);
+          console.log(`Filtro de fecha aplicado: ${filteredUsers.length} usuarios en el rango`);
         }
         break;
 
@@ -182,29 +159,21 @@ const UsuariosAnalyticsContent = () => {
             selectedRoleIds.includes(userRole.role_id) && !userRole.deleted_at
           ).map(userRole => userRole.user_id) || [];
           
-          // SIEMPRE incluir el usuario logueado actual si tiene los roles en su perfil
-          if (currentUser?.id) {
-            const currentUserProfile = users.find(u => u.id === currentUser.id);
-            if (currentUserProfile?.role && Array.isArray(currentUserProfile.role)) {
-              const currentUserHasSelectedRole = selectedRoleNames.some(roleName => 
-                currentUserProfile.role.includes(roleName)
-              );
-              
-              if (currentUserHasSelectedRole && !userIdsWithSelectedRoles.includes(currentUser.id)) {
-                userIdsWithSelectedRoles.push(currentUser.id);
-                console.log('Usuario actual agregado por roles en perfil:', currentUser.id);
-              }
-            }
-          }
-          
-          console.log('IDs de usuarios con roles seleccionados (incluyendo usuario actual):', userIdsWithSelectedRoles);
+          console.log('IDs de usuarios con roles seleccionados:', userIdsWithSelectedRoles);
           
           // Filtrar usuarios que tienen alguno de los roles seleccionados
-          filteredUsers = filteredUsers.filter(user => 
-            userIdsWithSelectedRoles.includes(user.id)
-          );
+          filteredUsers = filteredUsers.filter(user => {
+            // Verificar en user_roles table
+            const hasRoleInTable = userIdsWithSelectedRoles.includes(user.id);
+            
+            // Verificar en el campo role del perfil
+            const hasRoleInProfile = user.role && Array.isArray(user.role) && 
+              selectedRoleNames.some(roleName => user.role.includes(roleName));
+            
+            return hasRoleInTable || hasRoleInProfile;
+          });
           
-          console.log(`Filtro de roles aplicado: ${filteredUsers.length} usuarios con roles seleccionados (incluyendo usuario actual)`);
+          console.log(`Filtro de roles aplicado: ${filteredUsers.length} usuarios con roles seleccionados`);
           console.log('Usuarios encontrados con roles:', filteredUsers.map(u => ({ id: u.id, email: u.email })));
         }
         break;
@@ -216,20 +185,7 @@ const UsuariosAnalyticsContent = () => {
             const userState = isActive ? 'Activo' : 'Inactivo';
             return appliedFilters.estados.includes(userState);
           });
-          
-          // Asegurar que el usuario actual esté incluido si cumple con el filtro
-          if (currentUser?.id) {
-            const currentUserInUsers = users.find(u => u.id === currentUser.id);
-            if (currentUserInUsers && !filteredUsers.find(u => u.id === currentUser.id)) {
-              const currentUserState = currentUserInUsers.asset ? 'Activo' : 'Inactivo';
-              if (appliedFilters.estados.includes(currentUserState)) {
-                filteredUsers.push(currentUserInUsers);
-                console.log('Usuario actual agregado al filtro de activación:', currentUser.id);
-              }
-            }
-          }
-          
-          console.log(`Filtro de activación aplicado: ${filteredUsers.length} usuarios con estados seleccionados (incluyendo usuario actual si aplica)`);
+          console.log(`Filtro de activación aplicado: ${filteredUsers.length} usuarios con estados seleccionados`);
         }
         break;
 
@@ -240,25 +196,12 @@ const UsuariosAnalyticsContent = () => {
             const userConfirmation = isConfirmed ? 'Confirmado' : 'No Confirmado';
             return appliedFilters.categorias.includes(userConfirmation);
           });
-          
-          // Asegurar que el usuario actual esté incluido si cumple con el filtro
-          if (currentUser?.id) {
-            const currentUserInUsers = users.find(u => u.id === currentUser.id);
-            if (currentUserInUsers && !filteredUsers.find(u => u.id === currentUser.id)) {
-              const currentUserConfirmation = currentUserInUsers.confirmed ? 'Confirmado' : 'No Confirmado';
-              if (appliedFilters.categorias.includes(currentUserConfirmation)) {
-                filteredUsers.push(currentUserInUsers);
-                console.log('Usuario actual agregado al filtro de confirmación:', currentUser.id);
-              }
-            }
-          }
-          
-          console.log(`Filtro de confirmación aplicado: ${filteredUsers.length} usuarios con confirmaciones seleccionadas (incluyendo usuario actual si aplica)`);
+          console.log(`Filtro de confirmación aplicado: ${filteredUsers.length} usuarios con confirmaciones seleccionadas`);
         }
         break;
     }
 
-    console.log('Resultado final del filtrado sobre datos reales:', {
+    console.log('Resultado final del filtrado sobre datos reales (incluyendo usuario actual):', {
       usuariosOriginales: stats.usuarios.total,
       usuariosFiltrados: filteredUsers.length,
       tabActiva: appliedFilters.activeTab,
@@ -338,8 +281,8 @@ const UsuariosAnalyticsContent = () => {
           </h2>
           <p className="text-muted-foreground">
             {hasValidFilters 
-              ? 'Dashboard con filtros aplicados sobre datos reales de la base de datos'
-              : 'Dashboard en tiempo real con datos reales de la base de datos'
+              ? 'Dashboard con filtros aplicados sobre datos reales de la base de datos (incluyendo usuario actual)'
+              : 'Dashboard en tiempo real con datos reales de la base de datos (incluyendo usuario actual)'
             }
           </p>
         </div>
@@ -362,7 +305,7 @@ const UsuariosAnalyticsContent = () => {
       {/* Indicador de filtros aplicados */}
       {hasValidFilters && (
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <h3 className="text-sm font-medium text-blue-900 mb-2">Comparación activa sobre datos reales:</h3>
+          <h3 className="text-sm font-medium text-blue-900 mb-2">Comparación activa sobre datos reales (incluyendo usuario actual):</h3>
           <div className="flex flex-wrap gap-2 text-sm text-blue-700">
             {appliedFilters.activeTab === 'busqueda' && appliedFilters.searchTerm.length >= 2 && (
               <span className="bg-blue-100 px-2 py-1 rounded">
@@ -391,7 +334,7 @@ const UsuariosAnalyticsContent = () => {
             )}
           </div>
           <div className="mt-2 text-xs text-blue-600">
-            Datos reales: {filteredStats.usuarios.total} de {stats?.usuarios.total} usuarios
+            Datos reales: {filteredStats.usuarios.total} de {stats?.usuarios.total} usuarios (incluyendo usuario actual)
           </div>
         </div>
       )}
@@ -401,7 +344,7 @@ const UsuariosAnalyticsContent = () => {
         <div className="bg-green-50 border border-green-200 rounded-lg p-4">
           <h3 className="text-sm font-medium text-green-900 mb-2">Vista en Tiempo Real (Datos Reales):</h3>
           <div className="text-sm text-green-700">
-            Mostrando todos los usuarios reales de la base de datos ({stats?.usuarios.total} usuarios)
+            Mostrando todos los usuarios reales de la base de datos ({stats?.usuarios.total} usuarios, incluyendo usuario actual)
           </div>
         </div>
       )}
@@ -461,7 +404,7 @@ const UsuariosAnalyticsContent = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <InteractiveCharts
           title="Distribución por Estado de Activación"
-          description={hasValidFilters ? "Usuarios filtrados según su estado de activación (datos reales)" : "Todos los usuarios según su estado de activación (datos reales)"}
+          description={hasValidFilters ? "Usuarios filtrados según su estado de activación (datos reales, incluyendo usuario actual)" : "Todos los usuarios según su estado de activación (datos reales, incluyendo usuario actual)"}
           data={filteredStats.usuarios.porEstadoActivacion.map(item => ({
             name: item.estado,
             value: item.count,
@@ -471,7 +414,7 @@ const UsuariosAnalyticsContent = () => {
         
         <InteractiveCharts
           title="Distribución por Confirmación de Email"
-          description={hasValidFilters ? "Usuarios filtrados según su confirmación de email (datos reales)" : "Todos los usuarios según su confirmación de email (datos reales)"}
+          description={hasValidFilters ? "Usuarios filtrados según su confirmación de email (datos reales, incluyendo usuario actual)" : "Todos los usuarios según su confirmación de email (datos reales, incluyendo usuario actual)"}
           data={filteredStats.usuarios.porConfirmacion.map(item => ({
             name: item.categoria,
             value: item.count,
@@ -489,7 +432,7 @@ const UsuariosAnalyticsContent = () => {
               Análisis de Activación (Datos Reales)
             </CardTitle>
             <CardDescription>
-              {hasValidFilters ? "Métricas de activación en usuarios filtrados (datos reales)" : "Métricas detalladas de activación basadas en datos reales de la base de datos"}
+              {hasValidFilters ? "Métricas de activación en usuarios filtrados (datos reales, incluyendo usuario actual)" : "Métricas detalladas de activación basadas en datos reales de la base de datos (incluyendo usuario actual)"}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -536,7 +479,7 @@ const UsuariosAnalyticsContent = () => {
               Análisis de Confirmación (Datos Reales)
             </CardTitle>
             <CardDescription>
-              {hasValidFilters ? "Métricas de confirmación en usuarios filtrados (datos reales)" : "Métricas detalladas de confirmación de email basadas en datos reales de la base de datos"}
+              {hasValidFilters ? "Métricas de confirmación en usuarios filtrados (datos reales, incluyendo usuario actual)" : "Métricas detalladas de confirmación de email basadas en datos reales de la base de datos (incluyendo usuario actual)"}
             </CardDescription>
           </CardHeader>
           <CardContent>
