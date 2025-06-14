@@ -104,6 +104,11 @@ export const EstadosList = ({ onCreateEstado, onEditEstado, onViewEstado, onBulk
     getSelectedData,
     selectedCount,
   } = useBulkSelection(selectableEstados); // Use all selectable filtered data for bulk selection
+  
+  // Debug logs
+  console.log('Estados - Total filtrados:', filteredData.length);
+  console.log('Estados - Seleccionables:', selectableEstados.length);
+  console.log('Estados - Seleccionados:', selectedCount);
 
   // Check if all visible items on current page are selected
   const visibleSelectableItems = paginatedData.filter(estado => !isSystemEstado(estado.nombre));
