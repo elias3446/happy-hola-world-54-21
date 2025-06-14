@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -22,6 +23,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DataTableToolbar, useDataTableFilters, type DataTableColumn } from '@/components/ui/data-table-toolbar';
 import { BulkActionsBar } from '@/components/ui/bulk-actions-bar';
 import { BulkReportActionsDialog, type BulkActionType } from './dialogs/BulkReportActionsDialog';
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from '@/components/ui/pagination';
 import { useReportes } from '@/hooks/useReportes';
 import { useBulkSelection } from '@/hooks/useBulkSelection';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -48,6 +57,8 @@ interface ReportesListProps {
   onBulkUpload: () => void;
 }
 
+const ITEMS_PER_PAGE = 5;
+
 export const ReportesList = ({ onCreateReporte, onEditReporte, onViewReporte, onBulkUpload }: ReportesListProps) => {
   const { 
     reportes, 
@@ -72,6 +83,7 @@ export const ReportesList = ({ onCreateReporte, onEditReporte, onViewReporte, on
   const [filters, setFilters] = useDataTableFilters();
   const [reporteToDelete, setReporteToDelete] = useState<Reporte | null>(null);
   const [filteredData, setFilteredData] = useState<any[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
   const [bulkActionDialog, setBulkActionDialog] = useState<{
     open: boolean;
     type: BulkActionType;
@@ -116,6 +128,17 @@ export const ReportesList = ({ onCreateReporte, onEditReporte, onViewReporte, on
       created_at_display: new Date(reporte.created_at).toLocaleDateString('es-ES'),
     }));
   }, [reportes]);
+
+  // Calculate pagination values
+  const totalPages = Math.ceil(filteredData.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const endIndex = startIndex + ITEMS_PER_PAGE;
+  const paginatedData = filteredData.slice(startIndex, endIndex);
+
+  // Reset to first page when filtered data changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filteredData.length]);
 
   // Initialize filtered data when transformedReportes change
   useEffect(() => {
@@ -214,6 +237,11 @@ export const ReportesList = ({ onCreateReporte, onEditReporte, onViewReporte, on
     document.body.removeChild(link);
   };
 
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    clearSelection(); // Clear selection when changing pages
+  };
+
   if (isLoading) {
     return (
       <Card>
@@ -272,6 +300,18 @@ export const ReportesList = ({ onCreateReporte, onEditReporte, onViewReporte, on
             onDataFilter={setFilteredData}
           />
 
+          {/* Pagination Info */}
+          {filteredData.length > 0 && (
+            <div className="flex items-center justify-between text-sm text-muted-foreground">
+              <p>
+                Mostrando {startIndex + 1} a {Math.min(endIndex, filteredData.length)} de {filteredData.length} reportes
+              </p>
+              <p>
+                Página {currentPage} de {totalPages}
+              </p>
+            </div>
+          )}
+
           {/* Bulk Actions Bar */}
           <BulkActionsBar
             selectedCount={selectedCount}
@@ -306,174 +346,211 @@ export const ReportesList = ({ onCreateReporte, onEditReporte, onViewReporte, on
               </Button>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-[40px]">
-                      <Checkbox
-                        checked={isAllSelected}
-                        onCheckedChange={handleSelectAll}
-                        ref={(el) => {
-                          if (el && 'indeterminate' in el) {
-                            (el as any).indeterminate = isIndeterminate;
-                          }
-                        }}
-                      />
-                    </TableHead>
-                    <TableHead className={isMobile ? "min-w-[120px]" : "min-w-[200px]"}>Nombre</TableHead>
-                    {!isMobile && <TableHead className="min-w-[250px]">Descripción</TableHead>}
-                    <TableHead className={isMobile ? "min-w-[80px]" : "min-w-[120px]"}>Categoría</TableHead>
-                    <TableHead className={isMobile ? "min-w-[80px]" : "min-w-[120px]"}>Estado</TableHead>
-                    <TableHead className={isMobile ? "min-w-[60px]" : "min-w-[100px]"}>Activo</TableHead>
-                    {!isMobile && <TableHead className="min-w-[120px]">Fecha de Creación</TableHead>}
-                    <TableHead className="w-[50px]">Acciones</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredData.map((reporte) => (
-                    <TableRow key={reporte.id}>
-                      <TableCell>
+            <>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[40px]">
                         <Checkbox
-                          checked={selectedItems.has(reporte.id)}
-                          onCheckedChange={() => handleSelectItem(reporte.id)}
+                          checked={isAllSelected}
+                          onCheckedChange={handleSelectAll}
+                          ref={(el) => {
+                            if (el && 'indeterminate' in el) {
+                              (el as any).indeterminate = isIndeterminate;
+                            }
+                          }}
                         />
-                      </TableCell>
-                      
-                      <TableCell>
-                        <button
-                          onClick={() => onViewReporte(reporte)}
-                          className="font-medium text-blue-600 hover:text-blue-800 hover:underline transition-colors text-left"
-                        >
-                          <span className={isMobile ? "line-clamp-2 break-words text-xs" : ""}>
-                            {reporte.nombre}
-                          </span>
-                        </button>
-                        {isMobile && (
-                          <p className="text-xs text-muted-foreground line-clamp-1 mt-1">
-                            {reporte.descripcion}
-                          </p>
-                        )}
-                      </TableCell>
-                      
-                      {!isMobile && (
-                        <TableCell className="max-w-xs">
-                          <p className="text-sm truncate" title={reporte.descripcion}>
-                            {reporte.descripcion}
-                          </p>
-                        </TableCell>
-                      )}
-                      
-                      <TableCell>
-                        <div className="flex items-center gap-1">
-                          {reporte.categoria?.deleted_at ? (
-                            <Badge variant="destructive" className={`flex items-center gap-1 ${isMobile ? 'text-xs px-1' : ''}`}>
-                              <AlertTriangle className="h-2 w-2" />
-                              {isMobile ? 'Elim.' : `${reporte.categoria.nombre} (Eliminada)`}
-                            </Badge>
-                          ) : reporte.categoria ? (
-                            <div className="flex items-center gap-1">
-                              <div 
-                                className="w-2 h-2 rounded-full shrink-0" 
-                                style={{ backgroundColor: reporte.categoria.color }}
-                              />
-                              <span className={isMobile ? "text-xs truncate max-w-[60px]" : "text-sm"}>
-                                {reporte.categoria.nombre}
-                              </span>
-                            </div>
-                          ) : (
-                            <span className={`text-gray-500 ${isMobile ? 'text-xs' : 'text-sm'}`}>Sin categoría</span>
-                          )}
-                        </div>
-                      </TableCell>
-                      
-                      <TableCell>
-                        <div className="flex items-center gap-1">
-                          {reporte.estado?.deleted_at ? (
-                            <Badge variant="destructive" className={`flex items-center gap-1 ${isMobile ? 'text-xs px-1' : ''}`}>
-                              <AlertTriangle className="h-2 w-2" />
-                              {isMobile ? 'Elim.' : `${reporte.estado.nombre} (Eliminado)`}
-                            </Badge>
-                          ) : reporte.estado ? (
-                            <div className="flex items-center gap-1">
-                              <div 
-                                className="w-2 h-2 rounded-full shrink-0" 
-                                style={{ backgroundColor: reporte.estado.color }}
-                              />
-                              <span className={isMobile ? "text-xs truncate max-w-[60px]" : "text-sm"}>
-                                {reporte.estado.nombre}
-                              </span>
-                            </div>
-                          ) : (
-                            <span className={`text-gray-500 ${isMobile ? 'text-xs' : 'text-sm'}`}>Sin estado</span>
-                          )}
-                        </div>
-                      </TableCell>
-                      
-                      <TableCell>
-                        <div className={`flex items-center gap-1 ${isMobile ? 'flex-col' : ''}`}>
-                          <Switch
-                            checked={reporte.activo || false}
-                            onCheckedChange={() => handleToggleStatus(reporte)}
-                            disabled={isToggling}
-                            className={isMobile ? "scale-75" : ""}
-                          />
-                          {!isMobile && (
-                            <Badge variant={reporte.activo ? "default" : "secondary"} className="flex items-center gap-1">
-                              {reporte.activo ? (
-                                <CheckCircle className="h-3 w-3" />
-                              ) : (
-                                <XCircle className="h-3 w-3" />
-                              )}
-                              {reporte.activo ? 'Activo' : 'Inactivo'}
-                            </Badge>
-                          )}
-                        </div>
-                        {isMobile && (
-                          <div className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-                            <Calendar className="h-2 w-2" />
-                            {new Date(reporte.created_at).toLocaleDateString('es-ES')}
-                          </div>
-                        )}
-                      </TableCell>
-                      
-                      {!isMobile && (
-                        <TableCell>
-                          <p className="text-sm">
-                            {new Date(reporte.created_at).toLocaleDateString('es-ES')}
-                          </p>
-                        </TableCell>
-                      )}
-                      
-                      <TableCell>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm" className={isMobile ? "h-6 w-6 p-0" : ""}>
-                              <MoreHorizontal className={isMobile ? "h-3 w-3" : "h-4 w-4"} />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => onEditReporte(reporte)}>
-                              <Edit className="h-4 w-4 mr-2" />
-                              Editar
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem 
-                              onClick={() => setReporteToDelete(reporte)}
-                              className="text-red-600"
-                              disabled={isDeleting}
-                            >
-                              <Trash2 className="h-4 w-4 mr-2" />
-                              Eliminar
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
+                      </TableHead>
+                      <TableHead className={isMobile ? "min-w-[120px]" : "min-w-[200px]"}>Nombre</TableHead>
+                      {!isMobile && <TableHead className="min-w-[250px]">Descripción</TableHead>}
+                      <TableHead className={isMobile ? "min-w-[80px]" : "min-w-[120px]"}>Categoría</TableHead>
+                      <TableHead className={isMobile ? "min-w-[80px]" : "min-w-[120px]"}>Estado</TableHead>
+                      <TableHead className={isMobile ? "min-w-[60px]" : "min-w-[100px]"}>Activo</TableHead>
+                      {!isMobile && <TableHead className="min-w-[120px]">Fecha de Creación</TableHead>}
+                      <TableHead className="w-[50px]">Acciones</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+                  </TableHeader>
+                  <TableBody>
+                    {paginatedData.map((reporte) => (
+                      <TableRow key={reporte.id}>
+                        <TableCell>
+                          <Checkbox
+                            checked={selectedItems.has(reporte.id)}
+                            onCheckedChange={() => handleSelectItem(reporte.id)}
+                          />
+                        </TableCell>
+                        
+                        <TableCell>
+                          <button
+                            onClick={() => onViewReporte(reporte)}
+                            className="font-medium text-blue-600 hover:text-blue-800 hover:underline transition-colors text-left"
+                          >
+                            <span className={isMobile ? "line-clamp-2 break-words text-xs" : ""}>
+                              {reporte.nombre}
+                            </span>
+                          </button>
+                          {isMobile && (
+                            <p className="text-xs text-muted-foreground line-clamp-1 mt-1">
+                              {reporte.descripcion}
+                            </p>
+                          )}
+                        </TableCell>
+                        
+                        {!isMobile && (
+                          <TableCell className="max-w-xs">
+                            <p className="text-sm truncate" title={reporte.descripcion}>
+                              {reporte.descripcion}
+                            </p>
+                          </TableCell>
+                        )}
+                        
+                        <TableCell>
+                          <div className="flex items-center gap-1">
+                            {reporte.categoria?.deleted_at ? (
+                              <Badge variant="destructive" className={`flex items-center gap-1 ${isMobile ? 'text-xs px-1' : ''}`}>
+                                <AlertTriangle className="h-2 w-2" />
+                                {isMobile ? 'Elim.' : `${reporte.categoria.nombre} (Eliminada)`}
+                              </Badge>
+                            ) : reporte.categoria ? (
+                              <div className="flex items-center gap-1">
+                                <div 
+                                  className="w-2 h-2 rounded-full shrink-0" 
+                                  style={{ backgroundColor: reporte.categoria.color }}
+                                />
+                                <span className={isMobile ? "text-xs truncate max-w-[60px]" : "text-sm"}>
+                                  {reporte.categoria.nombre}
+                                </span>
+                              </div>
+                            ) : (
+                              <span className={`text-gray-500 ${isMobile ? 'text-xs' : 'text-sm'}`}>Sin categoría</span>
+                            )}
+                          </div>
+                        </TableCell>
+                        
+                        <TableCell>
+                          <div className="flex items-center gap-1">
+                            {reporte.estado?.deleted_at ? (
+                              <Badge variant="destructive" className={`flex items-center gap-1 ${isMobile ? 'text-xs px-1' : ''}`}>
+                                <AlertTriangle className="h-2 w-2" />
+                                {isMobile ? 'Elim.' : `${reporte.estado.nombre} (Eliminado)`}
+                              </Badge>
+                            ) : reporte.estado ? (
+                              <div className="flex items-center gap-1">
+                                <div 
+                                  className="w-2 h-2 rounded-full shrink-0" 
+                                  style={{ backgroundColor: reporte.estado.color }}
+                                />
+                                <span className={isMobile ? "text-xs truncate max-w-[60px]" : "text-sm"}>
+                                  {reporte.estado.nombre}
+                                </span>
+                              </div>
+                            ) : (
+                              <span className={`text-gray-500 ${isMobile ? 'text-xs' : 'text-sm'}`}>Sin estado</span>
+                            )}
+                          </div>
+                        </TableCell>
+                        
+                        <TableCell>
+                          <div className={`flex items-center gap-1 ${isMobile ? 'flex-col' : ''}`}>
+                            <Switch
+                              checked={reporte.activo || false}
+                              onCheckedChange={() => handleToggleStatus(reporte)}
+                              disabled={isToggling}
+                              className={isMobile ? "scale-75" : ""}
+                            />
+                            {!isMobile && (
+                              <Badge variant={reporte.activo ? "default" : "secondary"} className="flex items-center gap-1">
+                                {reporte.activo ? (
+                                  <CheckCircle className="h-3 w-3" />
+                                ) : (
+                                  <XCircle className="h-3 w-3" />
+                                )}
+                                {reporte.activo ? 'Activo' : 'Inactivo'}
+                              </Badge>
+                            )}
+                          </div>
+                          {isMobile && (
+                            <div className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                              <Calendar className="h-2 w-2" />
+                              {new Date(reporte.created_at).toLocaleDateString('es-ES')}
+                            </div>
+                          )}
+                        </TableCell>
+                        
+                        {!isMobile && (
+                          <TableCell>
+                            <p className="text-sm">
+                              {new Date(reporte.created_at).toLocaleDateString('es-ES')}
+                            </p>
+                          </TableCell>
+                        )}
+                        
+                        <TableCell>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="sm" className={isMobile ? "h-6 w-6 p-0" : ""}>
+                                <MoreHorizontal className={isMobile ? "h-3 w-3" : "h-4 w-4"} />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => onEditReporte(reporte)}>
+                                <Edit className="h-4 w-4 mr-2" />
+                                Editar
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem 
+                                onClick={() => setReporteToDelete(reporte)}
+                                className="text-red-600"
+                                disabled={isDeleting}
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                Eliminar
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="flex justify-center mt-4">
+                  <Pagination>
+                    <PaginationContent>
+                      <PaginationItem>
+                        <PaginationPrevious 
+                          onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
+                          className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                        />
+                      </PaginationItem>
+                      
+                      {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                        <PaginationItem key={page}>
+                          <PaginationLink
+                            onClick={() => handlePageChange(page)}
+                            isActive={currentPage === page}
+                            className="cursor-pointer"
+                          >
+                            {page}
+                          </PaginationLink>
+                        </PaginationItem>
+                      ))}
+                      
+                      <PaginationItem>
+                        <PaginationNext 
+                          onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
+                          className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                        />
+                      </PaginationItem>
+                    </PaginationContent>
+                  </Pagination>
+                </div>
+              )}
+            </>
           )}
         </CardContent>
       </Card>
