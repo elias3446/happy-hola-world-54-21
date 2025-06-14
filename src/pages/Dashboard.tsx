@@ -3,6 +3,7 @@ import React from 'react';
 import { useSearchParams, Link, useLocation } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Toaster } from "@/components/ui/sonner";
 import { 
   FileText, 
   Users, 
@@ -86,10 +87,10 @@ const Dashboard = () => {
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-foreground mb-2 flex items-center gap-2">
             <BarChart3 className="h-8 w-8" />
-            Dashboard Analítico
+            Dashboard Analítico Avanzado
           </h1>
           <p className="text-muted-foreground">
-            Vista general y análisis detallado del sistema de reportes georreferenciados
+            Vista interactiva y análisis en tiempo real del sistema de reportes georreferenciados
           </p>
         </div>
 
@@ -147,7 +148,7 @@ const Dashboard = () => {
                   </SheetTrigger>
                   <SheetContent side="left" className="w-64">
                     <div className="flex flex-col space-y-4 mt-4">
-                      <div className="text-lg font-semibold">Análisis</div>
+                      <div className="text-lg font-semibold">Análisis Avanzado</div>
                       
                       <div className="space-y-2">
                         {analyticsMenuItems.map((item) => {
@@ -183,6 +184,14 @@ const Dashboard = () => {
           {renderContent()}
         </div>
       </div>
+      
+      {/* Toast notifications */}
+      <Toaster 
+        position="top-right"
+        expand={true}
+        richColors
+        closeButton
+      />
     </div>
   );
 };
