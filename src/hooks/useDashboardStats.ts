@@ -1,4 +1,3 @@
-
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -36,7 +35,7 @@ interface DashboardStats {
     recientes: number; // últimos 7 días
     porEstadoActivacion: { estado: string; count: number; color: string }[];
     porConfirmacion: { categoria: string; count: number; color: string }[];
-    porRoles: { name: string; value: number; color: string }[]; // Desde user_roles
+    porRoles: { name: string; value: number; color: string }[]; // Nombres específicos de roles desde user_roles
     porTipoUsuario: { name: string; value: number; color: string }[]; // Desde profiles.role
     datosCompletos: UserWithDates[];
   };
@@ -226,48 +225,24 @@ export const useDashboardStats = () => {
         { categoria: 'No confirmados', count: (usuarios?.length || 0) - usuariosConfirmados.length, color: '#F59E0B' }
       ];
 
-      // Calcular distribución por CANTIDAD DE ROLES (desde user_roles)
-      const roleCountsPerUser: { [userId: string]: number } = {};
+      // Calcular distribución por NOMBRES ESPECÍFICOS DE ROLES (desde user_roles)
+      const rolesCounts: { [roleName: string]: number } = {};
       
-      // Contar cuántos roles tiene cada usuario en user_roles
+      // Contar usuarios por nombre de rol específico
       userRoles?.forEach(userRole => {
-        if (!roleCountsPerUser[userRole.user_id]) {
-          roleCountsPerUser[userRole.user_id] = 0;
+        const roleName = userRole.roles?.nombre;
+        if (roleName) {
+          rolesCounts[roleName] = (rolesCounts[roleName] || 0) + 1;
         }
-        roleCountsPerUser[userRole.user_id]++;
       });
 
-      // Agrupar usuarios por cantidad de roles
-      const roleDistributionCounts: { [key: string]: number } = {};
-      
-      Object.values(roleCountsPerUser).forEach(roleCount => {
-        let category: string;
-        if (roleCount === 1) {
-          category = '1 Rol';
-        } else if (roleCount === 2) {
-          category = '2 Roles';
-        } else if (roleCount > 2) {
-          category = 'Más de 2 Roles';
-        } else {
-          category = 'Sin Roles';
-        }
-        
-        roleDistributionCounts[category] = (roleDistributionCounts[category] || 0) + 1;
-      });
-
-      // Agregar usuarios que no tienen roles asignados en user_roles
-      const usersWithoutRoles = (usuarios?.length || 0) - Object.keys(roleCountsPerUser).length;
-      if (usersWithoutRoles > 0) {
-        roleDistributionCounts['Sin Roles'] = (roleDistributionCounts['Sin Roles'] || 0) + usersWithoutRoles;
-      }
-
-      // Convertir distribución de roles a formato de gráfico
-      const porRoles = Object.entries(roleDistributionCounts).map(([category, count], index) => {
-        const colors = ['#DC2626', '#059669', '#7C3AED', '#F59E0B', '#10B981'];
+      // Convertir conteos de roles específicos a formato de gráfico
+      const porRoles = Object.entries(rolesCounts).map(([roleName, count], index) => {
+        const role = roles?.find(r => r.nombre === roleName);
         return {
-          name: category,
+          name: roleName,
           value: count as number,
-          color: colors[index % colors.length]
+          color: role?.color || `hsl(${index * 45}, 70%, 60%)`
         };
       }).filter(item => item.value > 0);
 
@@ -322,7 +297,7 @@ export const useDashboardStats = () => {
           recientes: usuariosRecientes.length,
           porEstadoActivacion: usuariosPorEstadoActivacion,
           porConfirmacion: usuariosPorConfirmacion,
-          porRoles, // Distribución por cantidad de roles desde user_roles
+          porRoles, // Distribución por nombres específicos de roles desde user_roles
           porTipoUsuario, // Tipos de usuario desde profiles.role
           datosCompletos: usuariosCompletos,
         },
