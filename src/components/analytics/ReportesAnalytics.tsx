@@ -602,18 +602,6 @@ const ReportesAnalyticsContent = () => {
           </CardContent>
         </Card>
       </div>
-
-      {/* Mensaje cuando no hay filtros válidos aplicados */}
-      {appliedFilters && !isValidForComparison(appliedFilters) && (
-        <div className="text-center py-12">
-          <AlertTriangle className="h-12 w-12 mx-auto mb-4 text-amber-500" />
-          <h3 className="text-lg font-medium mb-2">Selecciona filtros para comparar</h3>
-          <p className="text-muted-foreground">
-            Para ver el análisis comparativo, selecciona al menos 2 reportes en Búsqueda, 
-            o configura criterios en las otras pestañas de filtros.
-          </p>
-        </div>
-      )}
     </div>
   );
 };
