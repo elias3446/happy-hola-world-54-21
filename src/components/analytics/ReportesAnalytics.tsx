@@ -49,22 +49,18 @@ const ReportesAnalyticsContent = () => {
   const handleFiltersChange = useCallback((filters: AdvancedFilters) => {
     setAppliedFilters(filters);
     
-    // Update selected report IDs based on search terms
     if (filters.searchTerm && filters.searchTerm.length > 0) {
       setSelectedReportIds(filters.searchTerm);
     } else if (filters.searchTerm.length === 0 && selectedReportIds.length > 0) {
-      // If search is cleared, clear selections
       setSelectedReportIds([]);
     }
     
     console.log('Filtros aplicados:', filters);
   }, [selectedReportIds]);
 
-  // Function to handle multiple report selection
   const handleReportSelection = useCallback((reportTitles: string[]) => {
     if (!reportes) return;
     
-    // Convert titles to IDs
     const reportIds = reportTitles.map(title => {
       const reporte = reportes.find(r => r.nombre === title);
       return reporte?.id || title;
@@ -72,7 +68,6 @@ const ReportesAnalyticsContent = () => {
     
     setSelectedReportIds(reportIds);
     
-    // Update filters to maintain synchronization
     if (appliedFilters) {
       setAppliedFilters({
         ...appliedFilters,
@@ -81,22 +76,17 @@ const ReportesAnalyticsContent = () => {
     }
   }, [reportes, appliedFilters]);
 
-  // Function to check if a date is within a specified range
   const isDateInRange = (dateString: string, dateRange: { from: Date; to: Date }) => {
     const reportDate = new Date(dateString);
-    
-    // Create new dates for the range without modifying the original ones
     const fromDate = new Date(dateRange.from);
     const toDate = new Date(dateRange.to);
     
-    // Set hours to compare the full day
     fromDate.setHours(0, 0, 0, 0);
     toDate.setHours(23, 59, 59, 999);
     
     return reportDate >= fromDate && reportDate <= toDate;
   };
 
-  // Función para validar si los filtros son válidos para comparación
   const isValidForComparison = (filters: AdvancedFilters) => {
     switch (filters.activeTab) {
       case 'busqueda':
@@ -114,14 +104,11 @@ const ReportesAnalyticsContent = () => {
     }
   };
 
-  // Función para determinar si hay filtros activos válidos
   const hasValidFilters = appliedFilters && isValidForComparison(appliedFilters);
 
-  // Function to filter data using real database data - Solo se ejecuta si hay filtros válidos
   const getFilteredStats = () => {
     if (!stats) return stats;
     
-    // Si no hay filtros válidos, devolver datos originales (tiempo real)
     if (!hasValidFilters) {
       console.log('Sin filtros válidos - mostrando datos en tiempo real');
       return stats;
@@ -134,11 +121,9 @@ const ReportesAnalyticsContent = () => {
       tabActiva: appliedFilters.activeTab
     });
 
-    // Use real database data for filtered reports
     let filteredReportes = [...stats.reportes.datosCompletos];
     console.log('Reportes iniciales:', filteredReportes.length);
 
-    // Apply filters based on active tab
     switch (appliedFilters.activeTab) {
       case 'busqueda':
         if (appliedFilters.searchTerm.length >= 2) {
@@ -194,18 +179,18 @@ const ReportesAnalyticsContent = () => {
       tabActiva: appliedFilters.activeTab
     });
 
-    // Recalculate statistics based on real filtered data
+    // Recalcular estadísticas basadas en datos filtrados reales
     const totalFiltrado = filteredReportes.length;
     const activosFiltrado = filteredReportes.filter(r => r.activo).length;
     
-    // Calculate recent reports (last 7 days) in the filtered data
+    // Calcular reportes recientes (últimos 7 días) en los datos filtrados
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
     const recientesFiltrado = filteredReportes.filter(r => 
       new Date(r.created_at) >= sevenDaysAgo
     ).length;
 
-    // Re-group by state based on filtered data
+    // Re-agrupar por estado basado en datos filtrados
     const porEstadoFiltrado = filteredReportes.reduce((acc, reporte) => {
       const estadoNombre = reporte.estado?.nombre || 'Sin estado';
       const estadoColor = reporte.estado?.color || '#6B7280';
@@ -218,7 +203,7 @@ const ReportesAnalyticsContent = () => {
       return acc;
     }, [] as { estado: string; count: number; color: string }[]);
 
-    // Re-group by category based on filtered data
+    // Re-agrupar por categoría basado en datos filtrados
     const porCategoriaFiltrado = filteredReportes.reduce((acc, reporte) => {
       const categoriaNombre = reporte.categoria?.nombre || 'Sin categoría';
       const categoriaColor = reporte.categoria?.color || '#6B7280';
@@ -231,7 +216,7 @@ const ReportesAnalyticsContent = () => {
       return acc;
     }, [] as { categoria: string; count: number; color: string }[]);
 
-    // Re-group by priority based on filtered data
+    // Re-agrupar por prioridad basado en datos filtrados
     const porPrioridadFiltrado = filteredReportes.reduce((acc, reporte) => {
       const prioridad = reporte.priority;
       const existing = acc.find(item => item.priority === prioridad);
@@ -260,7 +245,7 @@ const ReportesAnalyticsContent = () => {
 
   const filteredStats = getFilteredStats();
 
-  // Prepare data for multiple report comparison
+  // Preparar datos para comparación múltiple de reportes - solo datos reales
   const reportesParaComparacion = selectedReportIds.length > 0 && reportes ? 
     reportes
       .filter(r => selectedReportIds.includes(r.id))
@@ -373,7 +358,7 @@ const ReportesAnalyticsContent = () => {
         </div>
       )}
 
-      {/* Métricas en Tiempo Real con Gráficos de Actividad por Horas */}
+      {/* Métricas en Tiempo Real con Gráficos de Actividad por Horas - SOLO DATOS REALES */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <RealTimeMetrics
           title="Total Reportes"
@@ -419,7 +404,7 @@ const ReportesAnalyticsContent = () => {
         />
         
         <RealTimeMetrics
-          title="Estados Activos"
+          title="Estados Únicos"
           value={filteredStats.reportes.porEstado.length}
           previousValue={hasValidFilters ? stats?.reportes.porEstado.length : undefined}
           subtitle="Diferentes estados"
@@ -432,7 +417,7 @@ const ReportesAnalyticsContent = () => {
         />
       </div>
 
-      {/* Gráficos Interactivos */}
+      {/* Gráficos Interactivos - SOLO DATOS REALES */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <InteractiveCharts
           title="Distribución por Estado"
@@ -441,9 +426,7 @@ const ReportesAnalyticsContent = () => {
             name: item.estado,
             value: item.count,
             color: item.color,
-            trend: Math.random() * 20 - 10,
           }))}
-          showTrends={true}
         />
         
         <InteractiveCharts
@@ -453,9 +436,7 @@ const ReportesAnalyticsContent = () => {
             name: item.categoria,
             value: item.count,
             color: item.color,
-            trend: Math.random() * 15 - 7.5,
           }))}
-          showTrends={true}
         />
       </div>
 
@@ -468,9 +449,7 @@ const ReportesAnalyticsContent = () => {
               name: priorityConfig[item.priority as keyof typeof priorityConfig]?.label || item.priority,
               value: item.count,
               color: priorityConfig[item.priority as keyof typeof priorityConfig]?.color || '#6B7280',
-              trend: Math.random() * 25 - 12.5,
             }))}
-            showTrends={true}
           />
           
           <Card>
@@ -480,7 +459,7 @@ const ReportesAnalyticsContent = () => {
                 Análisis de Prioridades
               </CardTitle>
               <CardDescription>
-                {hasValidFilters ? "Métricas de prioridades en reportes filtrados" : "Métricas detalladas por nivel de prioridad con tendencias"}
+                {hasValidFilters ? "Métricas de prioridades en reportes filtrados" : "Métricas detalladas por nivel de prioridad basadas en datos reales"}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -488,7 +467,6 @@ const ReportesAnalyticsContent = () => {
                 {filteredStats.reportes.porPrioridad.map((item) => {
                   const config = priorityConfig[item.priority as keyof typeof priorityConfig];
                   const percentage = Math.round((item.count / Math.max(filteredStats.reportes.total, 1)) * 100);
-                  const trend = Math.random() * 20 - 10;
                   
                   return (
                     <div key={item.priority} className="flex items-center justify-between p-3 rounded-lg border">
@@ -508,16 +486,7 @@ const ReportesAnalyticsContent = () => {
                       </div>
                       <div className="text-right">
                         <div className="font-bold text-lg">{item.count}</div>
-                        <div className={`text-xs flex items-center gap-1 ${
-                          trend > 0 ? 'text-green-600' : trend < 0 ? 'text-red-600' : 'text-gray-500'
-                        }`}>
-                          {trend > 0 ? (
-                            <TrendingUp className="h-3 w-3" />
-                          ) : trend < 0 ? (
-                            <TrendingUp className="h-3 w-3 rotate-180" />
-                          ) : null}
-                          {Math.abs(trend).toFixed(1)}%
-                        </div>
+                        <div className="text-xs text-muted-foreground">reportes</div>
                       </div>
                     </div>
                   );
@@ -528,7 +497,7 @@ const ReportesAnalyticsContent = () => {
         </div>
       )}
 
-      {/* Métricas adicionales */}
+      {/* Métricas adicionales - BASADAS EN DATOS REALES */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card>
           <CardHeader>
