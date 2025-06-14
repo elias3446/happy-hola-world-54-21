@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
@@ -81,7 +81,9 @@ export const CategoriesList = ({ onCreateCategory, onEditCategory, onViewCategor
   });
 
   // Filter non-system categories for bulk selection
-  const nonSystemCategories = filteredData.filter(category => !isSystemCategory(category.nombre));
+  const selectableCategories = useMemo(() => {
+    return filteredData.filter(category => !isSystemCategory(category.nombre));
+  }, [filteredData]);
 
   // Calculate pagination values
   const totalPages = Math.ceil(filteredData.length / ITEMS_PER_PAGE);
@@ -94,7 +96,7 @@ export const CategoriesList = ({ onCreateCategory, onEditCategory, onViewCategor
     setCurrentPage(1);
   }, [filteredData.length]);
 
-  // Bulk selection hook - only for non-system categories and paginated data
+  // Bulk selection hook - NOW USES ALL SELECTABLE FILTERED DATA, NOT JUST PAGINATED
   const {
     selectedItems,
     isAllSelected,
@@ -104,7 +106,32 @@ export const CategoriesList = ({ onCreateCategory, onEditCategory, onViewCategor
     clearSelection,
     getSelectedData,
     selectedCount,
-  } = useBulkSelection(paginatedData.filter(category => !isSystemCategory(category.nombre)));
+  } = useBulkSelection(selectableCategories); // Use all selectable filtered data for bulk selection
+
+  // Check if all visible items on current page are selected
+  const visibleSelectableItems = paginatedData.filter(category => !isSystemCategory(category.nombre));
+  const visibleItemsSelected = visibleSelectableItems.every(item => selectedItems.has(item.id));
+  const someVisibleItemsSelected = visibleSelectableItems.some(item => selectedItems.has(item.id));
+  const isCurrentPageIndeterminate = someVisibleItemsSelected && !visibleItemsSelected;
+
+  // Handler for selecting/deselecting all items on current page
+  const handleSelectAllCurrentPage = () => {
+    if (visibleItemsSelected) {
+      // Deselect all items on current page
+      visibleSelectableItems.forEach(item => {
+        if (selectedItems.has(item.id)) {
+          handleSelectItem(item.id);
+        }
+      });
+    } else {
+      // Select all items on current page
+      visibleSelectableItems.forEach(item => {
+        if (!selectedItems.has(item.id)) {
+          handleSelectItem(item.id);
+        }
+      });
+    }
+  };
 
   // Define columns for the table
   const columns: DataTableColumn[] = [
@@ -345,17 +372,17 @@ export const CategoriesList = ({ onCreateCategory, onEditCategory, onViewCategor
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead className="w-[40px]">
-                        <Checkbox
-                          checked={isAllSelected}
-                          onCheckedChange={handleSelectAll}
-                          ref={(el) => {
-                            if (el && 'indeterminate' in el) {
-                              (el as any).indeterminate = isIndeterminate;
-                            }
-                          }}
-                        />
-                      </TableHead>
+                       <TableHead className="w-[40px]">
+                         <Checkbox
+                           checked={visibleItemsSelected}
+                           onCheckedChange={handleSelectAllCurrentPage}
+                           ref={(el) => {
+                             if (el && 'indeterminate' in el) {
+                               (el as any).indeterminate = isCurrentPageIndeterminate;
+                             }
+                           }}
+                         />
+                       </TableHead>
                       <TableHead>Categoría</TableHead>
                       <TableHead className="hidden lg:table-cell">Descripción</TableHead>
                       <TableHead>Estado</TableHead>
@@ -470,7 +497,34 @@ export const CategoriesList = ({ onCreateCategory, onEditCategory, onViewCategor
                     })}
                   </TableBody>
                 </Table>
-              </div>
+               </div>
+
+              {/* Enhanced selection info */}
+              {selectedCount > 0 && (
+                <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg border border-blue-200">
+                  <div className="flex items-center gap-2 text-sm text-blue-700">
+                    <span className="font-medium">{selectedCount} categorías seleccionadas</span>
+                    {selectedCount !== selectableCategories.length && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleSelectAll}
+                        className="h-6 px-2 text-xs border-blue-300 text-blue-700 hover:bg-blue-100"
+                      >
+                        Seleccionar todas ({selectableCategories.length})
+                      </Button>
+                    )}
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={clearSelection}
+                    className="h-6 px-2 text-xs border-blue-300 text-blue-700 hover:bg-blue-100"
+                  >
+                    Limpiar selección
+                  </Button>
+                </div>
+              )}
 
               {/* Pagination Info and Controls */}
               {filteredData.length > 0 && (
