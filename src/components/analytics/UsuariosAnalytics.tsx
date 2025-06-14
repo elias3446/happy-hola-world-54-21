@@ -231,18 +231,16 @@ const UsuariosAnalyticsContent = () => {
       { categoria: 'No confirmados', count: totalFiltrado - confirmadosFiltrado, color: '#F59E0B' }
     ];
 
-    // Calculate roles and user types distribution for filtered users
-    const porRoles = [];
-    const porTipoUsuario = { admin: 0, user: 0, ambas: 0 };
-
-    // Group users by roles from user_roles table
-    const rolesCounts = {};
+    // Calculate roles distribution ONLY for filtered users
+    const userRoleAssignments: { [userId: string]: string[] } = {};
+    
+    // Obtener todos los roles asignados por usuario desde user_roles SOLO para usuarios filtrados
     filteredUsers.forEach(user => {
-      const userRoleAssignments = userRoles?.filter(ur => 
+      const userRolesList = userRoles?.filter(ur => 
         ur.user_id === user.id && !ur.deleted_at
       ) || [];
       
-      const userRoleNames = userRoleAssignments.map(ur => {
+      const userRoleNames = userRolesList.map(ur => {
         const role = roles?.find(r => r.id === ur.role_id);
         return role ? role.nombre : null;
       }).filter(Boolean);
@@ -251,39 +249,72 @@ const UsuariosAnalyticsContent = () => {
       const profileRoles = user.role || [];
       const allUserRoles = [...new Set([...userRoleNames, ...profileRoles])];
 
-      // Count for roles chart
-      allUserRoles.forEach(roleName => {
-        rolesCounts[roleName] = (rolesCounts[roleName] || 0) + 1;
-      });
-
-      // Count for user types (admin, user, both)
-      const hasAdmin = allUserRoles.some(r => r.toLowerCase().includes('admin'));
-      const hasUser = allUserRoles.some(r => r.toLowerCase().includes('user'));
-
-      if (hasAdmin && hasUser) {
-        porTipoUsuario.ambas++;
-      } else if (hasAdmin) {
-        porTipoUsuario.admin++;
-      } else if (hasUser) {
-        porTipoUsuario.user++;
+      if (allUserRoles.length > 0) {
+        userRoleAssignments[user.id] = allUserRoles;
       }
     });
 
-    // Convert roles count to chart format
-    Object.entries(rolesCounts).forEach(([roleName, count], index) => {
-      const role = roles?.find(r => r.nombre === roleName);
-      porRoles.push({
-        name: roleName,
-        value: count,
-        color: role?.color || `hsl(${index * 45}, 70%, 60%)`
-      });
+    // Contar usuarios por combinaciones específicas de roles SOLO de usuarios filtrados
+    const rolesCombinations: { [combination: string]: number } = {};
+    
+    Object.values(userRoleAssignments).forEach(userRoles => {
+      if (userRoles.length > 0) {
+        // Ordenar roles alfabéticamente para crear combinaciones consistentes
+        const sortedRoles = userRoles.sort();
+        const combination = sortedRoles.join(' y '); // Usar " y " como separador
+        rolesCombinations[combination] = (rolesCombinations[combination] || 0) + 1;
+      }
+    });
+
+    // Agregar usuarios filtrados sin roles asignados
+    const filteredUsersWithoutRoles = filteredUsers.filter(user => !userRoleAssignments[user.id]).length;
+    if (filteredUsersWithoutRoles > 0) {
+      rolesCombinations['Sin Roles'] = filteredUsersWithoutRoles;
+    }
+
+    // Convertir combinaciones a formato de gráfico
+    const porRoles = Object.entries(rolesCombinations).map(([combination, count], index) => {
+      let color: string;
+      
+      if (combination === 'Sin Roles') {
+        color = '#6B7280';
+      } else {
+        // Para combinaciones de roles, usar el color del primer rol o un color generado
+        const firstRoleName = combination.split(' y ')[0];
+        const firstRole = roles?.find(r => r.nombre === firstRoleName);
+        color = firstRole?.color || `hsl(${index * 45}, 70%, 60%)`;
+      }
+      
+      return {
+        name: combination,
+        value: count as number,
+        color
+      };
+    }).filter(item => item.value > 0);
+
+    // Calculate user types distribution ONLY for filtered users
+    const tipoUsuarioCounts = { soloAdmin: 0, soloUser: 0, ambas: 0 };
+
+    filteredUsers.forEach(user => {
+      const userRoles = user.role || [];
+      
+      const hasAdmin = userRoles.includes('admin');
+      const hasUser = userRoles.includes('user');
+
+      if (hasAdmin && hasUser) {
+        tipoUsuarioCounts.ambas++;
+      } else if (hasAdmin) {
+        tipoUsuarioCounts.soloAdmin++;
+      } else if (hasUser) {
+        tipoUsuarioCounts.soloUser++;
+      }
     });
 
     // Convert user types to chart format
-    const porTipoUsuarioChart = [
-      { name: 'Solo Admin', value: porTipoUsuario.admin, color: '#DC2626' },
-      { name: 'Solo Usuario', value: porTipoUsuario.user, color: '#059669' },
-      { name: 'Admin y Usuario', value: porTipoUsuario.ambas, color: '#7C3AED' }
+    const porTipoUsuario = [
+      { name: 'Solo Admin', value: tipoUsuarioCounts.soloAdmin, color: '#DC2626' },
+      { name: 'Solo Usuario', value: tipoUsuarioCounts.soloUser, color: '#059669' },
+      { name: 'Admin y Usuario', value: tipoUsuarioCounts.ambas, color: '#7C3AED' }
     ].filter(item => item.value > 0);
 
     return {
@@ -296,8 +327,8 @@ const UsuariosAnalyticsContent = () => {
         recientes: recientesFiltrado,
         porEstadoActivacion,
         porConfirmacion,
-        porRoles, // Recalculado para usuarios filtrados
-        porTipoUsuario: porTipoUsuarioChart, // Recalculado para usuarios filtrados
+        porRoles, // Recalculado SOLO para usuarios filtrados
+        porTipoUsuario, // Recalculado SOLO para usuarios filtrados
         datosCompletos: filteredUsers, // Real filtered data only
       }
     };
