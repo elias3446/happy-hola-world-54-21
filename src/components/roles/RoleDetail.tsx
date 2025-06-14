@@ -1,4 +1,3 @@
-
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
@@ -8,6 +7,7 @@ import { useRoles } from '@/hooks/useRoles';
 import type { Role } from '@/types/roles';
 import { PERMISSION_LABELS, PERMISSION_GROUPS } from '@/types/roles';
 import { RolAuditoria } from './RolAuditoria';
+import { RoleUsersList } from './RoleUsersList';
 import { 
   ArrowLeft, 
   Edit, 
@@ -276,6 +276,11 @@ export const RoleDetail = ({ role: initialRole, onEdit, onBack }: RoleDetailProp
             )}
           </CardContent>
         </Card>
+
+        {/* Usuarios con este Rol */}
+        <div className="lg:col-span-2">
+          <RoleUsersList role={currentRole} />
+        </div>
 
         {/* Auditoría del Rol */}
         <div className="lg:col-span-1">
