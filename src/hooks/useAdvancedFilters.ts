@@ -11,9 +11,10 @@ export interface AdvancedFilters {
   priority: string[];
   estados: string[];
   categorias: string[];
-  searchTerm: string[]; // Changed from string to string[]
+  searchTerm: string[];
   sortBy: 'created_at' | 'priority' | 'estado' | 'categoria';
   sortOrder: 'asc' | 'desc';
+  activeTab: 'busqueda' | 'fechas' | 'prioridad' | 'estados' | 'categorias';
 }
 
 const defaultFilters: AdvancedFilters = {
@@ -21,9 +22,10 @@ const defaultFilters: AdvancedFilters = {
   priority: [],
   estados: [],
   categorias: [],
-  searchTerm: [], // Changed from '' to []
+  searchTerm: [],
   sortBy: 'created_at',
   sortOrder: 'desc',
+  activeTab: 'busqueda',
 };
 
 export const useAdvancedFilters = () => {
@@ -46,8 +48,26 @@ export const useAdvancedFilters = () => {
       filters.priority.length > 0 ||
       filters.estados.length > 0 ||
       filters.categorias.length > 0 ||
-      filters.searchTerm.length > 0 // Changed from filters.searchTerm.length > 0
+      filters.searchTerm.length > 0
     );
+  }, [filters]);
+
+  // Validar si los filtros son válidos para comparación
+  const isValidForComparison = useMemo(() => {
+    switch (filters.activeTab) {
+      case 'busqueda':
+        return filters.searchTerm.length >= 2;
+      case 'fechas':
+        return filters.dateRange !== null;
+      case 'prioridad':
+        return filters.priority.length > 0;
+      case 'estados':
+        return filters.estados.length > 0;
+      case 'categorias':
+        return filters.categorias.length > 0;
+      default:
+        return false;
+    }
   }, [filters]);
 
   return {
@@ -55,5 +75,6 @@ export const useAdvancedFilters = () => {
     updateFilter,
     resetFilters,
     hasActiveFilters,
+    isValidForComparison,
   };
 };

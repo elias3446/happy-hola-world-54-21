@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,13 +8,18 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Separator } from '@/components/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Filter, 
   X, 
   Calendar as CalendarIcon, 
   RotateCcw,
   SortAsc,
-  SortDesc 
+  SortDesc,
+  Search,
+  AlertTriangle,
+  CheckCircle,
+  Folder
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -44,7 +50,7 @@ export const AdvancedFiltersPanel: React.FC<AdvancedFiltersPanelProps> = ({
   onMultipleReportSelection,
   selectedReportIds = [],
 }) => {
-  const { filters, updateFilter, resetFilters, hasActiveFilters } = useAdvancedFilters();
+  const { filters, updateFilter, resetFilters, hasActiveFilters, isValidForComparison } = useAdvancedFilters();
   const { data: stats } = useDashboardStats();
   const { reportes } = useReportes();
 
@@ -93,10 +99,10 @@ export const AdvancedFiltersPanel: React.FC<AdvancedFiltersPanelProps> = ({
           className="flex items-center gap-2"
         >
           <Filter className="h-4 w-4" />
-          Filtros Avanzados
+          Filtros de Comparación
           {hasActiveFilters && (
             <Badge variant="secondary" className="ml-1 h-5 px-1.5">
-              {filters.priority.length + filters.estados.length + filters.categorias.length}
+              {filters.priority.length + filters.estados.length + filters.categorias.length + (filters.searchTerm.length > 0 ? 1 : 0) + (filters.dateRange ? 1 : 0)}
             </Badge>
           )}
         </Button>
@@ -111,6 +117,11 @@ export const AdvancedFiltersPanel: React.FC<AdvancedFiltersPanelProps> = ({
             Limpiar
           </Button>
         )}
+        {!isValidForComparison && hasActiveFilters && (
+          <Badge variant="destructive" className="text-xs">
+            Selecciona criterios válidos para comparar
+          </Badge>
+        )}
       </div>
     );
   }
@@ -121,7 +132,7 @@ export const AdvancedFiltersPanel: React.FC<AdvancedFiltersPanelProps> = ({
         <div className="flex items-center justify-between">
           <CardTitle className="text-lg flex items-center gap-2">
             <Filter className="h-5 w-5" />
-            Filtros Avanzados
+            Filtros de Comparación
           </CardTitle>
           <div className="flex items-center gap-2">
             {hasActiveFilters && (
@@ -140,156 +151,232 @@ export const AdvancedFiltersPanel: React.FC<AdvancedFiltersPanelProps> = ({
             </Button>
           </div>
         </div>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        {/* Búsqueda con lista desplegable */}
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Búsqueda de Reportes</label>
-          <SearchCombobox
-            reportes={reportesForSearch}
-            value={filters.searchTerm}
-            onValueChange={(value) => {
-              updateFilter('searchTerm', value);
-              if (onMultipleReportSelection) {
-                onMultipleReportSelection(value);
-              }
-            }}
-            placeholder="Buscar reportes..."
-          />
-          {filters.searchTerm.length > 0 && (
-            <p className="text-xs text-muted-foreground">
-              {filters.searchTerm.length} reporte(s) seleccionado(s)
+        {!isValidForComparison && hasActiveFilters && (
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mt-2">
+            <p className="text-sm text-amber-800">
+              <AlertTriangle className="h-4 w-4 inline mr-1" />
+              Para realizar comparaciones, selecciona al menos 2 reportes en Búsqueda, o selecciona criterios en las otras pestañas.
             </p>
-          )}
-        </div>
+          </div>
+        )}
+      </CardHeader>
+      <CardContent>
+        <Tabs 
+          value={filters.activeTab} 
+          onValueChange={(value) => updateFilter('activeTab', value as any)}
+          className="w-full"
+        >
+          <TabsList className="grid w-full grid-cols-5">
+            <TabsTrigger value="busqueda" className="flex items-center gap-1">
+              <Search className="h-3 w-3" />
+              Búsqueda
+            </TabsTrigger>
+            <TabsTrigger value="fechas" className="flex items-center gap-1">
+              <CalendarIcon className="h-3 w-3" />
+              Fechas
+            </TabsTrigger>
+            <TabsTrigger value="prioridad" className="flex items-center gap-1">
+              <AlertTriangle className="h-3 w-3" />
+              Prioridad
+            </TabsTrigger>
+            <TabsTrigger value="estados" className="flex items-center gap-1">
+              <CheckCircle className="h-3 w-3" />
+              Estados
+            </TabsTrigger>
+            <TabsTrigger value="categorias" className="flex items-center gap-1">
+              <Folder className="h-3 w-3" />
+              Categorías
+            </TabsTrigger>
+          </TabsList>
 
-        {/* Rango de fechas */}
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Rango de Fechas</label>
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                className="w-full justify-start text-left font-normal"
-              >
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {filters.dateRange ? (
-                  `${format(filters.dateRange.from, 'dd/MM/yyyy', { locale: es })} - ${format(filters.dateRange.to, 'dd/MM/yyyy', { locale: es })}`
-                ) : (
-                  'Seleccionar rango de fechas'
-                )}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-              <Calendar
-                mode="range"
-                selected={filters.dateRange ? {
-                  from: filters.dateRange.from,
-                  to: filters.dateRange.to
-                } : undefined}
-                onSelect={(range) => {
-                  if (range?.from && range?.to) {
-                    updateFilter('dateRange', { from: range.from, to: range.to });
-                  } else if (!range) {
-                    updateFilter('dateRange', null);
+          <TabsContent value="busqueda" className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">
+                Selecciona Reportes para Comparar (mínimo 2)
+              </label>
+              <SearchCombobox
+                reportes={reportesForSearch}
+                value={filters.searchTerm}
+                onValueChange={(value) => {
+                  updateFilter('searchTerm', value);
+                  if (onMultipleReportSelection) {
+                    onMultipleReportSelection(value);
                   }
                 }}
-                numberOfMonths={2}
-                locale={es}
+                placeholder="Buscar reportes para comparar..."
+                maxSelections={10}
               />
-            </PopoverContent>
-          </Popover>
-        </div>
+              {filters.searchTerm.length > 0 && (
+                <div className="flex items-center gap-2">
+                  <Badge variant={filters.searchTerm.length >= 2 ? "default" : "secondary"}>
+                    {filters.searchTerm.length} reporte(s) seleccionado(s)
+                  </Badge>
+                  {filters.searchTerm.length >= 2 && (
+                    <Badge variant="default" className="bg-green-100 text-green-800">
+                      ✓ Listo para comparar
+                    </Badge>
+                  )}
+                </div>
+              )}
+            </div>
+          </TabsContent>
 
-        <Separator />
-
-        {/* Prioridad */}
-        <div className="space-y-3">
-          <label className="text-sm font-medium">Prioridad</label>
-          <div className="grid grid-cols-2 gap-2">
-            {priorityOptions.map((option) => (
-              <div key={option.value} className="flex items-center space-x-2">
-                <Checkbox
-                  id={`priority-${option.value}`}
-                  checked={filters.priority.includes(option.value)}
-                  onCheckedChange={() => handlePriorityToggle(option.value)}
-                />
-                <label
-                  htmlFor={`priority-${option.value}`}
-                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-2"
-                >
-                  <div
-                    className="w-3 h-3 rounded-full"
-                    style={{ backgroundColor: option.color }}
+          <TabsContent value="fechas" className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">
+                Selecciona Rango de Fechas para Comparar
+              </label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start text-left font-normal"
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {filters.dateRange ? (
+                      `${format(filters.dateRange.from, 'dd/MM/yyyy', { locale: es })} - ${format(filters.dateRange.to, 'dd/MM/yyyy', { locale: es })}`
+                    ) : (
+                      'Seleccionar rango de fechas'
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="range"
+                    selected={filters.dateRange ? {
+                      from: filters.dateRange.from,
+                      to: filters.dateRange.to
+                    } : undefined}
+                    onSelect={(range) => {
+                      if (range?.from && range?.to) {
+                        updateFilter('dateRange', { from: range.from, to: range.to });
+                      } else if (range?.from && !range?.to) {
+                        updateFilter('dateRange', { from: range.from, to: range.from });
+                      } else if (!range) {
+                        updateFilter('dateRange', null);
+                      }
+                    }}
+                    numberOfMonths={2}
+                    locale={es}
                   />
-                  {option.label}
-                </label>
+                </PopoverContent>
+              </Popover>
+              {filters.dateRange && (
+                <Badge variant="default" className="bg-green-100 text-green-800">
+                  ✓ Rango de fechas seleccionado
+                </Badge>
+              )}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="prioridad" className="space-y-4">
+            <div className="space-y-3">
+              <label className="text-sm font-medium">
+                Selecciona Prioridades para Comparar
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                {priorityOptions.map((option) => (
+                  <div key={option.value} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={`priority-${option.value}`}
+                      checked={filters.priority.includes(option.value)}
+                      onCheckedChange={() => handlePriorityToggle(option.value)}
+                    />
+                    <label
+                      htmlFor={`priority-${option.value}`}
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-2"
+                    >
+                      <div
+                        className="w-3 h-3 rounded-full"
+                        style={{ backgroundColor: option.color }}
+                      />
+                      {option.label}
+                    </label>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-        </div>
-
-        <Separator />
-
-        {/* Estados */}
-        {stats && stats.reportes.porEstado.length > 0 && (
-          <div className="space-y-3">
-            <label className="text-sm font-medium">Estados</label>
-            <div className="grid grid-cols-1 gap-2 max-h-32 overflow-y-auto">
-              {stats.reportes.porEstado.map((estado) => (
-                <div key={estado.estado} className="flex items-center space-x-2">
-                  <Checkbox
-                    id={`estado-${estado.estado}`}
-                    checked={filters.estados.includes(estado.estado)}
-                    onCheckedChange={() => handleEstadoToggle(estado.estado)}
-                  />
-                  <label
-                    htmlFor={`estado-${estado.estado}`}
-                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-2"
-                  >
-                    <div
-                      className="w-3 h-3 rounded-full"
-                      style={{ backgroundColor: estado.color }}
-                    />
-                    {estado.estado} ({estado.count})
-                  </label>
-                </div>
-              ))}
+              {filters.priority.length > 0 && (
+                <Badge variant="default" className="bg-green-100 text-green-800">
+                  ✓ {filters.priority.length} prioridad(es) seleccionada(s)
+                </Badge>
+              )}
             </div>
-          </div>
-        )}
+          </TabsContent>
 
-        <Separator />
-
-        {/* Categorías */}
-        {stats && stats.reportes.porCategoria.length > 0 && (
-          <div className="space-y-3">
-            <label className="text-sm font-medium">Categorías</label>
-            <div className="grid grid-cols-1 gap-2 max-h-32 overflow-y-auto">
-              {stats.reportes.porCategoria.map((categoria) => (
-                <div key={categoria.categoria} className="flex items-center space-x-2">
-                  <Checkbox
-                    id={`categoria-${categoria.categoria}`}
-                    checked={filters.categorias.includes(categoria.categoria)}
-                    onCheckedChange={() => handleCategoriaToggle(categoria.categoria)}
-                  />
-                  <label
-                    htmlFor={`categoria-${categoria.categoria}`}
-                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-2"
-                  >
-                    <div
-                      className="w-3 h-3 rounded-full"
-                      style={{ backgroundColor: categoria.color }}
-                    />
-                    {categoria.categoria} ({categoria.count})
-                  </label>
+          <TabsContent value="estados" className="space-y-4">
+            {stats && stats.reportes.porEstado.length > 0 && (
+              <div className="space-y-3">
+                <label className="text-sm font-medium">
+                  Selecciona Estados para Comparar
+                </label>
+                <div className="grid grid-cols-1 gap-2 max-h-64 overflow-y-auto">
+                  {stats.reportes.porEstado.map((estado) => (
+                    <div key={estado.estado} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`estado-${estado.estado}`}
+                        checked={filters.estados.includes(estado.estado)}
+                        onCheckedChange={() => handleEstadoToggle(estado.estado)}
+                      />
+                      <label
+                        htmlFor={`estado-${estado.estado}`}
+                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-2"
+                      >
+                        <div
+                          className="w-3 h-3 rounded-full"
+                          style={{ backgroundColor: estado.color }}
+                        />
+                        {estado.estado} ({estado.count})
+                      </label>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          </div>
-        )}
+                {filters.estados.length > 0 && (
+                  <Badge variant="default" className="bg-green-100 text-green-800">
+                    ✓ {filters.estados.length} estado(s) seleccionado(s)
+                  </Badge>
+                )}
+              </div>
+            )}
+          </TabsContent>
 
-        <Separator />
+          <TabsContent value="categorias" className="space-y-4">
+            {stats && stats.reportes.porCategoria.length > 0 && (
+              <div className="space-y-3">
+                <label className="text-sm font-medium">
+                  Selecciona Categorías para Comparar
+                </label>
+                <div className="grid grid-cols-1 gap-2 max-h-64 overflow-y-auto">
+                  {stats.reportes.porCategoria.map((categoria) => (
+                    <div key={categoria.categoria} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`categoria-${categoria.categoria}`}
+                        checked={filters.categorias.includes(categoria.categoria)}
+                        onCheckedChange={() => handleCategoriaToggle(categoria.categoria)}
+                      />
+                      <label
+                        htmlFor={`categoria-${categoria.categoria}`}
+                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-2"
+                      >
+                        <div
+                          className="w-3 h-3 rounded-full"
+                          style={{ backgroundColor: categoria.color }}
+                        />
+                        {categoria.categoria} ({categoria.count})
+                      </label>
+                    </div>
+                  ))}
+                </div>
+                {filters.categorias.length > 0 && (
+                  <Badge variant="default" className="bg-green-100 text-green-800">
+                    ✓ {filters.categorias.length} categoría(s) seleccionada(s)
+                  </Badge>
+                )}
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
+
+        <Separator className="my-6" />
 
         {/* Ordenamiento */}
         <div className="grid grid-cols-2 gap-4">
