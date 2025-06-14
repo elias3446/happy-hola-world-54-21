@@ -1,3 +1,4 @@
+
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -47,7 +48,7 @@ export const useDashboardStats = () => {
     queryFn: async (): Promise<DashboardStats> => {
       console.log('Fetching dashboard statistics...');
 
-      // Obtener estadísticas de reportes con datos completos
+      // Obtener estadísticas de reportes con datos completos - FILTRAR CORRECTAMENTE
       const { data: reportes, error: reportesError } = await supabase
         .from('reportes')
         .select(`
@@ -58,77 +59,87 @@ export const useDashboardStats = () => {
           categoria:categories(nombre, color),
           estado:estados(nombre, color)
         `)
-        .is('deleted_at', null);
+        .is('deleted_at', null); // ESTO ES CLAVE - Solo reportes no eliminados
 
       if (reportesError) {
         console.error('Error fetching reportes stats:', reportesError);
         throw reportesError;
       }
 
-      // Obtener estadísticas de usuarios
+      console.log('Reportes fetched from database (ONLY non-deleted):', reportes?.length || 0, reportes);
+
+      // Obtener estadísticas de usuarios - FILTRAR CORRECTAMENTE  
       const { data: usuarios, error: usuariosError } = await supabase
         .from('profiles')
         .select('id, asset, confirmed, created_at')
-        .is('deleted_at', null);
+        .is('deleted_at', null); // Solo usuarios no eliminados
 
       if (usuariosError) {
         console.error('Error fetching usuarios stats:', usuariosError);
         throw usuariosError;
       }
 
-      // Obtener estadísticas de roles
+      console.log('Usuarios fetched from database (ONLY non-deleted):', usuarios?.length || 0);
+
+      // Obtener estadísticas de roles - FILTRAR CORRECTAMENTE
       const { data: roles, error: rolesError } = await supabase
         .from('roles')
         .select('id, activo')
-        .is('deleted_at', null);
+        .is('deleted_at', null); // Solo roles no eliminados
 
       if (rolesError) {
         console.error('Error fetching roles stats:', rolesError);
         throw rolesError;
       }
 
-      // Obtener asignaciones de roles
+      // Obtener asignaciones de roles - FILTRAR CORRECTAMENTE
       const { data: userRoles, error: userRolesError } = await supabase
         .from('user_roles')
         .select('id')
-        .is('deleted_at', null);
+        .is('deleted_at', null); // Solo asignaciones no eliminadas
 
       if (userRolesError) {
         console.error('Error fetching user roles stats:', userRolesError);
         throw userRolesError;
       }
 
-      // Obtener estadísticas de categorías
+      // Obtener estadísticas de categorías - FILTRAR CORRECTAMENTE
       const { data: categorias, error: categoriasError } = await supabase
         .from('categories')
         .select('id, activo')
-        .is('deleted_at', null);
+        .is('deleted_at', null); // Solo categorías no eliminadas
 
       if (categoriasError) {
         console.error('Error fetching categorias stats:', categoriasError);
         throw categoriasError;
       }
 
-      // Obtener estadísticas de estados
+      // Obtener estadísticas de estados - FILTRAR CORRECTAMENTE
       const { data: estados, error: estadosError } = await supabase
         .from('estados')
         .select('id, activo')
-        .is('deleted_at', null);
+        .is('deleted_at', null); // Solo estados no eliminados
 
       if (estadosError) {
         console.error('Error fetching estados stats:', estadosError);
         throw estadosError;
       }
 
-      // Calcular estadísticas usando datos reales
+      // Calcular estadísticas usando SOLO datos reales de la base de datos
       const now = new Date();
       const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
 
-      // Estadísticas de reportes
+      // Estadísticas de reportes - SOLO DATOS REALES
       const reportesActivos = reportes?.filter(r => r.activo) || [];
       const reportesRecientes = reportes?.filter(r => 
         new Date(r.created_at) >= sevenDaysAgo
       ) || [];
+
+      console.log('REAL DATABASE STATS:', {
+        totalReportes: reportes?.length || 0,
+        reportesActivos: reportesActivos.length,
+        reportesRecientes: reportesRecientes.length
+      });
 
       // Guardar datos completos para filtrado posterior
       const datosCompletos: ReporteWithDates[] = reportes?.map(r => ({
@@ -140,7 +151,7 @@ export const useDashboardStats = () => {
         estado: r.estado
       })) || [];
 
-      // Agrupar por estado
+      // Agrupar por estado - SOLO DATOS REALES
       const porEstado = reportes?.reduce((acc, reporte) => {
         const estadoNombre = reporte.estado?.nombre || 'Sin estado';
         const estadoColor = reporte.estado?.color || '#6B7280';
@@ -153,7 +164,7 @@ export const useDashboardStats = () => {
         return acc;
       }, [] as { estado: string; count: number; color: string }[]) || [];
 
-      // Agrupar por categoría
+      // Agrupar por categoría - SOLO DATOS REALES
       const porCategoria = reportes?.reduce((acc, reporte) => {
         const categoriaNombre = reporte.categoria?.nombre || 'Sin categoría';
         const categoriaColor = reporte.categoria?.color || '#6B7280';
@@ -166,7 +177,7 @@ export const useDashboardStats = () => {
         return acc;
       }, [] as { categoria: string; count: number; color: string }[]) || [];
 
-      // Agrupar por prioridad
+      // Agrupar por prioridad - SOLO DATOS REALES
       const porPrioridad = reportes?.reduce((acc, reporte) => {
         const prioridad = reporte.priority || 'medio';
         const existing = acc.find(item => item.priority === prioridad);
@@ -178,31 +189,31 @@ export const useDashboardStats = () => {
         return acc;
       }, [] as { priority: string; count: number }[]) || [];
 
-      // Estadísticas de usuarios
+      // Estadísticas de usuarios - SOLO DATOS REALES
       const usuariosActivos = usuarios?.filter(u => u.asset) || [];
       const usuariosConfirmados = usuarios?.filter(u => u.confirmed) || [];
       const usuariosRecientes = usuarios?.filter(u => 
         new Date(u.created_at) >= sevenDaysAgo
       ) || [];
 
-      // Estadísticas de roles
+      // Estadísticas de roles - SOLO DATOS REALES
       const rolesActivos = roles?.filter(r => r.activo) || [];
 
-      // Estadísticas de categorías
+      // Estadísticas de categorías - SOLO DATOS REALES
       const categoriasActivas = categorias?.filter(c => c.activo) || [];
 
-      // Estadísticas de estados
+      // Estadísticas de estados - SOLO DATOS REALES
       const estadosActivos = estados?.filter(e => e.activo) || [];
 
       const stats: DashboardStats = {
         reportes: {
-          total: reportes?.length || 0,
-          activos: reportesActivos.length,
-          porEstado,
-          porCategoria,
-          porPrioridad,
-          recientes: reportesRecientes.length,
-          datosCompletos, // Incluimos los datos completos
+          total: reportes?.length || 0, // DATO REAL DE LA BASE DE DATOS
+          activos: reportesActivos.length, // DATO REAL DE LA BASE DE DATOS
+          porEstado, // DATOS REALES DE LA BASE DE DATOS
+          porCategoria, // DATOS REALES DE LA BASE DE DATOS
+          porPrioridad, // DATOS REALES DE LA BASE DE DATOS
+          recientes: reportesRecientes.length, // DATO REAL DE LA BASE DE DATOS
+          datosCompletos, // DATOS REALES DE LA BASE DE DATOS
         },
         usuarios: {
           total: usuarios?.length || 0,
@@ -225,7 +236,7 @@ export const useDashboardStats = () => {
         },
       };
 
-      console.log('Dashboard stats calculated:', stats);
+      console.log('FINAL Dashboard stats calculated WITH REAL DATABASE DATA:', stats);
       return stats;
     },
   });
