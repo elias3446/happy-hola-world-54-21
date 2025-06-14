@@ -117,7 +117,7 @@ const ReportesAnalyticsContent = () => {
   // Función para determinar si hay filtros activos válidos
   const hasValidFilters = appliedFilters && isValidForComparison(appliedFilters);
 
-  // Function to filter data using real database data - Solo se ejecuta si hay filtros válidos
+  // Function to filter data using real database data
   const getFilteredStats = () => {
     if (!stats) return stats;
     
@@ -260,7 +260,7 @@ const ReportesAnalyticsContent = () => {
 
   const filteredStats = getFilteredStats();
 
-  // Prepare data for multiple report comparison
+  // Prepare data for multiple report comparison usando solo datos reales
   const reportesParaComparacion = selectedReportIds.length > 0 && reportes ? 
     reportes
       .filter(r => selectedReportIds.includes(r.id))
@@ -373,7 +373,7 @@ const ReportesAnalyticsContent = () => {
         </div>
       )}
 
-      {/* Métricas en Tiempo Real con Gráficos de Actividad por Horas */}
+      {/* Métricas en Tiempo Real con Gráficos de Actividad por Horas - SOLO DATOS REALES */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <RealTimeMetrics
           title="Total Reportes"
@@ -432,7 +432,7 @@ const ReportesAnalyticsContent = () => {
         />
       </div>
 
-      {/* Gráficos Interactivos */}
+      {/* Gráficos Interactivos - SOLO DATOS REALES */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <InteractiveCharts
           title="Distribución por Estado"
@@ -441,9 +441,10 @@ const ReportesAnalyticsContent = () => {
             name: item.estado,
             value: item.count,
             color: item.color,
-            trend: Math.random() * 20 - 10,
+            // Calcular trend real basado en datos históricos de la base de datos
+            trend: 0, // Sin datos simulados
           }))}
-          showTrends={true}
+          showTrends={false} // Deshabilitamos trends simulados
         />
         
         <InteractiveCharts
@@ -453,9 +454,9 @@ const ReportesAnalyticsContent = () => {
             name: item.categoria,
             value: item.count,
             color: item.color,
-            trend: Math.random() * 15 - 7.5,
+            trend: 0, // Sin datos simulados
           }))}
-          showTrends={true}
+          showTrends={false} // Deshabilitamos trends simulados
         />
       </div>
 
@@ -468,9 +469,9 @@ const ReportesAnalyticsContent = () => {
               name: priorityConfig[item.priority as keyof typeof priorityConfig]?.label || item.priority,
               value: item.count,
               color: priorityConfig[item.priority as keyof typeof priorityConfig]?.color || '#6B7280',
-              trend: Math.random() * 25 - 12.5,
+              trend: 0, // Sin datos simulados
             }))}
-            showTrends={true}
+            showTrends={false} // Deshabilitamos trends simulados
           />
           
           <Card>
@@ -480,7 +481,7 @@ const ReportesAnalyticsContent = () => {
                 Análisis de Prioridades
               </CardTitle>
               <CardDescription>
-                {hasValidFilters ? "Métricas de prioridades en reportes filtrados" : "Métricas detalladas por nivel de prioridad con tendencias"}
+                {hasValidFilters ? "Métricas de prioridades en reportes filtrados" : "Métricas detalladas por nivel de prioridad basadas en datos reales"}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -488,7 +489,6 @@ const ReportesAnalyticsContent = () => {
                 {filteredStats.reportes.porPrioridad.map((item) => {
                   const config = priorityConfig[item.priority as keyof typeof priorityConfig];
                   const percentage = Math.round((item.count / Math.max(filteredStats.reportes.total, 1)) * 100);
-                  const trend = Math.random() * 20 - 10;
                   
                   return (
                     <div key={item.priority} className="flex items-center justify-between p-3 rounded-lg border">
@@ -508,15 +508,8 @@ const ReportesAnalyticsContent = () => {
                       </div>
                       <div className="text-right">
                         <div className="font-bold text-lg">{item.count}</div>
-                        <div className={`text-xs flex items-center gap-1 ${
-                          trend > 0 ? 'text-green-600' : trend < 0 ? 'text-red-600' : 'text-gray-500'
-                        }`}>
-                          {trend > 0 ? (
-                            <TrendingUp className="h-3 w-3" />
-                          ) : trend < 0 ? (
-                            <TrendingUp className="h-3 w-3 rotate-180" />
-                          ) : null}
-                          {Math.abs(trend).toFixed(1)}%
+                        <div className="text-xs text-gray-500">
+                          Datos reales
                         </div>
                       </div>
                     </div>
@@ -528,7 +521,7 @@ const ReportesAnalyticsContent = () => {
         </div>
       )}
 
-      {/* Métricas adicionales */}
+      {/* Métricas adicionales - SOLO DATOS REALES */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card>
           <CardHeader>

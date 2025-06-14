@@ -23,7 +23,7 @@ interface RealTimeMetricsProps {
   formatValue?: (value: number) => string;
   refreshInterval?: number;
   onRefresh?: () => void;
-  // Nuevas props para gráficos de actividad
+  // Props para gráficos de actividad
   showHourlyChart?: boolean;
   hourlyData?: any[];
   chartColor?: string;
@@ -47,8 +47,10 @@ export const RealTimeMetrics: React.FC<RealTimeMetricsProps> = ({
   const [isRefreshing, setIsRefreshing] = useState(false);
   const { toast } = useToast();
 
-  // Calculate trend
-  const trend = previousValue !== undefined ? ((value - previousValue) / previousValue) * 100 : 0;
+  // Calculate trend usando solo datos reales
+  const trend = previousValue !== undefined && previousValue > 0 
+    ? ((value - previousValue) / previousValue) * 100 
+    : 0;
   const trendDirection = trend > 0 ? 'up' : trend < 0 ? 'down' : 'stable';
 
   // Auto refresh
@@ -59,7 +61,7 @@ export const RealTimeMetrics: React.FC<RealTimeMetricsProps> = ({
       setIsRefreshing(true);
       try {
         await onRefresh();
-        // Simulate data change detection
+        // Actualizar historial solo con datos reales
         if (metricHistory.length > 0) {
           const lastValue = metricHistory[metricHistory.length - 1].current;
           if (lastValue !== value) {
@@ -78,7 +80,7 @@ export const RealTimeMetrics: React.FC<RealTimeMetricsProps> = ({
     return () => clearInterval(interval);
   }, [refreshInterval, onRefresh, value, title, formatValue, metricHistory, toast]);
 
-  // Update history when value changes
+  // Update history when value changes con datos reales únicamente
   useEffect(() => {
     if (metricHistory.length === 0 || metricHistory[metricHistory.length - 1].current !== value) {
       setMetricHistory(prev => [
@@ -125,7 +127,7 @@ export const RealTimeMetrics: React.FC<RealTimeMetricsProps> = ({
     }
   };
 
-  // Si showHourlyChart es true, renderizar el gráfico en lugar de la tarjeta normal
+  // Si showHourlyChart es true, renderizar el gráfico con datos reales
   if (showHourlyChart) {
     return (
       <HourlyActivityChart
@@ -184,14 +186,17 @@ export const RealTimeMetrics: React.FC<RealTimeMetricsProps> = ({
           </p>
         )}
         
-        {/* Mini sparkline */}
+        {/* Mini sparkline con datos reales del historial */}
         {metricHistory.length > 1 && (
           <div className="mt-2">
             <div className="h-8 flex items-end gap-1">
               {metricHistory.slice(-8).map((metric, index) => {
-                const height = metricHistory.length > 1 
-                  ? ((metric.current - Math.min(...metricHistory.map(m => m.current))) /
-                     (Math.max(...metricHistory.map(m => m.current)) - Math.min(...metricHistory.map(m => m.current)))) * 100
+                const minValue = Math.min(...metricHistory.map(m => m.current));
+                const maxValue = Math.max(...metricHistory.map(m => m.current));
+                const range = maxValue - minValue;
+                
+                const height = range > 0 
+                  ? ((metric.current - minValue) / range) * 100
                   : 50;
                 
                 return (
