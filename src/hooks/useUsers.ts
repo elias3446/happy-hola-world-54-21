@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -103,33 +104,41 @@ export const useUsers = (includeCurrentUser: boolean = false) => {
           user_roles: []
         }));
         
-        // If includeCurrentUser is false, filter out the current user
+        console.log('ALL users fetched without roles (before any filtering):', transformedUsers.length, 'users');
+        console.log('User IDs:', transformedUsers.map(u => u.id));
+        
+        // Only filter current user if includeCurrentUser is false
         if (!includeCurrentUser) {
           const { data: { user: currentUser } } = await supabase.auth.getUser();
           const filteredUsers = currentUser 
             ? transformedUsers.filter(user => user.id !== currentUser.id)
             : transformedUsers;
           
-          console.log('Fetched users without roles (current user filtered):', filteredUsers);
+          console.log('Current user ID:', currentUser?.id);
+          console.log('Filtered users (without current):', filteredUsers.length, 'users');
           return filteredUsers as User[];
         }
         
-        console.log('Fetched users without roles (including current user):', transformedUsers);
+        console.log('Returning ALL users (including current user):', transformedUsers.length, 'users');
         return transformedUsers as User[];
       }
 
-      // If includeCurrentUser is false, filter out the current user
+      console.log('ALL users fetched with roles (before any filtering):', (usersWithRoles || []).length, 'users');
+      console.log('User IDs:', (usersWithRoles || []).map(u => u.id));
+
+      // Only filter current user if includeCurrentUser is false
       if (!includeCurrentUser) {
         const { data: { user: currentUser } } = await supabase.auth.getUser();
         const filteredUsers = currentUser 
           ? (usersWithRoles || []).filter(user => user.id !== currentUser.id)
           : (usersWithRoles || []);
 
-        console.log('Fetched users with roles (current user filtered):', filteredUsers);
+        console.log('Current user ID:', currentUser?.id);
+        console.log('Filtered users (without current):', filteredUsers.length, 'users');
         return filteredUsers as User[];
       }
 
-      console.log('Fetched users with roles (including current user):', usersWithRoles);
+      console.log('Returning ALL users (including current user):', (usersWithRoles || []).length, 'users');
       return (usersWithRoles || []) as User[];
     },
   });

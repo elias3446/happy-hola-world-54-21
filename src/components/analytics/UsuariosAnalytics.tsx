@@ -18,7 +18,7 @@ import { isValidForComparison } from './usuarios/UsuariosDataProcessor';
 
 const UsuariosAnalyticsContent = () => {
   const { data: stats, isLoading, error, refetch } = useDashboardStats();
-  // IMPORTANT: Include current user in analytics by passing true - this ensures ALL users are counted
+  // CRÍTICO: Asegurar que SIEMPRE incluimos al usuario actual en analytics
   const { users } = useUsers(true);
   const { userRoles } = useUserRoles();
   const { roles } = useRoles();
@@ -28,12 +28,13 @@ const UsuariosAnalyticsContent = () => {
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
   const { toast } = useToast();
 
-  console.log('UsuariosAnalytics - Users data (FIXED TO SHOW ALL):', {
+  console.log('UsuariosAnalytics - VERIFICACIÓN CRÍTICA:', {
     totalUsers: users?.length || 0,
     currentUserId: currentUser?.id,
     usersIncludesCurrent: users?.some(u => u.id === currentUser?.id),
-    allUserIds: users?.map(u => u.id),
-    statsTotal: stats?.usuarios?.total
+    allUserEmails: users?.map(u => u.email),
+    statsTotal: stats?.usuarios?.total,
+    includeCurrentUserParam: true
   });
 
   const handleRefreshData = useCallback(async () => {
@@ -125,8 +126,8 @@ const UsuariosAnalyticsContent = () => {
               : 'Dashboard en tiempo real con datos reales de la base de datos (incluyendo usuario actual)'
             }
           </p>
-          <p className="text-sm text-blue-600 mt-1">
-            Mostrando {users?.length || 0} usuarios totales de la base de datos
+          <p className="text-sm text-blue-600 mt-1 font-semibold">
+            Mostrando {users?.length || 0} usuarios totales de la base de datos (TODOS INCLUIDOS)
           </p>
         </div>
         <Button onClick={handleRefreshData} variant="outline" className="w-fit">
