@@ -38,25 +38,29 @@ const ReportesAnalyticsContent = () => {
     console.log('Filtros aplicados:', filters);
   }, []);
 
-  // Función mejorada para verificar si una fecha está en el rango especificado
+  // Función corregida para verificar si una fecha está en el rango especificado
   const isDateInRange = (dateString: string, dateRange: { from: Date; to: Date }) => {
     const reportDate = new Date(dateString);
+    
+    // Crear nuevas fechas para el rango sin modificar las originales
     const fromDate = new Date(dateRange.from);
     const toDate = new Date(dateRange.to);
     
-    // Normalizar las fechas para comparación (solo fecha, sin tiempo)
-    const reportDateOnly = new Date(reportDate.getFullYear(), reportDate.getMonth(), reportDate.getDate());
-    const fromDateOnly = new Date(fromDate.getFullYear(), fromDate.getMonth(), fromDate.getDate());
-    const toDateOnly = new Date(toDate.getFullYear(), toDate.getMonth(), toDate.getDate());
+    // Establecer las horas para comparación completa del día
+    fromDate.setHours(0, 0, 0, 0);
+    toDate.setHours(23, 59, 59, 999);
     
     console.log('Comparando fechas:', {
-      reporte: reportDateOnly.toISOString().split('T')[0],
-      desde: fromDateOnly.toISOString().split('T')[0],
-      hasta: toDateOnly.toISOString().split('T')[0],
-      enRango: reportDateOnly >= fromDateOnly && reportDateOnly <= toDateOnly
+      reporte: reportDate.toISOString(),
+      reporteFormatted: reportDate.toLocaleDateString('es-ES'),
+      desde: fromDate.toISOString(),
+      desdeFormatted: fromDate.toLocaleDateString('es-ES'),
+      hasta: toDate.toISOString(),
+      hastaFormatted: toDate.toLocaleDateString('es-ES'),
+      enRango: reportDate >= fromDate && reportDate <= toDate
     });
     
-    return reportDateOnly >= fromDateOnly && reportDateOnly <= toDateOnly;
+    return reportDate >= fromDate && reportDate <= toDate;
   };
 
   // Filtrar datos usando los datos reales de la base de datos
@@ -89,14 +93,15 @@ const ReportesAnalyticsContent = () => {
     // Aplicar filtro de rango de fechas usando datos reales
     if (appliedFilters.dateRange) {
       console.log('Aplicando filtro de fecha:', {
-        desde: appliedFilters.dateRange.from.toISOString().split('T')[0],
-        hasta: appliedFilters.dateRange.to.toISOString().split('T')[0]
+        desde: appliedFilters.dateRange.from.toLocaleDateString('es-ES'),
+        hasta: appliedFilters.dateRange.to.toLocaleDateString('es-ES'),
+        totalReportesAntesFiltro: filteredReportes.length
       });
       
       const reportesAntesDelFiltro = filteredReportes.length;
       filteredReportes = filteredReportes.filter(reporte => {
         const estaEnRango = isDateInRange(reporte.created_at, appliedFilters.dateRange!);
-        console.log(`Reporte ${reporte.id} (${reporte.created_at}) está en rango: ${estaEnRango}`);
+        console.log(`Reporte ${reporte.id} creado el ${new Date(reporte.created_at).toLocaleDateString('es-ES')} está en rango: ${estaEnRango}`);
         return estaEnRango;
       });
       
