@@ -1,8 +1,12 @@
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Switch } from '@/components/ui/switch';
+
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Switch } from '@/components/ui/switch';
 import { useRoles } from '@/hooks/useRoles';
 import { useUsers } from '@/hooks/useUsers';
 import type { Role } from '@/types/roles';
@@ -18,9 +22,17 @@ import {
   User,
   CheckCircle,
   XCircle,
-  Lock
+  Lock,
+  Clock,
+  FileText,
+  History,
+  Users,
+  Settings,
+  BarChart3
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
+import { useEffect } from 'react';
 
 interface RoleDetailProps {
   role: Role;
@@ -109,213 +121,336 @@ export const RoleDetail = ({ role: initialRole, onEdit, onBack }: RoleDetailProp
   const permissionsByGroup = getPermissionsByGroup();
   const isSystemRoleItem = isSystemRole(currentRole.nombre);
 
+  const getStatusBadge = () => {
+    if (currentRole.activo) {
+      return {
+        variant: "default" as const,
+        icon: <CheckCircle className="h-3 w-3" />,
+        text: "Activo"
+      };
+    } else {
+      return {
+        variant: "secondary" as const,
+        icon: <XCircle className="h-3 w-3" />,
+        text: "Inactivo"
+      };
+    }
+  };
+
+  const statusBadge = getStatusBadge();
+
   return (
-    <div className="container mx-auto px-4 py-6">
-      <div className="mb-6">
-        <Button 
-          variant="ghost" 
-          onClick={onBack}
-          className="mb-4 flex items-center gap-2"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Volver a Roles
-        </Button>
-        
-        <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div 
-              className="w-12 h-12 rounded-full flex items-center justify-center text-white text-lg font-medium"
-              style={{ backgroundColor: currentRole.color }}
-            >
-              {currentRole.icono.charAt(0)}
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-2xl font-bold">{currentRole.nombre}</h1>
-                {isSystemRoleItem && (
-                  <Badge variant="secondary" className="text-xs">
-                    Sistema
-                  </Badge>
-                )}
-              </div>
-              <p className="text-gray-600">{currentRole.descripcion}</p>
-            </div>
+    <div className="space-y-4 sm:space-y-6 p-2 sm:p-4">
+      {/* Header - Responsive */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={onBack}
+            className="flex items-center gap-2 w-fit"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            <span className="hidden sm:inline">Volver</span>
+          </Button>
+          <div>
+            <h1 className="text-xl sm:text-2xl font-bold">Detalle del Rol</h1>
+            <p className="text-sm text-muted-foreground">Información completa del rol</p>
           </div>
-          
+        </div>
+        <div className="flex items-center gap-2">
           {!isSystemRoleItem ? (
-            <Button onClick={handleEdit} className="flex items-center gap-2">
+            <Button 
+              onClick={handleEdit} 
+              className="flex items-center gap-2 text-sm"
+              size="sm"
+            >
               <Edit className="h-4 w-4" />
-              Editar Rol
+              <span className="hidden sm:inline">Editar Rol</span>
+              <span className="sm:hidden">Editar</span>
             </Button>
           ) : (
             <div className="flex items-center gap-2 text-gray-500">
               <Lock className="h-4 w-4" />
-              <span className="text-sm">Rol protegido del sistema</span>
+              <span className="text-sm hidden sm:inline">Rol protegido del sistema</span>
+              <span className="text-sm sm:hidden">Protegido</span>
             </div>
           )}
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Información General */}
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Shield className="h-5 w-5" />
-              Información General
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="text-sm font-medium text-gray-700">Nombre del Rol</label>
-                <p className="text-lg font-semibold mt-1">{currentRole.nombre}</p>
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 sm:gap-6">
+        {/* Información Principal - Responsive */}
+        <div className="xl:col-span-1">
+          <Card>
+            <CardHeader className="text-center pb-4">
+              <div className="flex justify-center mb-4">
+                <Avatar className="h-16 w-16 sm:h-24 sm:w-24">
+                  <AvatarFallback 
+                    className="text-lg sm:text-xl text-white"
+                    style={{ backgroundColor: currentRole.color }}
+                  >
+                    {currentRole.icono.charAt(0)}
+                  </AvatarFallback>
+                </Avatar>
               </div>
-              
+              <CardTitle className="text-lg sm:text-xl">{currentRole.nombre}</CardTitle>
+              <p className="text-sm text-muted-foreground break-all">{currentRole.descripcion}</p>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-3">
+                <div className="flex items-start gap-2">
+                  <FileText className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                  <span className="text-sm break-words">{currentRole.descripcion}</span>
+                </div>
+                
+                <div className="flex items-start gap-2">
+                  <Calendar className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                  <span className="text-sm">
+                    Creado: {format(new Date(currentRole.created_at), 'dd/MM/yyyy', { locale: es })}
+                  </span>
+                </div>
+                
+                <div className="flex items-start gap-2">
+                  <Clock className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                  <span className="text-sm">
+                    Actualizado: {format(new Date(currentRole.updated_at), 'dd/MM/yyyy', { locale: es })}
+                  </span>
+                </div>
+
+                <div className="flex items-start gap-2">
+                  <Shield className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                  <span className="text-sm">
+                    Permisos: {currentRole.permisos.length}
+                  </span>
+                </div>
+              </div>
+
+              <Separator />
+
               <div>
-                <label className="text-sm font-medium text-gray-700">Estado</label>
-                <div className="flex items-center gap-3 mt-1">
-                  <Switch
-                    checked={currentRole.activo}
-                    onCheckedChange={handleToggleStatus}
-                    disabled={isToggling || isSystemRoleItem}
-                  />
-                  <Badge variant={currentRole.activo ? "default" : "secondary"} className="flex items-center gap-1">
-                    {currentRole.activo ? (
-                      <CheckCircle className="h-3 w-3" />
-                    ) : (
-                      <XCircle className="h-3 w-3" />
+                <h4 className="font-medium mb-2 flex items-center gap-2">
+                  <Shield className="h-4 w-4 flex-shrink-0" />
+                  Apariencia
+                </h4>
+                <div className="flex flex-wrap gap-2">
+                  <div className="flex items-center gap-2">
+                    <div 
+                      className="w-6 h-6 rounded border"
+                      style={{ backgroundColor: currentRole.color }}
+                    />
+                    <span className="text-sm font-mono">{currentRole.color}</span>
+                  </div>
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Control de Estado del Rol */}
+              <div className="space-y-3">
+                <h4 className="font-medium">Estado del Rol</h4>
+                
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Badge 
+                      variant={statusBadge.variant} 
+                      className="flex items-center gap-1"
+                    >
+                      {statusBadge.icon}
+                      {statusBadge.text}
+                    </Badge>
+                    {isSystemRoleItem && (
+                      <Badge variant="secondary" className="text-xs">
+                        Sistema
+                      </Badge>
                     )}
-                    {currentRole.activo ? 'Activo' : 'Inactivo'}
-                  </Badge>
-                  {isSystemRoleItem && (
-                    <span className="text-xs text-gray-500 flex items-center gap-1">
-                      <Lock className="h-3 w-3" />
-                      Protegido
-                    </span>
+                  </div>
+                  
+                  {!isSystemRoleItem && (
+                    <Switch
+                      checked={currentRole.activo}
+                      onCheckedChange={handleToggleStatus}
+                      disabled={isToggling}
+                    />
                   )}
                 </div>
               </div>
-            </div>
 
-            <Separator />
-
-            <div>
-              <label className="text-sm font-medium text-gray-700">Descripción</label>
-              <p className="text-gray-900 mt-1">{currentRole.descripcion}</p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="text-sm font-medium text-gray-700">Color</label>
-                <div className="flex items-center gap-2 mt-1">
-                  <div 
-                    className="w-6 h-6 rounded border"
-                    style={{ backgroundColor: currentRole.color }}
-                  />
-                  <span className="text-gray-900 font-mono">{currentRole.color}</span>
-                </div>
-              </div>
-              
-              <div>
-                <label className="text-sm font-medium text-gray-700">Ícono</label>
-                <p className="text-gray-900 mt-1">{currentRole.icono}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Información Adicional */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Calendar className="h-5 w-5" />
-              Información Adicional
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <label className="text-sm font-medium text-gray-700">Fecha de Creación</label>
-              <p className="text-gray-900 mt-1">
-                {new Date(currentRole.created_at).toLocaleDateString('es-ES', {
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric',
-                  hour: '2-digit',
-                  minute: '2-digit'
-                })}
-              </p>
-            </div>
-            
-            <div>
-              <label className="text-sm font-medium text-gray-700">Última Actualización</label>
-              <p className="text-gray-900 mt-1">
-                {new Date(currentRole.updated_at).toLocaleDateString('es-ES', {
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric',
-                  hour: '2-digit',
-                  minute: '2-digit'
-                })}
-              </p>
-            </div>
-
-            {isSystemRoleItem && (
-              <>
-                <Separator />
-                <div className="flex items-start gap-2 p-3 bg-blue-50 border border-blue-200 rounded-md">
-                  <Lock className="h-5 w-5 text-blue-500 mt-0.5" />
-                  <div className="text-sm text-blue-700">
-                    <p className="font-medium">Rol del Sistema</p>
-                    <p>Este rol está protegido y no puede ser modificado o eliminado.</p>
-                  </div>
-                </div>
-              </>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Permisos */}
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <User className="h-5 w-5" />
-              Permisos Asignados ({currentRole.permisos.length})
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {Object.keys(permissionsByGroup).length === 0 ? (
-              <div className="text-center py-8">
-                <Shield className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-500">Este rol no tiene permisos asignados</p>
-              </div>
-            ) : (
-              <div className="space-y-6">
-                {Object.entries(permissionsByGroup).map(([groupName, permissions]) => (
-                  <div key={groupName}>
-                    <h4 className="font-medium text-gray-900 mb-3">{groupName}</h4>
-                    <div className="flex flex-wrap gap-2">
-                      {permissions.map((permission) => (
-                        <Badge key={permission} variant="secondary">
-                          {permission}
-                        </Badge>
-                      ))}
+              {isSystemRoleItem && (
+                <>
+                  <Separator />
+                  <div className="space-y-2">
+                    <h4 className="font-medium">Rol del Sistema</h4>
+                    <div className="flex items-start gap-2 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                      <Lock className="h-4 w-4 text-blue-500 mt-0.5 flex-shrink-0" />
+                      <div className="text-sm text-blue-700">
+                        <p className="font-medium">Protegido</p>
+                        <p>Este rol no puede ser modificado.</p>
+                      </div>
                     </div>
                   </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Usuarios con este Rol */}
-        <div className="lg:col-span-2">
-          <RoleUsersList role={currentRole} onViewUser={handleViewUser} />
+                </>
+              )}
+            </CardContent>
+          </Card>
         </div>
 
-        {/* Auditoría del Rol */}
-        <div className="lg:col-span-1">
-          <RolAuditoria rolId={currentRole.id} />
+        {/* Información Detallada - Responsive */}
+        <div className="xl:col-span-2">
+          <Tabs defaultValue="permisos" className="space-y-4">
+            {/* Responsive TabsList with scrollable layout */}
+            <div className="overflow-x-auto">
+              <TabsList className="flex w-full min-w-fit">
+                <TabsTrigger value="permisos" className="flex items-center gap-1 px-2 py-1.5 text-xs sm:text-sm sm:px-4 sm:py-2 whitespace-nowrap">
+                  <Shield className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                  <span className="hidden xs:inline sm:inline">Permisos</span>
+                </TabsTrigger>
+                <TabsTrigger value="usuarios" className="flex items-center gap-1 px-2 py-1.5 text-xs sm:text-sm sm:px-4 sm:py-2 whitespace-nowrap">
+                  <Users className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                  <span className="hidden xs:inline sm:inline">Usuarios</span>
+                </TabsTrigger>
+                <TabsTrigger value="detalles" className="flex items-center gap-1 px-2 py-1.5 text-xs sm:text-sm sm:px-4 sm:py-2 whitespace-nowrap">
+                  <FileText className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                  <span className="hidden xs:inline sm:inline">Detalles</span>
+                </TabsTrigger>
+                <TabsTrigger value="auditoria" className="flex items-center gap-1 px-2 py-1.5 text-xs sm:text-sm sm:px-4 sm:py-2 whitespace-nowrap">
+                  <History className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                  <span className="hidden xs:inline sm:inline">Auditoría</span>
+                </TabsTrigger>
+              </TabsList>
+            </div>
+
+            <TabsContent value="permisos">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Shield className="h-5 w-5" />
+                    Permisos Asignados ({currentRole.permisos.length})
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {Object.keys(permissionsByGroup).length === 0 ? (
+                    <div className="text-center py-8">
+                      <Shield className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                      <p className="text-gray-500">Este rol no tiene permisos asignados</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-6">
+                      {Object.entries(permissionsByGroup).map(([groupName, permissions]) => (
+                        <div key={groupName}>
+                          <h4 className="font-medium text-gray-900 mb-3">{groupName}</h4>
+                          <div className="flex flex-wrap gap-2">
+                            {permissions.map((permission) => (
+                              <Badge key={permission} variant="secondary">
+                                {permission}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="usuarios">
+              <RoleUsersList role={currentRole} onViewUser={handleViewUser} />
+            </TabsContent>
+
+            <TabsContent value="detalles">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <FileText className="h-5 w-5" />
+                    Información del Rol
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="text-sm font-medium text-gray-700">Nombre del Rol</label>
+                      <div className="mt-1">
+                        <p className="font-medium text-gray-900 break-words">{currentRole.nombre}</p>
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <label className="text-sm font-medium text-gray-700">Estado</label>
+                      <div className="flex items-center gap-3 mt-1">
+                        <Switch
+                          checked={currentRole.activo}
+                          onCheckedChange={handleToggleStatus}
+                          disabled={isToggling || isSystemRoleItem}
+                        />
+                        <Badge variant={currentRole.activo ? "default" : "secondary"} className="flex items-center gap-1">
+                          {currentRole.activo ? (
+                            <CheckCircle className="h-3 w-3" />
+                          ) : (
+                            <XCircle className="h-3 w-3" />
+                          )}
+                          {currentRole.activo ? 'Activo' : 'Inactivo'}
+                        </Badge>
+                        {isSystemRoleItem && (
+                          <span className="text-xs text-gray-500 flex items-center gap-1">
+                            <Lock className="h-3 w-3" />
+                            Protegido
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="text-sm font-medium text-gray-700">Color</label>
+                      <div className="flex items-center gap-2 mt-1">
+                        <div 
+                          className="w-6 h-6 rounded border"
+                          style={{ backgroundColor: currentRole.color }}
+                        />
+                        <span className="text-gray-900 font-mono">{currentRole.color}</span>
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <label className="text-sm font-medium text-gray-700">Ícono</label>
+                      <p className="text-gray-900 mt-1">{currentRole.icono}</p>
+                    </div>
+
+                    <div>
+                      <label className="text-sm font-medium text-gray-700">Fecha de Creación</label>
+                      <div className="flex items-center gap-2 mt-1">
+                        <Calendar className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                        <span className="text-gray-900 break-words">
+                          {format(new Date(currentRole.created_at), 'dd/MM/yyyy HH:mm', { locale: es })}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="text-sm font-medium text-gray-700">Última Actualización</label>
+                      <div className="flex items-center gap-2 mt-1">
+                        <Clock className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                        <span className="text-gray-900 break-words">
+                          {format(new Date(currentRole.updated_at), 'dd/MM/yyyy HH:mm', { locale: es })}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <Separator />
+
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">Descripción</label>
+                    <p className="text-gray-900 mt-1 break-words whitespace-pre-wrap">{currentRole.descripcion}</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="auditoria">
+              <RolAuditoria rolId={currentRole.id} />
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
     </div>
