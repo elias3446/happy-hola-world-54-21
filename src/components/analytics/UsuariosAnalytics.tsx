@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -268,7 +269,7 @@ const UsuariosAnalyticsContent = () => {
       if (userRoles.length > 0) {
         // Ordenar roles alfabéticamente para crear combinaciones consistentes
         const sortedRoles = userRoles.sort();
-        const combination = sortedRoles.join(' y '); // Usar " y " como separador
+        const combination = sortedRoles.join(' y ');
         rolesCombinations[combination] = (rolesCombinations[combination] || 0) + 1;
       }
     });
@@ -334,9 +335,9 @@ const UsuariosAnalyticsContent = () => {
         recientes: recientesFiltrado,
         porEstadoActivacion,
         porConfirmacion,
-        porRoles, // Recalculado SOLO para usuarios filtrados
-        porTipoUsuario, // Recalculado SOLO para usuarios filtrados
-        datosCompletos: filteredUsers, // Real filtered data only
+        porRoles,
+        porTipoUsuario,
+        datosCompletos: filteredUsers,
       }
     };
   };
@@ -461,7 +462,7 @@ const UsuariosAnalyticsContent = () => {
         <RealTimeMetrics
           title="Usuarios Activos"
           value={filteredStats.usuarios.activos}
-          subtitle={`${Math.round((filteredStats.usuarios.activos / Math.max(filteredStats.usuarios.total, 1)) * 100}% del total`}
+          subtitle={`${Math.round((filteredStats.usuarios.activos / Math.max(filteredStats.usuarios.total, 1)) * 100)}% del total`}
           icon={UserCheck}
           color="text-green-600"
           onRefresh={() => queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] })}
