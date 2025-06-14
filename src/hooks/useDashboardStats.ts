@@ -15,6 +15,7 @@ interface UserWithDates {
   asset: boolean;
   confirmed: boolean;
   created_at: string;
+  role: string;
 }
 
 interface DashboardStats {
@@ -34,8 +35,8 @@ interface DashboardStats {
     recientes: number; // últimos 7 días
     porEstadoActivacion: { estado: string; count: number; color: string }[];
     porConfirmacion: { categoria: string; count: number; color: string }[];
-    porRoles?: { name: string; value: number; color: string }[];
-    porTipoUsuario?: { name: string; value: number; color: string }[];
+    porRoles: { name: string; value: number; color: string }[];
+    porTipoUsuario: { name: string; value: number; color: string }[];
     datosCompletos: UserWithDates[];
   };
   roles: {
@@ -80,7 +81,7 @@ export const useDashboardStats = () => {
       // Obtener estadísticas de usuarios con datos completos
       const { data: usuarios, error: usuariosError } = await supabase
         .from('profiles')
-        .select('id, asset, confirmed, created_at')
+        .select('id, asset, confirmed, created_at, role')
         .is('deleted_at', null);
 
       if (usuariosError) {
@@ -88,26 +89,32 @@ export const useDashboardStats = () => {
         throw usuariosError;
       }
 
-      // Obtener estadísticas de roles
-      const { data: roles, error: rolesError } = await supabase
-        .from('roles')
-        .select('id, activo')
-        .is('deleted_at', null);
-
-      if (rolesError) {
-        console.error('Error fetching roles stats:', rolesError);
-        throw rolesError;
-      }
-
-      // Obtener asignaciones de roles
+      // Obtener asignaciones de roles desde user_roles table
       const { data: userRoles, error: userRolesError } = await supabase
         .from('user_roles')
-        .select('id')
+        .select(`
+          id,
+          user_id,
+          role_id,
+          deleted_at,
+          roles!inner(id, nombre, color)
+        `)
         .is('deleted_at', null);
 
       if (userRolesError) {
         console.error('Error fetching user roles stats:', userRolesError);
         throw userRolesError;
+      }
+
+      // Obtener todos los roles para referencia
+      const { data: roles, error: rolesError } = await supabase
+        .from('roles')
+        .select('id, nombre, color, activo')
+        .is('deleted_at', null);
+
+      if (rolesError) {
+        console.error('Error fetching roles stats:', rolesError);
+        throw rolesError;
       }
 
       // Obtener estadísticas de categorías
@@ -217,6 +224,60 @@ export const useDashboardStats = () => {
         { categoria: 'No confirmados', count: (usuarios?.length || 0) - usuariosConfirmados.length, color: '#F59E0B' }
       ];
 
+      // Calcular distribución por roles - SIEMPRE disponible
+      const rolesCounts = {};
+      const porTipoUsuario = { admin: 0, user: 0, ambas: 0 };
+
+      usuarios?.forEach(user => {
+        // Obtener roles desde user_roles table
+        const userRoleAssignments = userRoles?.filter(ur => 
+          ur.user_id === user.id && !ur.deleted_at
+        ) || [];
+        
+        const userRoleNames = userRoleAssignments.map(ur => {
+          const role = roles?.find(r => r.id === ur.role_id);
+          return role ? role.nombre : null;
+        }).filter(Boolean);
+
+        // También considerar roles del campo role en profiles
+        const profileRoles = user.role || [];
+        const allUserRoles = [...new Set([...userRoleNames, ...profileRoles])];
+
+        // Contar para gráfico de roles
+        allUserRoles.forEach(roleName => {
+          rolesCounts[roleName] = (rolesCounts[roleName] || 0) + 1;
+        });
+
+        // Contar para gráfico de tipos de usuario
+        const hasAdmin = allUserRoles.some(r => r.toLowerCase().includes('admin'));
+        const hasUser = allUserRoles.some(r => r.toLowerCase().includes('user'));
+
+        if (hasAdmin && hasUser) {
+          porTipoUsuario.ambas++;
+        } else if (hasAdmin) {
+          porTipoUsuario.admin++;
+        } else if (hasUser) {
+          porTipoUsuario.user++;
+        }
+      });
+
+      // Convertir conteos de roles a formato de gráfico
+      const porRoles = Object.entries(rolesCounts).map(([roleName, count], index) => {
+        const role = roles?.find(r => r.nombre === roleName);
+        return {
+          name: roleName,
+          value: count,
+          color: role?.color || `hsl(${index * 45}, 70%, 60%)`
+        };
+      });
+
+      // Convertir tipos de usuario a formato de gráfico
+      const porTipoUsuarioChart = [
+        { name: 'Solo Admin', value: porTipoUsuario.admin, color: '#DC2626' },
+        { name: 'Solo Usuario', value: porTipoUsuario.user, color: '#059669' },
+        { name: 'Admin y Usuario', value: porTipoUsuario.ambas, color: '#7C3AED' }
+      ].filter(item => item.value > 0);
+
       // Estadísticas de roles
       const rolesActivos = roles?.filter(r => r.activo) || [];
 
@@ -243,6 +304,8 @@ export const useDashboardStats = () => {
           recientes: usuariosRecientes.length,
           porEstadoActivacion: usuariosPorEstadoActivacion,
           porConfirmacion: usuariosPorConfirmacion,
+          porRoles, // Siempre disponible
+          porTipoUsuario: porTipoUsuarioChart, // Siempre disponible
           datosCompletos: usuariosCompletos,
         },
         roles: {

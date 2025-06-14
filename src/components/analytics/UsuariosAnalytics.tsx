@@ -1,5 +1,3 @@
-
-
 import React, { useState, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -233,7 +231,7 @@ const UsuariosAnalyticsContent = () => {
       { categoria: 'No confirmados', count: totalFiltrado - confirmadosFiltrado, color: '#F59E0B' }
     ];
 
-    // Calculate roles and user types distribution
+    // Calculate roles and user types distribution for filtered users
     const porRoles = [];
     const porTipoUsuario = { admin: 0, user: 0, ambas: 0 };
 
@@ -249,16 +247,18 @@ const UsuariosAnalyticsContent = () => {
         return role ? role.nombre : null;
       }).filter(Boolean);
 
+      // También considerar roles del campo role en profiles
+      const profileRoles = user.role || [];
+      const allUserRoles = [...new Set([...userRoleNames, ...profileRoles])];
+
       // Count for roles chart
-      userRoleNames.forEach(roleName => {
+      allUserRoles.forEach(roleName => {
         rolesCounts[roleName] = (rolesCounts[roleName] || 0) + 1;
       });
 
       // Count for user types (admin, user, both)
-      const hasAdmin = userRoleNames.some(r => r.toLowerCase().includes('admin')) || 
-                      (user.role && user.role.some(r => r.toLowerCase().includes('admin')));
-      const hasUser = userRoleNames.some(r => r.toLowerCase().includes('user')) || 
-                     (user.role && user.role.some(r => r.toLowerCase().includes('user')));
+      const hasAdmin = allUserRoles.some(r => r.toLowerCase().includes('admin'));
+      const hasUser = allUserRoles.some(r => r.toLowerCase().includes('user'));
 
       if (hasAdmin && hasUser) {
         porTipoUsuario.ambas++;
@@ -296,8 +296,8 @@ const UsuariosAnalyticsContent = () => {
         recientes: recientesFiltrado,
         porEstadoActivacion,
         porConfirmacion,
-        porRoles,
-        porTipoUsuario: porTipoUsuarioChart,
+        porRoles, // Recalculado para usuarios filtrados
+        porTipoUsuario: porTipoUsuarioChart, // Recalculado para usuarios filtrados
         datosCompletos: filteredUsers, // Real filtered data only
       }
     };
@@ -476,7 +476,7 @@ const UsuariosAnalyticsContent = () => {
         />
       </div>
 
-      {/* Nuevos Gráficos de Roles y Tipos de Usuario */}
+      {/* Gráficos de Roles y Tipos de Usuario - SIEMPRE DISPONIBLES */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {filteredStats.usuarios.porRoles && filteredStats.usuarios.porRoles.length > 0 && (
           <InteractiveCharts
@@ -690,4 +690,3 @@ const UsuariosAnalyticsContent = () => {
 export const UsuariosAnalytics = () => {
   return <UsuariosAnalyticsContent />;
 };
-
