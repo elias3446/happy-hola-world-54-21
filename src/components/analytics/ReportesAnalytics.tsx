@@ -76,6 +76,13 @@ export const ReportesAnalytics = () => {
     await refetch();
   };
 
+  // Transform data for InteractiveCharts component
+  const chartData = reportesData.porEstado.map(item => ({
+    name: item.estado,
+    value: item.count,
+    color: item.color
+  }));
+
   return (
     <NotificationProvider>
       <div className="space-y-6">
@@ -254,7 +261,12 @@ export const ReportesAnalytics = () => {
           </TabsContent>
 
           <TabsContent value="charts" className="space-y-6">
-            <InteractiveCharts data={reportesData.porEstado} />
+            <InteractiveCharts 
+              title="Distribución por Estado"
+              description="Análisis de reportes por estado actual"
+              data={chartData}
+              showTrends={false}
+            />
           </TabsContent>
 
           <TabsContent value="comparison" className="space-y-6">
