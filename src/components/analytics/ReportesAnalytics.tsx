@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,6 +6,7 @@ import { useDashboardStats } from '@/hooks/useDashboardStats';
 import { RealTimeMetrics } from './RealTimeMetrics';
 import { InteractiveCharts } from './InteractiveCharts';
 import { AdvancedFiltersPanel } from './AdvancedFiltersPanel';
+import { ActivityPeakChart } from './ActivityPeakChart';
 import { AdvancedFilters } from '@/hooks/useAdvancedFilters';
 import { useQueryClient } from '@tanstack/react-query';
 import { useReportes } from '@/hooks/useReportes';
@@ -346,7 +346,7 @@ const ReportesAnalyticsContent = () => {
         </div>
       )}
 
-      {/* Métricas en Tiempo Real con Gráficos de Actividad por Horas - SOLO DATOS REALES */}
+      {/* Métricas en Tiempo Real - SIN gráficos de actividad por horas */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <RealTimeMetrics
           title="Total Reportes"
@@ -356,9 +356,7 @@ const ReportesAnalyticsContent = () => {
           icon={FileText}
           color="text-blue-600"
           onRefresh={() => queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] })}
-          showHourlyChart={true}
-          hourlyData={filteredStats.reportes.datosCompletos}
-          chartColor="#3b82f6"
+          showHourlyChart={false}
         />
         
         <RealTimeMetrics
@@ -369,9 +367,7 @@ const ReportesAnalyticsContent = () => {
           icon={TrendingUp}
           color="text-green-600"
           onRefresh={() => queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] })}
-          showHourlyChart={true}
-          hourlyData={filteredStats.reportes.datosCompletos.filter(r => r.activo)}
-          chartColor="#059669"
+          showHourlyChart={false}
         />
         
         <RealTimeMetrics
@@ -382,13 +378,7 @@ const ReportesAnalyticsContent = () => {
           icon={Activity}
           color="text-orange-600"
           onRefresh={() => queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] })}
-          showHourlyChart={true}
-          hourlyData={filteredStats.reportes.datosCompletos.filter(r => {
-            const sevenDaysAgo = new Date();
-            sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-            return new Date(r.created_at) >= sevenDaysAgo;
-          })}
-          chartColor="#ea580c"
+          showHourlyChart={false}
         />
         
         <RealTimeMetrics
@@ -399,11 +389,20 @@ const ReportesAnalyticsContent = () => {
           icon={AlertTriangle}
           color="text-purple-600"
           onRefresh={() => queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] })}
-          showHourlyChart={true}
-          hourlyData={filteredStats.reportes.datosCompletos}
-          chartColor="#9333ea"
+          showHourlyChart={false}
         />
       </div>
+
+      {/* Gráfico de Pico de Actividad - Componente separado */}
+      <ActivityPeakChart
+        data={filteredStats.reportes.datosCompletos}
+        title={hasValidFilters ? "Pico de Actividad - Reportes Filtrados" : "Pico de Actividad - Todos los Reportes"}
+        subtitle={hasValidFilters 
+          ? `Distribución horaria de ${filteredStats.reportes.total} reportes filtrados`
+          : `Distribución horaria de todos los reportes (${filteredStats.reportes.total} total)`
+        }
+        color="#3b82f6"
+      />
 
       {/* Gráficos Interactivos - SOLO DATOS REALES */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
