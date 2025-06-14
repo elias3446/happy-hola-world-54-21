@@ -48,9 +48,8 @@ export const SearchCombobox: React.FC<SearchComboboxProps> = ({
     onValueChange(value.filter(v => v !== valueToRemove));
   };
 
-  // Cambiar para usar IDs en lugar de títulos
   const selectedReportes = reportes.filter(reporte => 
-    value.includes(reporte.id)
+    value.includes(reporte.titulo) || value.includes(reporte.id)
   );
 
   // Filtrar reportes basado en la búsqueda interna del componente
@@ -83,7 +82,7 @@ export const SearchCombobox: React.FC<SearchComboboxProps> = ({
               ) : (
                 <span className="truncate">
                   {value.length === 1 
-                    ? selectedReportes[0]?.titulo || 'Reporte no encontrado'
+                    ? selectedReportes[0]?.titulo || value[0]
                     : `${value.length} reportes seleccionados`
                   }
                 </span>
@@ -106,13 +105,13 @@ export const SearchCombobox: React.FC<SearchComboboxProps> = ({
                   {value.length}/{reportes.length} reportes seleccionados
                 </div>
                 {filteredReportes.map((reporte) => {
-                  const isSelected = value.includes(reporte.id);
+                  const isSelected = value.includes(reporte.titulo);
                   
                   return (
                     <CommandItem
                       key={reporte.id}
-                      value={`${reporte.titulo}-${reporte.id}`} // Usar combinación para búsqueda única
-                      onSelect={() => handleSelect(reporte.id)} // Usar ID para selección
+                      value={reporte.titulo}
+                      onSelect={() => handleSelect(reporte.titulo)}
                       className="cursor-pointer"
                     >
                       <Check
@@ -159,7 +158,7 @@ export const SearchCombobox: React.FC<SearchComboboxProps> = ({
               <span className="truncate">{reporte.titulo}</span>
               <X
                 className="h-3 w-3 cursor-pointer hover:text-destructive"
-                onClick={() => handleRemove(reporte.id)} // Usar ID para remover
+                onClick={() => handleRemove(reporte.titulo)}
               />
             </Badge>
           ))}
