@@ -12,8 +12,6 @@ export interface AdvancedFilters {
   estados: string[];
   categorias: string[];
   searchTerm: string[];
-  sortBy: 'created_at' | 'priority' | 'estado' | 'categoria';
-  sortOrder: 'asc' | 'desc';
   activeTab: 'busqueda' | 'fechas' | 'prioridad' | 'estados' | 'categorias';
 }
 
@@ -23,8 +21,6 @@ const defaultFilters: AdvancedFilters = {
   estados: [],
   categorias: [],
   searchTerm: [],
-  sortBy: 'created_at',
-  sortOrder: 'desc',
   activeTab: 'busqueda',
 };
 

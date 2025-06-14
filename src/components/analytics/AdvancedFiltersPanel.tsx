@@ -4,18 +4,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Filter, 
   X, 
   Calendar as CalendarIcon, 
   RotateCcw,
-  SortAsc,
-  SortDesc,
   Search,
   AlertTriangle,
   CheckCircle,
@@ -375,54 +371,6 @@ export const AdvancedFiltersPanel: React.FC<AdvancedFiltersPanelProps> = ({
             )}
           </TabsContent>
         </Tabs>
-
-        <Separator className="my-6" />
-
-        {/* Ordenamiento */}
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Ordenar por</label>
-            <Select
-              value={filters.sortBy}
-              onValueChange={(value: any) => updateFilter('sortBy', value)}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="created_at">Fecha de creación</SelectItem>
-                <SelectItem value="priority">Prioridad</SelectItem>
-                <SelectItem value="estado">Estado</SelectItem>
-                <SelectItem value="categoria">Categoría</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Orden</label>
-            <Select
-              value={filters.sortOrder}
-              onValueChange={(value: any) => updateFilter('sortOrder', value)}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="desc">
-                  <div className="flex items-center gap-2">
-                    <SortDesc className="h-4 w-4" />
-                    Descendente
-                  </div>
-                </SelectItem>
-                <SelectItem value="asc">
-                  <div className="flex items-center gap-2">
-                    <SortAsc className="h-4 w-4" />
-                    Ascendente
-                  </div>
-                </SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
       </CardContent>
     </Card>
   );
