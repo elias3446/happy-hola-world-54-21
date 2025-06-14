@@ -1,3 +1,4 @@
+
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -204,7 +205,7 @@ export const useDashboardStats = () => {
         new Date(u.created_at) >= sevenDaysAgo
       ) || [];
 
-      // Guardar datos completos de usuarios para filtrado posterior - FIX: include role property
+      // Guardar datos completos de usuarios para filtrado posterior
       const usuariosCompletos: UserWithDates[] = usuarios?.map(u => ({
         id: u.id,
         asset: u.asset || false,
@@ -225,7 +226,7 @@ export const useDashboardStats = () => {
         { categoria: 'No confirmados', count: (usuarios?.length || 0) - usuariosConfirmados.length, color: '#F59E0B' }
       ];
 
-      // CORREGIDO: Calcular distribución por ROLES del sistema (desde user_roles) - SIEMPRE disponible
+      // Calcular distribución por ROLES del sistema (desde user_roles)
       const rolesCounts: { [key: string]: number } = {};
       
       userRoles?.forEach(userRole => {
@@ -245,28 +246,28 @@ export const useDashboardStats = () => {
         };
       });
 
-      // CORREGIDO: Calcular distribución por TIPO DE USUARIO (desde profiles.role) - SIEMPRE disponible
-      const tipoUsuarioCounts = { admin: 0, user: 0, ambas: 0 };
+      // Calcular distribución por TIPO DE USUARIO (desde profiles.role)
+      const tipoUsuarioCounts = { soloAdmin: 0, soloUser: 0, ambas: 0 };
 
       usuarios?.forEach(user => {
         const userRoles = user.role || [];
         
-        const hasAdmin = userRoles.some(r => r.toLowerCase().includes('admin'));
-        const hasUser = userRoles.some(r => r.toLowerCase().includes('user'));
+        const hasAdmin = userRoles.includes('admin');
+        const hasUser = userRoles.includes('user');
 
         if (hasAdmin && hasUser) {
           tipoUsuarioCounts.ambas++;
         } else if (hasAdmin) {
-          tipoUsuarioCounts.admin++;
+          tipoUsuarioCounts.soloAdmin++;
         } else if (hasUser) {
-          tipoUsuarioCounts.user++;
+          tipoUsuarioCounts.soloUser++;
         }
       });
 
       // Convertir tipos de usuario a formato de gráfico
       const porTipoUsuario = [
-        { name: 'Solo Admin', value: tipoUsuarioCounts.admin, color: '#DC2626' },
-        { name: 'Solo Usuario', value: tipoUsuarioCounts.user, color: '#059669' },
+        { name: 'Solo Admin', value: tipoUsuarioCounts.soloAdmin, color: '#DC2626' },
+        { name: 'Solo Usuario', value: tipoUsuarioCounts.soloUser, color: '#059669' },
         { name: 'Admin y Usuario', value: tipoUsuarioCounts.ambas, color: '#7C3AED' }
       ].filter(item => item.value > 0);
 
@@ -287,7 +288,7 @@ export const useDashboardStats = () => {
           porCategoria,
           porPrioridad,
           recientes: reportesRecientes.length,
-          datosCompletos, // Incluimos los datos completos
+          datosCompletos,
         },
         usuarios: {
           total: usuarios?.length || 0,
@@ -296,8 +297,8 @@ export const useDashboardStats = () => {
           recientes: usuariosRecientes.length,
           porEstadoActivacion: usuariosPorEstadoActivacion,
           porConfirmacion: usuariosPorConfirmacion,
-          porRoles, // Ahora desde user_roles - roles del sistema
-          porTipoUsuario, // Ahora desde profiles.role - tipos de usuario
+          porRoles, // Roles del sistema desde user_roles
+          porTipoUsuario, // Tipos de usuario desde profiles.role
           datosCompletos: usuariosCompletos,
         },
         roles: {
