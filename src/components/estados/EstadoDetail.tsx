@@ -1,8 +1,12 @@
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Switch } from '@/components/ui/switch';
+
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Switch } from '@/components/ui/switch';
 import { useEstados } from '@/hooks/useEstados';
 import { useReportes } from '@/hooks/useReportes';
 import type { Estado } from '@/types/estados';
@@ -16,10 +20,16 @@ import {
   Calendar,
   CheckCircle,
   XCircle,
-  Palette,
-  Lock
+  Lock,
+  Clock,
+  FileText,
+  History,
+  Settings,
+  BarChart3
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
+import { useEffect } from 'react';
 
 interface EstadoDetailProps {
   estado: Estado;
@@ -40,8 +50,6 @@ export const EstadoDetail = ({ estado: initialEstado, onEdit, onBack }: EstadoDe
   const [currentEstado, setCurrentEstado] = useState(initialEstado);
   const [selectedReporteId, setSelectedReporteId] = useState<string | null>(null);
 
-  const isSystemEstadoItem = isSystemEstado(currentEstado.nombre);
-
   // Update currentEstado when estados data changes
   useEffect(() => {
     const updatedEstado = estados.find(e => e.id === initialEstado.id);
@@ -51,12 +59,16 @@ export const EstadoDetail = ({ estado: initialEstado, onEdit, onBack }: EstadoDe
   }, [estados, initialEstado.id]);
 
   const handleToggleStatus = () => {
-    if (isSystemEstadoItem) return;
+    if (isSystemEstado(currentEstado.nombre)) {
+      return; // No allow status change for system estados
+    }
     toggleEstadoStatus({ id: currentEstado.id, activo: !currentEstado.activo });
   };
 
-  const handleEditClick = () => {
-    if (isSystemEstadoItem) return;
+  const handleEdit = () => {
+    if (isSystemEstado(currentEstado.nombre)) {
+      return; // No allow edit for system estados
+    }
     onEdit(currentEstado);
   };
 
@@ -87,233 +99,300 @@ export const EstadoDetail = ({ estado: initialEstado, onEdit, onBack }: EstadoDe
     }
   }
 
+  const isSystemEstadoItem = isSystemEstado(currentEstado.nombre);
+
+  const getStatusBadge = () => {
+    if (currentEstado.activo) {
+      return {
+        variant: "default" as const,
+        icon: <CheckCircle className="h-3 w-3" />,
+        text: "Activo"
+      };
+    } else {
+      return {
+        variant: "secondary" as const,
+        icon: <XCircle className="h-3 w-3" />,
+        text: "Inactivo"
+      };
+    }
+  };
+
+  const statusBadge = getStatusBadge();
+
   return (
-    <div className="container mx-auto px-4 py-6">
-      <div className="mb-6">
-        <Button 
-          variant="ghost" 
-          onClick={onBack}
-          className="mb-4 flex items-center gap-2"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Volver a Estados
-        </Button>
-        
-        <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div 
-              className="w-12 h-12 rounded-full flex items-center justify-center text-white text-lg font-medium"
-              style={{ backgroundColor: currentEstado.color }}
-            >
-              {currentEstado.icono.charAt(0)}
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-2xl font-bold">{currentEstado.nombre}</h1>
-                {isSystemEstadoItem && (
-                  <Badge variant="secondary" className="flex items-center gap-1">
-                    <Lock className="h-3 w-3" />
-                    Sistema
-                  </Badge>
-                )}
-              </div>
-              <p className="text-gray-600">{currentEstado.descripcion}</p>
-            </div>
-          </div>
-          
+    <div className="space-y-4 sm:space-y-6 p-2 sm:p-4">
+      {/* Header - Responsive */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
           <Button 
-            onClick={handleEditClick} 
-            className="flex items-center gap-2"
-            disabled={isSystemEstadoItem}
+            variant="outline" 
+            size="sm" 
+            onClick={onBack}
+            className="flex items-center gap-2 w-fit"
           >
-            {isSystemEstadoItem ? (
-              <Lock className="h-4 w-4" />
-            ) : (
-              <Edit className="h-4 w-4" />
-            )}
-            {isSystemEstadoItem ? 'Protegido' : 'Editar Estado'}
+            <ArrowLeft className="h-4 w-4" />
+            <span className="hidden sm:inline">Volver</span>
           </Button>
+          <div>
+            <h1 className="text-xl sm:text-2xl font-bold">Detalle del Estado</h1>
+            <p className="text-sm text-muted-foreground">Información completa del estado</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          {!isSystemEstadoItem ? (
+            <Button 
+              onClick={handleEdit} 
+              className="flex items-center gap-2 text-sm"
+              size="sm"
+            >
+              <Edit className="h-4 w-4" />
+              <span className="hidden sm:inline">Editar Estado</span>
+              <span className="sm:hidden">Editar</span>
+            </Button>
+          ) : (
+            <div className="flex items-center gap-2 text-gray-500">
+              <Lock className="h-4 w-4" />
+              <span className="text-sm hidden sm:inline">Estado protegido del sistema</span>
+              <span className="text-sm sm:hidden">Protegido</span>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* System estado warning */}
-      {isSystemEstadoItem && (
-        <div className="mb-6">
-          <div className="flex items-start gap-2 p-4 bg-blue-50 border border-blue-200 rounded-md">
-            <Lock className="h-5 w-5 text-blue-500 mt-0.5" />
-            <div className="text-sm text-blue-700">
-              <p className="font-medium">Estado protegido del sistema</p>
-              <p>Este estado es esencial para el funcionamiento del sistema y no puede ser modificado o eliminado.</p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Información General */}
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Circle className="h-5 w-5" />
-              Información General
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="text-sm font-medium text-gray-700">Nombre del Estado</label>
-                <p className="text-lg font-semibold mt-1">{currentEstado.nombre}</p>
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 sm:gap-6">
+        {/* Información Principal - Responsive */}
+        <div className="xl:col-span-1">
+          <Card>
+            <CardHeader className="text-center pb-4">
+              <div className="flex justify-center mb-4">
+                <Avatar className="h-16 w-16 sm:h-24 sm:w-24">
+                  <AvatarFallback 
+                    className="text-lg sm:text-xl text-white"
+                    style={{ backgroundColor: currentEstado.color }}
+                  >
+                    {currentEstado.icono.charAt(0)}
+                  </AvatarFallback>
+                </Avatar>
               </div>
-              
+              <CardTitle className="text-lg sm:text-xl">{currentEstado.nombre}</CardTitle>
+              <p className="text-sm text-muted-foreground break-all">{currentEstado.descripcion}</p>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-3">
+                <div className="flex items-start gap-2">
+                  <FileText className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                  <span className="text-sm break-words">{currentEstado.descripcion}</span>
+                </div>
+                
+                <div className="flex items-start gap-2">
+                  <Calendar className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                  <span className="text-sm">
+                    Creado: {format(new Date(currentEstado.created_at), 'dd/MM/yyyy', { locale: es })}
+                  </span>
+                </div>
+                
+                <div className="flex items-start gap-2">
+                  <Clock className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                  <span className="text-sm">
+                    Actualizado: {format(new Date(currentEstado.updated_at), 'dd/MM/yyyy', { locale: es })}
+                  </span>
+                </div>
+
+                <div className="flex items-start gap-2">
+                  <Circle className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                  <span className="text-sm">
+                    Estado del sistema
+                  </span>
+                </div>
+              </div>
+
+              <Separator />
+
               <div>
-                <label className="text-sm font-medium text-gray-700">Estado</label>
-                <div className="flex items-center gap-3 mt-1">
-                  <Switch
-                    checked={currentEstado.activo}
-                    onCheckedChange={handleToggleStatus}
-                    disabled={isToggling || isSystemEstadoItem}
-                  />
-                  <Badge variant={currentEstado.activo ? "default" : "secondary"} className="flex items-center gap-1">
-                    {currentEstado.activo ? (
-                      <CheckCircle className="h-3 w-3" />
-                    ) : (
-                      <XCircle className="h-3 w-3" />
+                <h4 className="font-medium mb-2 flex items-center gap-2">
+                  <Circle className="h-4 w-4 flex-shrink-0" />
+                  Apariencia
+                </h4>
+                <div className="flex flex-wrap gap-2">
+                  <div className="flex items-center gap-2">
+                    <div 
+                      className="w-6 h-6 rounded border"
+                      style={{ backgroundColor: currentEstado.color }}
+                    />
+                    <span className="text-sm font-mono">{currentEstado.color}</span>
+                  </div>
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Control de Estado del Estado */}
+              <div className="space-y-3">
+                <h4 className="font-medium">Estado del Estado</h4>
+                
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Badge 
+                      variant={statusBadge.variant} 
+                      className="flex items-center gap-1"
+                    >
+                      {statusBadge.icon}
+                      {statusBadge.text}
+                    </Badge>
+                    {isSystemEstadoItem && (
+                      <Badge variant="secondary" className="text-xs">
+                        Sistema
+                      </Badge>
                     )}
-                    {currentEstado.activo ? 'Activo' : 'Inactivo'}
-                  </Badge>
-                </div>
-              </div>
-            </div>
-
-            <Separator />
-
-            <div>
-              <label className="text-sm font-medium text-gray-700">Descripción</label>
-              <p className="text-gray-900 mt-1">{currentEstado.descripcion}</p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="text-sm font-medium text-gray-700">Color</label>
-                <div className="flex items-center gap-2 mt-1">
-                  <div 
-                    className="w-6 h-6 rounded border"
-                    style={{ backgroundColor: currentEstado.color }}
-                  />
-                  <span className="text-gray-900 font-mono">{currentEstado.color}</span>
-                </div>
-              </div>
-              
-              <div>
-                <label className="text-sm font-medium text-gray-700">Ícono</label>
-                <p className="text-gray-900 mt-1">{currentEstado.icono}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Información Adicional */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Calendar className="h-5 w-5" />
-              Información Adicional
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <label className="text-sm font-medium text-gray-700">Fecha de Creación</label>
-              <p className="text-gray-900 mt-1">
-                {new Date(currentEstado.created_at).toLocaleDateString('es-ES', {
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric',
-                  hour: '2-digit',
-                  minute: '2-digit'
-                })}
-              </p>
-            </div>
-            
-            <div>
-              <label className="text-sm font-medium text-gray-700">Última Actualización</label>
-              <p className="text-gray-900 mt-1">
-                {new Date(currentEstado.updated_at).toLocaleDateString('es-ES', {
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric',
-                  hour: '2-digit',
-                  minute: '2-digit'
-                })}
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Vista Previa Visual */}
-        <Card className="lg:col-span-3">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Palette className="h-5 w-5" />
-              Vista Previa Visual
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="text-center">
-                <label className="text-sm font-medium text-gray-700 block mb-3">Vista de Lista</label>
-                <div className="flex items-center gap-3 p-3 border rounded-lg bg-gray-50">
-                  <div 
-                    className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-medium"
-                    style={{ backgroundColor: currentEstado.color }}
-                  >
-                    {currentEstado.icono.charAt(0)}
                   </div>
-                  <div className="text-left">
-                    <p className="font-medium text-sm">{currentEstado.nombre}</p>
-                    <p className="text-xs text-gray-600 truncate">{currentEstado.descripcion}</p>
+                  
+                  {!isSystemEstadoItem && (
+                    <Switch
+                      checked={currentEstado.activo}
+                      onCheckedChange={handleToggleStatus}
+                      disabled={isToggling}
+                    />
+                  )}
+                </div>
+              </div>
+
+              {isSystemEstadoItem && (
+                <>
+                  <Separator />
+                  <div className="space-y-2">
+                    <h4 className="font-medium">Estado del Sistema</h4>
+                    <div className="flex items-start gap-2 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                      <Lock className="h-4 w-4 text-blue-500 mt-0.5 flex-shrink-0" />
+                      <div className="text-sm text-blue-700">
+                        <p className="font-medium">Protegido</p>
+                        <p>Este estado no puede ser modificado.</p>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
-
-              <div className="text-center">
-                <label className="text-sm font-medium text-gray-700 block mb-3">Vista de Tarjeta</label>
-                <div className="p-4 border rounded-lg bg-gray-50">
-                  <div 
-                    className="w-12 h-12 rounded-full flex items-center justify-center text-white text-lg font-medium mx-auto mb-2"
-                    style={{ backgroundColor: currentEstado.color }}
-                  >
-                    {currentEstado.icono.charAt(0)}
-                  </div>
-                  <p className="font-medium text-sm">{currentEstado.nombre}</p>
-                  <p className="text-xs text-gray-600 mt-1">{currentEstado.descripcion}</p>
-                </div>
-              </div>
-
-              <div className="text-center">
-                <label className="text-sm font-medium text-gray-700 block mb-3">Badge</label>
-                <div className="p-4 border rounded-lg bg-gray-50 flex justify-center">
-                  <Badge 
-                    variant="secondary" 
-                    className="flex items-center gap-2"
-                    style={{ backgroundColor: currentEstado.color + '20', color: currentEstado.color }}
-                  >
-                    <span>{currentEstado.icono.charAt(0)}</span>
-                    {currentEstado.nombre}
-                  </Badge>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Reportes con este Estado */}
-        <div className="lg:col-span-2">
-          <EstadoReportesList estado={currentEstado} onViewReporte={handleViewReporte} />
+                </>
+              )}
+            </CardContent>
+          </Card>
         </div>
 
-        {/* Auditoría del Estado */}
-        <div className="lg:col-span-1">
-          <EstadoAuditoria estadoId={currentEstado.id} />
+        {/* Información Detallada - Responsive */}
+        <div className="xl:col-span-2">
+          <Tabs defaultValue="reportes" className="space-y-4">
+            {/* Responsive TabsList with scrollable layout */}
+            <div className="overflow-x-auto">
+              <TabsList className="flex w-full min-w-fit">
+                <TabsTrigger value="reportes" className="flex items-center gap-1 px-2 py-1.5 text-xs sm:text-sm sm:px-4 sm:py-2 whitespace-nowrap">
+                  <FileText className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                  <span className="hidden xs:inline sm:inline">Reportes</span>
+                </TabsTrigger>
+                <TabsTrigger value="detalles" className="flex items-center gap-1 px-2 py-1.5 text-xs sm:text-sm sm:px-4 sm:py-2 whitespace-nowrap">
+                  <Settings className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                  <span className="hidden xs:inline sm:inline">Detalles</span>
+                </TabsTrigger>
+                <TabsTrigger value="auditoria" className="flex items-center gap-1 px-2 py-1.5 text-xs sm:text-sm sm:px-4 sm:py-2 whitespace-nowrap">
+                  <History className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                  <span className="hidden xs:inline sm:inline">Auditoría</span>
+                </TabsTrigger>
+              </TabsList>
+            </div>
+
+            <TabsContent value="reportes">
+              <EstadoReportesList estado={currentEstado} onViewReporte={handleViewReporte} />
+            </TabsContent>
+
+            <TabsContent value="detalles">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Settings className="h-5 w-5" />
+                    Información del Estado
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="text-sm font-medium text-gray-700">Nombre del Estado</label>
+                      <div className="mt-1">
+                        <p className="font-medium text-gray-900 break-words">{currentEstado.nombre}</p>
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <label className="text-sm font-medium text-gray-700">Estado</label>
+                      <div className="flex items-center gap-3 mt-1">
+                        <Switch
+                          checked={currentEstado.activo}
+                          onCheckedChange={handleToggleStatus}
+                          disabled={isToggling || isSystemEstadoItem}
+                        />
+                        <Badge variant={currentEstado.activo ? "default" : "secondary"} className="flex items-center gap-1">
+                          {currentEstado.activo ? (
+                            <CheckCircle className="h-3 w-3" />
+                          ) : (
+                            <XCircle className="h-3 w-3" />
+                          )}
+                          {currentEstado.activo ? 'Activo' : 'Inactivo'}
+                        </Badge>
+                        {isSystemEstadoItem && (
+                          <span className="text-xs text-gray-500 flex items-center gap-1">
+                            <Lock className="h-3 w-3" />
+                            Protegido
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="text-sm font-medium text-gray-700">Color</label>
+                      <div className="flex items-center gap-2 mt-1">
+                        <div 
+                          className="w-6 h-6 rounded border"
+                          style={{ backgroundColor: currentEstado.color }}
+                        />
+                        <span className="text-gray-900 font-mono">{currentEstado.color}</span>
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <label className="text-sm font-medium text-gray-700">Ícono</label>
+                      <p className="text-gray-900 mt-1">{currentEstado.icono}</p>
+                    </div>
+
+                    <div>
+                      <label className="text-sm font-medium text-gray-700">Fecha de Creación</label>
+                      <div className="flex items-center gap-2 mt-1">
+                        <Calendar className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                        <span className="text-gray-900 break-words">
+                          {format(new Date(currentEstado.created_at), 'dd/MM/yyyy HH:mm', { locale: es })}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="text-sm font-medium text-gray-700">Última Actualización</label>
+                      <div className="flex items-center gap-2 mt-1">
+                        <Clock className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                        <span className="text-gray-900 break-words">
+                          {format(new Date(currentEstado.updated_at), 'dd/MM/yyyy HH:mm', { locale: es })}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <Separator />
+
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">Descripción</label>
+                    <p className="text-gray-900 mt-1 break-words whitespace-pre-wrap">{currentEstado.descripcion}</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="auditoria">
+              <EstadoAuditoria estadoId={currentEstado.id} />
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
     </div>
