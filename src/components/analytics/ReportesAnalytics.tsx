@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -223,6 +224,16 @@ const ReportesAnalyticsContent = () => {
     );
   }
 
+  // Ensure all required arrays exist with default values
+  const safeStats = {
+    ...filteredStats,
+    reportes: {
+      ...filteredStats.reportes,
+      porActividad: filteredStats.reportes.porActividad || [],
+      porAsignacion: filteredStats.reportes.porAsignacion || [],
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -286,7 +297,7 @@ const ReportesAnalyticsContent = () => {
             )}
           </div>
           <div className="mt-2 text-xs text-blue-600">
-            Datos reales: {filteredStats.reportes.total} de {stats?.reportes.total} reportes
+            Datos reales: {safeStats.reportes.total} de {stats?.reportes.total} reportes
           </div>
         </div>
       )}
@@ -305,9 +316,9 @@ const ReportesAnalyticsContent = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <RealTimeMetrics
           title="Total Reportes"
-          value={filteredStats.reportes.total}
+          value={safeStats.reportes.total}
           previousValue={hasValidFilters ? stats?.reportes.total : undefined}
-          subtitle={`${filteredStats.reportes.activos} activos`}
+          subtitle={`${safeStats.reportes.activos} activos`}
           icon={FileText}
           color="text-blue-600"
           onRefresh={() => queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] })}
@@ -317,9 +328,9 @@ const ReportesAnalyticsContent = () => {
         
         <RealTimeMetrics
           title="Reportes Activos"
-          value={filteredStats.reportes.activos}
+          value={safeStats.reportes.activos}
           previousValue={hasValidFilters ? stats?.reportes.activos : undefined}
-          subtitle={`${Math.round((filteredStats.reportes.activos / Math.max(filteredStats.reportes.total, 1)) * 100)}% del total`}
+          subtitle={`${Math.round((safeStats.reportes.activos / Math.max(safeStats.reportes.total, 1)) * 100)}% del total`}
           icon={CheckCircle}
           color="text-green-600"
           onRefresh={() => queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] })}
@@ -329,7 +340,7 @@ const ReportesAnalyticsContent = () => {
         
         <RealTimeMetrics
           title="Reportes Asignados"
-          value={filteredStats.reportes.asignados}
+          value={safeStats.reportes.asignados}
           previousValue={hasValidFilters ? stats?.reportes.asignados : undefined}
           subtitle="Con responsable asignado"
           icon={MapPin}
@@ -341,7 +352,7 @@ const ReportesAnalyticsContent = () => {
         
         <RealTimeMetrics
           title="Nuevos Reportes"
-          value={filteredStats.reportes.recientes}
+          value={safeStats.reportes.recientes}
           previousValue={hasValidFilters ? stats?.reportes.recientes : undefined}
           subtitle="Últimos 7 días"
           icon={Clock}
@@ -357,7 +368,7 @@ const ReportesAnalyticsContent = () => {
         <InteractiveCharts
           title="Distribución por Actividad"
           description={hasValidFilters ? "Reportes filtrados según su estado de actividad (datos reales)" : "Todos los reportes según su estado de actividad (datos reales)"}
-          data={filteredStats.reportes.porActividad.map(item => ({
+          data={safeStats.reportes.porActividad.map(item => ({
             name: item.actividad,
             value: item.count,
             color: item.color,
@@ -367,7 +378,7 @@ const ReportesAnalyticsContent = () => {
         <InteractiveCharts
           title="Distribución por Asignación"
           description={hasValidFilters ? "Reportes filtrados según su asignación (datos reales)" : "Todos los reportes según su asignación (datos reales)"}
-          data={filteredStats.reportes.porAsignacion.map(item => ({
+          data={safeStats.reportes.porAsignacion.map(item => ({
             name: item.asignacion,
             value: item.count,
             color: item.color,
@@ -395,12 +406,12 @@ const ReportesAnalyticsContent = () => {
                   <div>
                     <span className="font-medium">Reportes Activos</span>
                     <div className="text-xs text-muted-foreground">
-                      {Math.round((filteredStats.reportes.activos / Math.max(filteredStats.reportes.total, 1)) * 100)}% del total real
+                      {Math.round((safeStats.reportes.activos / Math.max(safeStats.reportes.total, 1)) * 100)}% del total real
                     </div>
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="font-bold text-lg">{filteredStats.reportes.activos}</div>
+                  <div className="font-bold text-lg">{safeStats.reportes.activos}</div>
                   <div className="text-xs text-muted-foreground">reportes</div>
                 </div>
               </div>
@@ -411,12 +422,12 @@ const ReportesAnalyticsContent = () => {
                   <div>
                     <span className="font-medium">Reportes Inactivos</span>
                     <div className="text-xs text-muted-foreground">
-                      {Math.round(((filteredStats.reportes.total - filteredStats.reportes.activos) / Math.max(filteredStats.reportes.total, 1)) * 100)}% del total real
+                      {Math.round(((safeStats.reportes.total - safeStats.reportes.activos) / Math.max(safeStats.reportes.total, 1)) * 100)}% del total real
                     </div>
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="font-bold text-lg">{filteredStats.reportes.total - filteredStats.reportes.activos}</div>
+                  <div className="font-bold text-lg">{safeStats.reportes.total - safeStats.reportes.activos}</div>
                   <div className="text-xs text-muted-foreground">reportes</div>
                 </div>
               </div>
@@ -442,12 +453,12 @@ const ReportesAnalyticsContent = () => {
                   <div>
                     <span className="font-medium">Reportes Asignados</span>
                     <div className="text-xs text-muted-foreground">
-                      {Math.round((filteredStats.reportes.asignados / Math.max(filteredStats.reportes.total, 1)) * 100)}% del total real
+                      {Math.round((safeStats.reportes.asignados / Math.max(safeStats.reportes.total, 1)) * 100)}% del total real
                     </div>
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="font-bold text-lg">{filteredStats.reportes.asignados}</div>
+                  <div className="font-bold text-lg">{safeStats.reportes.asignados}</div>
                   <div className="text-xs text-muted-foreground">reportes</div>
                 </div>
               </div>
@@ -458,12 +469,12 @@ const ReportesAnalyticsContent = () => {
                   <div>
                     <span className="font-medium">Sin Asignar</span>
                     <div className="text-xs text-muted-foreground">
-                      {Math.round(((filteredStats.reportes.total - filteredStats.reportes.asignados) / Math.max(filteredStats.reportes.total, 1)) * 100)}% del total real
+                      {Math.round(((safeStats.reportes.total - safeStats.reportes.asignados) / Math.max(safeStats.reportes.total, 1)) * 100)}% del total real
                     </div>
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="font-bold text-lg">{filteredStats.reportes.total - filteredStats.reportes.asignados}</div>
+                  <div className="font-bold text-lg">{safeStats.reportes.total - safeStats.reportes.asignados}</div>
                   <div className="text-xs text-muted-foreground">reportes</div>
                 </div>
               </div>
@@ -486,19 +497,19 @@ const ReportesAnalyticsContent = () => {
               <div className="flex justify-between">
                 <span className="text-sm text-muted-foreground">Tasa de actividad real</span>
                 <span className="text-sm font-medium">
-                  {Math.round((filteredStats.reportes.activos / Math.max(filteredStats.reportes.total, 1)) * 100)}%
+                  {Math.round((safeStats.reportes.activos / Math.max(safeStats.reportes.total, 1)) * 100)}%
                 </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-sm text-muted-foreground">Tasa de asignación real</span>
                 <span className="text-sm font-medium">
-                  {Math.round((filteredStats.reportes.asignados / Math.max(filteredStats.reportes.total, 1)) * 100)}%
+                  {Math.round((safeStats.reportes.asignados / Math.max(safeStats.reportes.total, 1)) * 100)}%
                 </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-sm text-muted-foreground">Reportes recientes (BD)</span>
                 <span className="text-sm font-medium text-green-600">
-                  {filteredStats.reportes.recientes}
+                  {safeStats.reportes.recientes}
                 </span>
               </div>
             </div>
@@ -516,17 +527,17 @@ const ReportesAnalyticsContent = () => {
             <div className="space-y-3">
               <div className="flex justify-between">
                 <span className="text-sm text-muted-foreground">Esta semana (BD)</span>
-                <span className="text-sm font-medium">{filteredStats.reportes.recientes}</span>
+                <span className="text-sm font-medium">{safeStats.reportes.recientes}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-sm text-muted-foreground">Promedio diario real</span>
                 <span className="text-sm font-medium">
-                  {Math.round(filteredStats.reportes.recientes / 7)}
+                  {Math.round(safeStats.reportes.recientes / 7)}
                 </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-sm text-muted-foreground">{hasValidFilters ? 'Total filtrado (BD)' : 'Total histórico (BD)'}</span>
-                <span className="text-sm font-medium">{filteredStats.reportes.total}</span>
+                <span className="text-sm font-medium">{safeStats.reportes.total}</span>
               </div>
             </div>
           </CardContent>
@@ -544,7 +555,7 @@ const ReportesAnalyticsContent = () => {
               <div className="flex justify-between">
                 <span className="text-sm text-muted-foreground">Reportes por categoría (BD)</span>
                 <span className="text-sm font-medium">
-                  {(filteredStats.reportes.total / Math.max(stats?.categorias.total || 1, 1)).toFixed(1)}
+                  {(safeStats.reportes.total / Math.max(stats?.categorias.total || 1, 1)).toFixed(1)}
                 </span>
               </div>
               <div className="flex justify-between">
