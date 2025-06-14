@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -88,7 +89,7 @@ export const ReportesList = ({ onCreateReporte, onEditReporte, onViewReporte, on
     type: BulkActionType;
   }>({ open: false, type: 'toggle_status' });
 
-  // Bulk selection hook
+  // Bulk selection hook - NOW USES ALL FILTERED DATA, NOT JUST PAGINATED
   const {
     selectedItems,
     isAllSelected,
@@ -98,7 +99,7 @@ export const ReportesList = ({ onCreateReporte, onEditReporte, onViewReporte, on
     clearSelection,
     getSelectedData,
     selectedCount,
-  } = useBulkSelection(filteredData);
+  } = useBulkSelection(filteredData); // Use all filtered data for bulk selection
 
   // Define columns for the table
   const columns: DataTableColumn[] = [
@@ -143,6 +144,30 @@ export const ReportesList = ({ onCreateReporte, onEditReporte, onViewReporte, on
   useEffect(() => {
     setFilteredData(transformedReportes);
   }, [transformedReportes]);
+
+  // Check if all visible items on current page are selected
+  const visibleItemsSelected = paginatedData.every(item => selectedItems.has(item.id));
+  const someVisibleItemsSelected = paginatedData.some(item => selectedItems.has(item.id));
+  const isCurrentPageIndeterminate = someVisibleItemsSelected && !visibleItemsSelected;
+
+  // Handler for selecting/deselecting all items on current page
+  const handleSelectAllCurrentPage = () => {
+    if (visibleItemsSelected) {
+      // Deselect all items on current page
+      paginatedData.forEach(item => {
+        if (selectedItems.has(item.id)) {
+          handleSelectItem(item.id);
+        }
+      });
+    } else {
+      // Select all items on current page
+      paginatedData.forEach(item => {
+        if (!selectedItems.has(item.id)) {
+          handleSelectItem(item.id);
+        }
+      });
+    }
+  };
 
   const handleDeleteReporte = () => {
     if (reporteToDelete) {
@@ -339,11 +364,11 @@ export const ReportesList = ({ onCreateReporte, onEditReporte, onViewReporte, on
                     <TableRow>
                       <TableHead className="w-[40px]">
                         <Checkbox
-                          checked={isAllSelected}
-                          onCheckedChange={handleSelectAll}
+                          checked={visibleItemsSelected}
+                          onCheckedChange={handleSelectAllCurrentPage}
                           ref={(el) => {
                             if (el && 'indeterminate' in el) {
-                              (el as any).indeterminate = isIndeterminate;
+                              (el as any).indeterminate = isCurrentPageIndeterminate;
                             }
                           }}
                         />
@@ -501,6 +526,33 @@ export const ReportesList = ({ onCreateReporte, onEditReporte, onViewReporte, on
                   </TableBody>
                 </Table>
               </div>
+
+              {/* Enhanced selection info */}
+              {selectedCount > 0 && (
+                <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg border border-blue-200">
+                  <div className="flex items-center gap-2 text-sm text-blue-700">
+                    <span className="font-medium">{selectedCount} reportes seleccionados</span>
+                    {selectedCount !== filteredData.length && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleSelectAll}
+                        className="h-6 px-2 text-xs border-blue-300 text-blue-700 hover:bg-blue-100"
+                      >
+                        Seleccionar todos ({filteredData.length})
+                      </Button>
+                    )}
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={clearSelection}
+                    className="h-6 px-2 text-xs border-blue-300 text-blue-700 hover:bg-blue-100"
+                  >
+                    Limpiar selección
+                  </Button>
+                </div>
+              )}
 
               {/* Pagination Info and Controls */}
               {filteredData.length > 0 && (
