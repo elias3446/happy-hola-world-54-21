@@ -1,4 +1,5 @@
 
+
 import React, { useState, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -232,6 +233,59 @@ const UsuariosAnalyticsContent = () => {
       { categoria: 'No confirmados', count: totalFiltrado - confirmadosFiltrado, color: '#F59E0B' }
     ];
 
+    // Calculate roles and user types distribution
+    const porRoles = [];
+    const porTipoUsuario = { admin: 0, user: 0, ambas: 0 };
+
+    // Group users by roles from user_roles table
+    const rolesCounts = {};
+    filteredUsers.forEach(user => {
+      const userRoleAssignments = userRoles?.filter(ur => 
+        ur.user_id === user.id && !ur.deleted_at
+      ) || [];
+      
+      const userRoleNames = userRoleAssignments.map(ur => {
+        const role = roles?.find(r => r.id === ur.role_id);
+        return role ? role.nombre : null;
+      }).filter(Boolean);
+
+      // Count for roles chart
+      userRoleNames.forEach(roleName => {
+        rolesCounts[roleName] = (rolesCounts[roleName] || 0) + 1;
+      });
+
+      // Count for user types (admin, user, both)
+      const hasAdmin = userRoleNames.some(r => r.toLowerCase().includes('admin')) || 
+                      (user.role && user.role.some(r => r.toLowerCase().includes('admin')));
+      const hasUser = userRoleNames.some(r => r.toLowerCase().includes('user')) || 
+                     (user.role && user.role.some(r => r.toLowerCase().includes('user')));
+
+      if (hasAdmin && hasUser) {
+        porTipoUsuario.ambas++;
+      } else if (hasAdmin) {
+        porTipoUsuario.admin++;
+      } else if (hasUser) {
+        porTipoUsuario.user++;
+      }
+    });
+
+    // Convert roles count to chart format
+    Object.entries(rolesCounts).forEach(([roleName, count], index) => {
+      const role = roles?.find(r => r.nombre === roleName);
+      porRoles.push({
+        name: roleName,
+        value: count,
+        color: role?.color || `hsl(${index * 45}, 70%, 60%)`
+      });
+    });
+
+    // Convert user types to chart format
+    const porTipoUsuarioChart = [
+      { name: 'Solo Admin', value: porTipoUsuario.admin, color: '#DC2626' },
+      { name: 'Solo Usuario', value: porTipoUsuario.user, color: '#059669' },
+      { name: 'Admin y Usuario', value: porTipoUsuario.ambas, color: '#7C3AED' }
+    ].filter(item => item.value > 0);
+
     return {
       ...stats,
       usuarios: {
@@ -242,6 +296,8 @@ const UsuariosAnalyticsContent = () => {
         recientes: recientesFiltrado,
         porEstadoActivacion,
         porConfirmacion,
+        porRoles,
+        porTipoUsuario: porTipoUsuarioChart,
         datosCompletos: filteredUsers, // Real filtered data only
       }
     };
@@ -418,6 +474,25 @@ const UsuariosAnalyticsContent = () => {
             color: item.color,
           }))}
         />
+      </div>
+
+      {/* Nuevos Gráficos de Roles y Tipos de Usuario */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {filteredStats.usuarios.porRoles && filteredStats.usuarios.porRoles.length > 0 && (
+          <InteractiveCharts
+            title="Distribución por Roles"
+            description={hasValidFilters ? "Usuarios filtrados distribuidos por roles asignados (datos reales, incluyendo usuario actual)" : "Todos los usuarios distribuidos por roles asignados (datos reales, incluyendo usuario actual)"}
+            data={filteredStats.usuarios.porRoles}
+          />
+        )}
+        
+        {filteredStats.usuarios.porTipoUsuario && filteredStats.usuarios.porTipoUsuario.length > 0 && (
+          <InteractiveCharts
+            title="Distribución por Tipo de Usuario"
+            description={hasValidFilters ? "Usuarios filtrados según tipo: solo admin, solo usuario, o ambos (datos reales, incluyendo usuario actual)" : "Todos los usuarios según tipo: solo admin, solo usuario, o ambos (datos reales, incluyendo usuario actual)"}
+            data={filteredStats.usuarios.porTipoUsuario}
+          />
+        )}
       </div>
 
       {/* Análisis detallado - Solo datos reales */}
@@ -615,3 +690,4 @@ const UsuariosAnalyticsContent = () => {
 export const UsuariosAnalytics = () => {
   return <UsuariosAnalyticsContent />;
 };
+
