@@ -1,8 +1,7 @@
 
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { InteractiveCharts } from './InteractiveCharts';
-import { TrendingUp, BarChart3, Activity } from 'lucide-react';
+import { BarChart3 } from 'lucide-react';
 
 interface ReporteComparativo {
   id: string;
@@ -25,54 +24,6 @@ export const MultiReportComparison: React.FC<MultiReportComparisonProps> = ({
     return null;
   }
 
-  // Agrupar datos por categorías para comparación
-  const comparisonData = {
-    estados: reportesSeleccionados.reduce((acc, reporte) => {
-      const existing = acc.find(item => item.name === reporte.estado);
-      if (existing) {
-        existing.value++;
-      } else {
-        acc.push({ 
-          name: reporte.estado, 
-          value: 1, 
-          color: getColorForEstado(reporte.estado),
-          trend: Math.random() * 10 - 5
-        });
-      }
-      return acc;
-    }, [] as { name: string; value: number; color: string; trend: number }[]),
-    
-    categorias: reportesSeleccionados.reduce((acc, reporte) => {
-      const existing = acc.find(item => item.name === reporte.categoria);
-      if (existing) {
-        existing.value++;
-      } else {
-        acc.push({ 
-          name: reporte.categoria, 
-          value: 1, 
-          color: getColorForCategoria(reporte.categoria),
-          trend: Math.random() * 10 - 5
-        });
-      }
-      return acc;
-    }, [] as { name: string; value: number; color: string; trend: number }[]),
-    
-    prioridades: reportesSeleccionados.reduce((acc, reporte) => {
-      const existing = acc.find(item => item.name === reporte.prioridad);
-      if (existing) {
-        existing.value++;
-      } else {
-        acc.push({ 
-          name: reporte.prioridad, 
-          value: 1, 
-          color: getColorForPrioridad(reporte.prioridad),
-          trend: Math.random() * 10 - 5
-        });
-      }
-      return acc;
-    }, [] as { name: string; value: number; color: string; trend: number }[])
-  };
-
   const reportesActivos = reportesSeleccionados.filter(r => r.activo).length;
   const porcentajeActivos = Math.round((reportesActivos / reportesSeleccionados.length) * 100);
 
@@ -82,10 +33,10 @@ export const MultiReportComparison: React.FC<MultiReportComparisonProps> = ({
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <BarChart3 className="h-5 w-5 text-blue-600" />
-            Comparativa de Reportes Seleccionados
+            Reportes Seleccionados para Comparación
           </CardTitle>
           <CardDescription>
-            Análisis comparativo de {reportesSeleccionados.length} reportes seleccionados
+            Listado de {reportesSeleccionados.length} reportes seleccionados
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -106,7 +57,7 @@ export const MultiReportComparison: React.FC<MultiReportComparisonProps> = ({
 
           {/* Lista de reportes seleccionados */}
           <div className="space-y-2">
-            <h4 className="font-medium text-sm text-muted-foreground mb-3">Reportes en comparación:</h4>
+            <h4 className="font-medium text-sm text-muted-foreground mb-3">Reportes seleccionados:</h4>
             {reportesSeleccionados.map((reporte, index) => (
               <div key={reporte.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                 <div className="flex items-center gap-3">
@@ -136,61 +87,6 @@ export const MultiReportComparison: React.FC<MultiReportComparisonProps> = ({
           </div>
         </CardContent>
       </Card>
-
-      {/* Gráficos comparativos */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <InteractiveCharts
-          title="Estados en Comparación"
-          description="Distribución de estados en los reportes seleccionados"
-          data={comparisonData.estados}
-          showTrends={true}
-        />
-        
-        <InteractiveCharts
-          title="Categorías en Comparación"
-          description="Distribución de categorías en los reportes seleccionados"
-          data={comparisonData.categorias}
-          showTrends={true}
-        />
-        
-        <InteractiveCharts
-          title="Prioridades en Comparación"
-          description="Distribución de prioridades en los reportes seleccionados"
-          data={comparisonData.prioridades}
-          showTrends={true}
-        />
-      </div>
     </div>
   );
 };
-
-// Funciones auxiliares para colores
-function getColorForEstado(estado: string): string {
-  const colors: { [key: string]: string } = {
-    'pendiente': '#EF4444',
-    'en_proceso': '#F59E0B',
-    'completado': '#10B981',
-    'cancelado': '#6B7280'
-  };
-  return colors[estado.toLowerCase()] || '#6B7280';
-}
-
-function getColorForCategoria(categoria: string): string {
-  const colors: { [key: string]: string } = {
-    'infraestructura': '#3B82F6',
-    'seguridad': '#EF4444',
-    'servicios': '#10B981',
-    'ambiente': '#F59E0B'
-  };
-  return colors[categoria.toLowerCase()] || '#6B7280';
-}
-
-function getColorForPrioridad(prioridad: string): string {
-  const colors: { [key: string]: string } = {
-    'urgente': '#DC2626',
-    'alto': '#EA580C',
-    'medio': '#D97706',
-    'bajo': '#059669'
-  };
-  return colors[prioridad.toLowerCase()] || '#6B7280';
-}
