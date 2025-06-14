@@ -1,3 +1,4 @@
+
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -35,7 +36,7 @@ interface DashboardStats {
     recientes: number; // últimos 7 días
     porEstadoActivacion: { estado: string; count: number; color: string }[];
     porConfirmacion: { categoria: string; count: number; color: string }[];
-    porRoles: { name: string; value: number; color: string }[]; // Combinaciones específicas de roles
+    porRoles: { name: string; value: number; color: string }[]; // Combinaciones específicas de roles reales
     porTipoUsuario: { name: string; value: number; color: string }[]; // Desde profiles.role
     datosCompletos: UserWithDates[];
   };
@@ -225,7 +226,7 @@ export const useDashboardStats = () => {
         { categoria: 'No confirmados', count: (usuarios?.length || 0) - usuariosConfirmados.length, color: '#F59E0B' }
       ];
 
-      // Calcular distribución por COMBINACIONES ESPECÍFICAS DE ROLES REALES
+      // Calcular distribución por COMBINACIONES ESPECÍFICAS DE ROLES REALES CON NOMBRES
       const userRoleAssignments: { [userId: string]: string[] } = {};
       
       // Obtener todos los roles asignados por usuario desde user_roles
@@ -239,7 +240,21 @@ export const useDashboardStats = () => {
         }
       });
 
-      // Contar usuarios por combinaciones específicas de roles
+      // También incluir roles del campo profiles.role
+      usuarios?.forEach(user => {
+        const profileRoles = user.role || [];
+        profileRoles.forEach(roleName => {
+          if (!userRoleAssignments[user.id]) {
+            userRoleAssignments[user.id] = [];
+          }
+          // Evitar duplicados
+          if (!userRoleAssignments[user.id].includes(roleName)) {
+            userRoleAssignments[user.id].push(roleName);
+          }
+        });
+      });
+
+      // Contar usuarios por combinaciones específicas de roles con nombres reales
       const rolesCombinations: { [combination: string]: number } = {};
       
       Object.values(userRoleAssignments).forEach(userRoles => {
@@ -257,21 +272,21 @@ export const useDashboardStats = () => {
         rolesCombinations['Sin Roles'] = usersWithoutRoles;
       }
 
-      // Convertir combinaciones a formato de gráfico
+      // Convertir combinaciones a formato de gráfico con nombres reales de roles
       const porRoles = Object.entries(rolesCombinations).map(([combination, count], index) => {
         let color: string;
         
         if (combination === 'Sin Roles') {
           color = '#6B7280';
         } else {
-          // Para combinaciones de roles, usar el color del primer rol o un color generado
+          // Para combinaciones de roles, usar el color del primer rol mencionado
           const firstRoleName = combination.split(' y ')[0];
           const firstRole = roles?.find(r => r.nombre === firstRoleName);
           color = firstRole?.color || `hsl(${index * 45}, 70%, 60%)`;
         }
         
         return {
-          name: combination,
+          name: combination, // Esto ahora contiene nombres reales como "Usuario y Administrador"
           value: count as number,
           color
         };
@@ -328,7 +343,7 @@ export const useDashboardStats = () => {
           recientes: usuariosRecientes.length,
           porEstadoActivacion: usuariosPorEstadoActivacion,
           porConfirmacion: usuariosPorConfirmacion,
-          porRoles, // Combinaciones específicas de roles reales de la BD
+          porRoles, // Combinaciones específicas con nombres reales de roles de la BD
           porTipoUsuario, // Tipos de usuario desde profiles.role
           datosCompletos: usuariosCompletos,
         },
