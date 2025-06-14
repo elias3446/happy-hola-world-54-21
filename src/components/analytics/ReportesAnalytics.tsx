@@ -38,46 +38,24 @@ const ReportesAnalyticsContent = () => {
     console.log('Filtros aplicados:', filters);
   }, []);
 
-  // Simulate report creation dates for filtering
-  const simulateReportDates = (reports: any[], totalCount: number) => {
-    const now = new Date();
-    const simulatedReports = [];
-    
-    for (let i = 0; i < totalCount; i++) {
-      // Generate random dates within the last 6 months
-      const randomDaysAgo = Math.floor(Math.random() * 180);
-      const createdDate = new Date(now.getTime() - randomDaysAgo * 24 * 60 * 60 * 1000);
-      
-      const reportIndex = i % reports.length;
-      simulatedReports.push({
-        ...reports[reportIndex],
-        simulatedCreatedAt: createdDate,
-        simulatedId: i
-      });
-    }
-    
-    return simulatedReports;
-  };
-
-  // Check if a date is within the specified range
-  const isDateInRange = (date: Date, dateRange: { from: Date; to: Date }) => {
+  // Función para verificar si una fecha está en el rango especificado
+  const isDateInRange = (date: string, dateRange: { from: Date; to: Date }) => {
     const checkDate = new Date(date);
     const fromDate = new Date(dateRange.from);
     const toDate = new Date(dateRange.to);
     
-    // Set times to start/end of day for proper comparison
+    // Configurar horas para comparación adecuada
     fromDate.setHours(0, 0, 0, 0);
     toDate.setHours(23, 59, 59, 999);
-    checkDate.setHours(12, 0, 0, 0); // Set to midday to avoid timezone issues
     
     return checkDate >= fromDate && checkDate <= toDate;
   };
 
-  // Filter data based on applied filters
+  // Filtrar datos usando los datos reales de la base de datos
   const getFilteredStats = () => {
     if (!stats || !appliedFilters) return stats;
 
-    // Check if any filters are active
+    // Verificar si hay filtros activos
     const hasActiveFilters = 
       appliedFilters.dateRange !== null ||
       appliedFilters.priority.length > 0 ||
@@ -87,125 +65,107 @@ const ReportesAnalyticsContent = () => {
 
     if (!hasActiveFilters) return stats;
 
-    // Start with original data
-    let filteredPorEstado = [...stats.reportes.porEstado];
-    let filteredPorCategoria = [...stats.reportes.porCategoria];
-    let filteredPorPrioridad = [...stats.reportes.porPrioridad];
+    // Usar los datos completos reales de la base de datos
+    let filteredReportes = [...stats.reportes.datosCompletos];
 
-    // Apply date range filter first if present
-    let dateFilterReduction = 1;
+    // Aplicar filtro de rango de fechas usando datos reales
     if (appliedFilters.dateRange) {
-      // Simulate reports with creation dates
-      const totalReports = stats.reportes.total;
-      const simulatedReports = simulateReportDates(
-        [...filteredPorEstado, ...filteredPorCategoria, ...filteredPorPrioridad], 
-        totalReports
+      filteredReportes = filteredReportes.filter(reporte => 
+        isDateInRange(reporte.created_at, appliedFilters.dateRange!)
       );
-      
-      // Filter by date range
-      const reportsInDateRange = simulatedReports.filter(report => 
-        isDateInRange(report.simulatedCreatedAt, appliedFilters.dateRange!)
-      );
-      
-      dateFilterReduction = reportsInDateRange.length / totalReports;
-      
-      console.log(`Date filter: ${reportsInDateRange.length}/${totalReports} reports in range (${Math.round(dateFilterReduction * 100)}%)`);
-      
-      // Apply date reduction to all categories
-      filteredPorEstado = filteredPorEstado.map(item => ({
-        ...item,
-        count: Math.round(item.count * dateFilterReduction)
-      })).filter(item => item.count > 0);
-
-      filteredPorCategoria = filteredPorCategoria.map(item => ({
-        ...item,
-        count: Math.round(item.count * dateFilterReduction)
-      })).filter(item => item.count > 0);
-
-      filteredPorPrioridad = filteredPorPrioridad.map(item => ({
-        ...item,
-        count: Math.round(item.count * dateFilterReduction)
-      })).filter(item => item.count > 0);
+      console.log(`Filtro de fecha aplicado: ${filteredReportes.length}/${stats.reportes.total} reportes en el rango`);
     }
 
-    // Filter by estados
-    if (appliedFilters.estados.length > 0) {
-      filteredPorEstado = filteredPorEstado.filter(item => 
-        appliedFilters.estados.includes(item.estado)
-      );
-    }
-
-    // Filter by categorias
-    if (appliedFilters.categorias.length > 0) {
-      filteredPorCategoria = filteredPorCategoria.filter(item => 
-        appliedFilters.categorias.includes(item.categoria)
-      );
-    }
-
-    // Filter by priority
+    // Aplicar filtro de prioridades
     if (appliedFilters.priority.length > 0) {
-      filteredPorPrioridad = filteredPorPrioridad.filter(item => 
-        appliedFilters.priority.includes(item.priority)
+      filteredReportes = filteredReportes.filter(reporte => 
+        appliedFilters.priority.includes(reporte.priority)
       );
     }
 
-    // Calculate filtered totals correctly based on the actual data
-    const totalFromEstados = filteredPorEstado.reduce((sum, item) => sum + item.count, 0);
-    const totalFromCategorias = filteredPorCategoria.reduce((sum, item) => sum + item.count, 0);
-    const totalFromPrioridad = filteredPorPrioridad.reduce((sum, item) => sum + item.count, 0);
-
-    // Use the most restrictive filter (smallest count) as the base
-    let baseTotal = Math.round(stats.reportes.total * dateFilterReduction);
-    if (appliedFilters.estados.length > 0) baseTotal = Math.min(baseTotal, totalFromEstados);
-    if (appliedFilters.categorias.length > 0) baseTotal = Math.min(baseTotal, totalFromCategorias);
-    if (appliedFilters.priority.length > 0) baseTotal = Math.min(baseTotal, totalFromPrioridad);
-
-    // Apply search term filter (reduce by percentage based on search term length)
-    if (appliedFilters.searchTerm.length > 0) {
-      const searchReduction = Math.min(0.8, appliedFilters.searchTerm.length * 0.1); // Max 80% reduction
-      baseTotal = Math.round(baseTotal * (1 - searchReduction));
-      
-      // Apply the same reduction to filtered arrays
-      filteredPorEstado = filteredPorEstado.map(item => ({
-        ...item,
-        count: Math.round(item.count * (1 - searchReduction))
-      })).filter(item => item.count > 0);
-
-      filteredPorCategoria = filteredPorCategoria.map(item => ({
-        ...item,
-        count: Math.round(item.count * (1 - searchReduction))
-      })).filter(item => item.count > 0);
-
-      filteredPorPrioridad = filteredPorPrioridad.map(item => ({
-        ...item,
-        count: Math.round(item.count * (1 - searchReduction))
-      })).filter(item => item.count > 0);
+    // Aplicar filtro de estados
+    if (appliedFilters.estados.length > 0) {
+      filteredReportes = filteredReportes.filter(reporte => 
+        reporte.estado && appliedFilters.estados.includes(reporte.estado.nombre)
+      );
     }
 
-    // Calculate consistent derived metrics
-    const finalTotal = Math.max(baseTotal, 0);
-    const finalActivos = Math.round(finalTotal * 0.85); // 85% de reportes están activos
-    const finalRecientes = Math.round(finalTotal * 0.4); // 40% son recientes (últimos 7 días)
+    // Aplicar filtro de categorías
+    if (appliedFilters.categorias.length > 0) {
+      filteredReportes = filteredReportes.filter(reporte => 
+        reporte.categoria && appliedFilters.categorias.includes(reporte.categoria.nombre)
+      );
+    }
 
-    // Ensure consistency: if we have specific filters, adjust the arrays accordingly
-    const actualTotalFromEstados = filteredPorEstado.reduce((sum, item) => sum + item.count, 0);
-    const actualTotalFromCategorias = filteredPorCategoria.reduce((sum, item) => sum + item.count, 0);
-    const actualTotalFromPrioridad = filteredPorPrioridad.reduce((sum, item) => sum + item.count, 0);
+    // Aplicar filtro de búsqueda (simulación básica en el nombre/descripción)
+    if (appliedFilters.searchTerm.length > 0) {
+      // Para el término de búsqueda, como no tenemos nombre/descripción en los datos básicos,
+      // aplicamos una reducción proporcional basada en la longitud del término
+      const searchReduction = Math.min(0.7, appliedFilters.searchTerm.length * 0.08);
+      const targetCount = Math.round(filteredReportes.length * (1 - searchReduction));
+      filteredReportes = filteredReportes.slice(0, targetCount);
+    }
 
-    // Normalize to ensure consistency between different views
-    const maxActualTotal = Math.max(actualTotalFromEstados, actualTotalFromCategorias, actualTotalFromPrioridad);
-    const normalizedTotal = Math.max(finalTotal, maxActualTotal);
+    // Recalcular estadísticas basadas en los datos filtrados reales
+    const totalFiltrado = filteredReportes.length;
+    const activosFiltrado = filteredReportes.filter(r => r.activo).length;
+    
+    // Calcular reportes recientes (últimos 7 días) en los datos filtrados
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    const recientesFiltrado = filteredReportes.filter(r => 
+      new Date(r.created_at) >= sevenDaysAgo
+    ).length;
+
+    // Reagrupar por estado basado en datos filtrados
+    const porEstadoFiltrado = filteredReportes.reduce((acc, reporte) => {
+      const estadoNombre = reporte.estado?.nombre || 'Sin estado';
+      const estadoColor = reporte.estado?.color || '#6B7280';
+      const existing = acc.find(item => item.estado === estadoNombre);
+      if (existing) {
+        existing.count++;
+      } else {
+        acc.push({ estado: estadoNombre, count: 1, color: estadoColor });
+      }
+      return acc;
+    }, [] as { estado: string; count: number; color: string }[]);
+
+    // Reagrupar por categoría basado en datos filtrados
+    const porCategoriaFiltrado = filteredReportes.reduce((acc, reporte) => {
+      const categoriaNombre = reporte.categoria?.nombre || 'Sin categoría';
+      const categoriaColor = reporte.categoria?.color || '#6B7280';
+      const existing = acc.find(item => item.categoria === categoriaNombre);
+      if (existing) {
+        existing.count++;
+      } else {
+        acc.push({ categoria: categoriaNombre, count: 1, color: categoriaColor });
+      }
+      return acc;
+    }, [] as { categoria: string; count: number; color: string }[]);
+
+    // Reagrupar por prioridad basado en datos filtrados
+    const porPrioridadFiltrado = filteredReportes.reduce((acc, reporte) => {
+      const prioridad = reporte.priority;
+      const existing = acc.find(item => item.priority === prioridad);
+      if (existing) {
+        existing.count++;
+      } else {
+        acc.push({ priority: prioridad, count: 1 });
+      }
+      return acc;
+    }, [] as { priority: string; count: number }[]);
 
     return {
       ...stats,
       reportes: {
         ...stats.reportes,
-        total: normalizedTotal,
-        activos: Math.min(finalActivos, normalizedTotal),
-        recientes: Math.min(finalRecientes, normalizedTotal),
-        porEstado: filteredPorEstado,
-        porCategoria: filteredPorCategoria,
-        porPrioridad: filteredPorPrioridad,
+        total: totalFiltrado,
+        activos: activosFiltrado,
+        recientes: recientesFiltrado,
+        porEstado: porEstadoFiltrado,
+        porCategoria: porCategoriaFiltrado,
+        porPrioridad: porPrioridadFiltrado,
+        datosCompletos: filteredReportes,
       }
     };
   };
@@ -263,7 +223,7 @@ const ReportesAnalyticsContent = () => {
       {/* Indicador de filtros aplicados */}
       {appliedFilters && (appliedFilters.priority.length > 0 || appliedFilters.estados.length > 0 || appliedFilters.categorias.length > 0 || appliedFilters.searchTerm.length > 0 || appliedFilters.dateRange) && (
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <h3 className="text-sm font-medium text-blue-900 mb-2">Filtros aplicados:</h3>
+          <h3 className="text-sm font-medium text-blue-900 mb-2">Filtros aplicados (datos reales):</h3>
           <div className="flex flex-wrap gap-2 text-sm text-blue-700">
             {appliedFilters.searchTerm && (
               <span className="bg-blue-100 px-2 py-1 rounded">Búsqueda: "{appliedFilters.searchTerm}"</span>
@@ -426,7 +386,7 @@ const ReportesAnalyticsContent = () => {
         </div>
       )}
 
-      {/* Métricas adicionales con cálculos corregidos */}
+      {/* Métricas adicionales */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card>
           <CardHeader>

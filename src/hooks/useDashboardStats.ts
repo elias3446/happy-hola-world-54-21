@@ -1,6 +1,14 @@
-
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+
+interface ReporteWithDates {
+  id: string;
+  activo: boolean;
+  created_at: string;
+  priority: string;
+  categoria: { nombre: string; color: string } | null;
+  estado: { nombre: string; color: string } | null;
+}
 
 interface DashboardStats {
   reportes: {
@@ -10,6 +18,7 @@ interface DashboardStats {
     porCategoria: { categoria: string; count: number; color: string }[];
     porPrioridad: { priority: string; count: number }[];
     recientes: number; // últimos 7 días
+    datosCompletos: ReporteWithDates[]; // Agregamos los datos completos para filtrado
   };
   usuarios: {
     total: number;
@@ -38,7 +47,7 @@ export const useDashboardStats = () => {
     queryFn: async (): Promise<DashboardStats> => {
       console.log('Fetching dashboard statistics...');
 
-      // Obtener estadísticas de reportes
+      // Obtener estadísticas de reportes con datos completos
       const { data: reportes, error: reportesError } = await supabase
         .from('reportes')
         .select(`
@@ -111,7 +120,7 @@ export const useDashboardStats = () => {
         throw estadosError;
       }
 
-      // Calcular estadísticas
+      // Calcular estadísticas usando datos reales
       const now = new Date();
       const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
 
@@ -120,6 +129,16 @@ export const useDashboardStats = () => {
       const reportesRecientes = reportes?.filter(r => 
         new Date(r.created_at) >= sevenDaysAgo
       ) || [];
+
+      // Guardar datos completos para filtrado posterior
+      const datosCompletos: ReporteWithDates[] = reportes?.map(r => ({
+        id: r.id,
+        activo: r.activo,
+        created_at: r.created_at,
+        priority: r.priority || 'medio',
+        categoria: r.categoria,
+        estado: r.estado
+      })) || [];
 
       // Agrupar por estado
       const porEstado = reportes?.reduce((acc, reporte) => {
@@ -149,7 +168,7 @@ export const useDashboardStats = () => {
 
       // Agrupar por prioridad
       const porPrioridad = reportes?.reduce((acc, reporte) => {
-        const prioridad = reporte.priority || 'urgente';
+        const prioridad = reporte.priority || 'medio';
         const existing = acc.find(item => item.priority === prioridad);
         if (existing) {
           existing.count++;
@@ -183,6 +202,7 @@ export const useDashboardStats = () => {
           porCategoria,
           porPrioridad,
           recientes: reportesRecientes.length,
+          datosCompletos, // Incluimos los datos completos
         },
         usuarios: {
           total: usuarios?.length || 0,
