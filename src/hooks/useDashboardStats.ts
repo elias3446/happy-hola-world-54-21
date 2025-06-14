@@ -1,3 +1,4 @@
+
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -15,7 +16,7 @@ interface UserWithDates {
   asset: boolean;
   confirmed: boolean;
   created_at: string;
-  role: string;
+  role: string[];
 }
 
 interface DashboardStats {
@@ -204,12 +205,13 @@ export const useDashboardStats = () => {
         new Date(u.created_at) >= sevenDaysAgo
       ) || [];
 
-      // Guardar datos completos de usuarios para filtrado posterior
+      // Guardar datos completos de usuarios para filtrado posterior - FIX: include role property
       const usuariosCompletos: UserWithDates[] = usuarios?.map(u => ({
         id: u.id,
         asset: u.asset || false,
         confirmed: u.confirmed || false,
-        created_at: u.created_at
+        created_at: u.created_at,
+        role: u.role || []
       })) || [];
 
       // Agrupar usuarios por estado de activación
@@ -225,7 +227,7 @@ export const useDashboardStats = () => {
       ];
 
       // Calcular distribución por roles - SIEMPRE disponible
-      const rolesCounts = {};
+      const rolesCounts: { [key: string]: number } = {};
       const porTipoUsuario = { admin: 0, user: 0, ambas: 0 };
 
       usuarios?.forEach(user => {
@@ -261,12 +263,12 @@ export const useDashboardStats = () => {
         }
       });
 
-      // Convertir conteos de roles a formato de gráfico
+      // Convertir conteos de roles a formato de gráfico - FIX: ensure number type
       const porRoles = Object.entries(rolesCounts).map(([roleName, count], index) => {
         const role = roles?.find(r => r.nombre === roleName);
         return {
           name: roleName,
-          value: count,
+          value: count as number, // Explicit cast to number
           color: role?.color || `hsl(${index * 45}, 70%, 60%)`
         };
       });
