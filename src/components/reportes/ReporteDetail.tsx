@@ -520,7 +520,7 @@ export const ReporteDetail = ({ reporte, onEdit, onBack }: ReporteDetailProps) =
 
       {/* Modal del Carrusel de Imágenes */}
       <Dialog open={selectedImageIndex !== null} onOpenChange={() => closeImageCarousel()}>
-        <DialogContent className="max-w-4xl max-h-[90vh] p-0">
+        <DialogContent className="max-w-4xl max-h-[90vh] p-0" hideCloseButton>
           <DialogHeader className="p-6 pb-0">
             <DialogTitle className="flex items-center justify-between">
               <span className="break-words overflow-hidden flex-1 min-w-0">Imágenes del Reporte - {reporte.nombre}</span>
