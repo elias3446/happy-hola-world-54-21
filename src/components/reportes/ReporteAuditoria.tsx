@@ -73,7 +73,7 @@ const getActivityColor = (type: ActividadReporte['activity_type']) => {
 };
 
 export const ReporteAuditoria: React.FC<ReporteAuditoriaProps> = ({ reporteId }) => {
-  const [filtroTipo, setFiltroTipo] = useState<string>('');
+  const [filtroTipo, setFiltroTipo] = useState<string>('all');
   const [filtroUsuario, setFiltroUsuario] = useState<string>('');
   const [filtroFecha, setFiltroFecha] = useState<string>('');
   const [busqueda, setBusqueda] = useState<string>('');
@@ -100,7 +100,7 @@ export const ReporteAuditoria: React.FC<ReporteAuditoriaProps> = ({ reporteId })
       );
 
       // Aplicar filtros
-      if (filtroTipo) {
+      if (filtroTipo && filtroTipo !== 'all') {
         filteredData = filteredData.filter(a => a.activity_type === filtroTipo);
       }
       if (filtroUsuario) {
@@ -136,7 +136,7 @@ export const ReporteAuditoria: React.FC<ReporteAuditoriaProps> = ({ reporteId })
       let filteredData = data as CambioReporte[];
 
       // Aplicar filtros
-      if (filtroTipo) {
+      if (filtroTipo && filtroTipo !== 'all') {
         filteredData = filteredData.filter(c => c.operation_type === filtroTipo);
       }
       if (filtroUsuario) {
@@ -153,7 +153,7 @@ export const ReporteAuditoria: React.FC<ReporteAuditoriaProps> = ({ reporteId })
   });
 
   const limpiarFiltros = () => {
-    setFiltroTipo('');
+    setFiltroTipo('all');
     setFiltroUsuario('');
     setFiltroFecha('');
     setBusqueda('');
@@ -214,7 +214,7 @@ export const ReporteAuditoria: React.FC<ReporteAuditoriaProps> = ({ reporteId })
                   <SelectValue placeholder="Todos los tipos" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todos los tipos</SelectItem>
+                  <SelectItem value="all">Todos los tipos</SelectItem>
                   <SelectItem value="CREATE">Crear</SelectItem>
                   <SelectItem value="READ">Leer</SelectItem>
                   <SelectItem value="UPDATE">Actualizar</SelectItem>
