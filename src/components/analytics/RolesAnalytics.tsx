@@ -52,7 +52,7 @@ export const RolesAnalytics = () => {
         <StatsCard
           title="Roles Activos"
           value={stats.roles.activos}
-          subtitle={`${Math.round((stats.roles.activos / stats.roles.total) * 100)}% del total`}
+          subtitle={`${Math.round((stats.roles.activos / Math.max(stats.roles.total, 1)) * 100)}% del total`}
           icon={Settings}
           color="text-green-600"
         />
@@ -117,7 +117,7 @@ export const RolesAnalytics = () => {
               <div className="flex justify-between">
                 <span className="text-sm text-muted-foreground">Usuarios con roles</span>
                 <span className="text-sm font-medium">
-                  {stats.roles.asignaciones > 0 ? '~' + Math.min(stats.roles.asignaciones, stats.usuarios.total) : '0'}
+                  {stats.roles.asignaciones > 0 ? Math.min(stats.roles.asignaciones, stats.usuarios.total) : 0}
                 </span>
               </div>
               <div className="flex justify-between">
