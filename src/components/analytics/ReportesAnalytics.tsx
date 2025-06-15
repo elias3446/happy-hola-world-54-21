@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -281,7 +282,7 @@ const ReportesAnalyticsContent = () => {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold text-foreground mb-2">
-            {hasValidFilters ? 'Análisis Comparativo de Reportes' : 'Análisis de Reportes en Tiempo Real'}
+            {hasValidFilters ? 'Análisis Comparativo de Reportes' : 'Análisis de Reportes'}
           </h2>
           <p className="text-muted-foreground">
             {hasValidFilters 
