@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -246,7 +247,7 @@ export const AdvancedFiltersPanel: React.FC<AdvancedFiltersPanelProps> = ({
                 Selecciona {context === 'usuarios' ? 'Usuarios' : 'Reportes'} para Comparar (mínimo 2)
               </label>
               <div className="text-xs text-muted-foreground mb-2">
-                {context === 'usuarios' ? 'Usuarios disponibles:' : 'Reportes disponibles:'} {searchData.length} {context === 'usuarios' ? '(incluyendo usuario actual)' : ''}
+                {context === 'usuarios' ? 'Usuarios disponibles:' : 'Reportes disponibles:'} {searchData.length}
               </div>
               <SearchCombobox
                 reportes={searchData}
