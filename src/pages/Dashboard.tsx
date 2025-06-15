@@ -89,9 +89,6 @@ const Dashboard = () => {
             <BarChart3 className="h-8 w-8" />
             Dashboard Analítico
           </h1>
-          <p className="text-muted-foreground">
-            Vista interactiva y análisis en tiempo real del sistema de reportes georreferenciados
-          </p>
         </div>
 
         {/* Responsive Navigation Menu */}
