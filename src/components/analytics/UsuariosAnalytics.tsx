@@ -1,5 +1,3 @@
-
-
 import React, { useState, useCallback } from 'react';
 import { Button } from "@/components/ui/button";
 import { Activity, RefreshCw } from 'lucide-react';
@@ -182,7 +180,7 @@ const UsuariosAnalyticsContent = () => {
         <div className="bg-green-50 border border-green-200 rounded-lg p-4">
           <h3 className="text-sm font-medium text-green-900 mb-2">Vista en Tiempo Real:</h3>
           <div className="text-sm text-green-700">
-            Mostrando todos los usuarios reales de la base de datos ({users?.length || 0} usuarios totales, incluyendo usuario actual)
+            Mostrando todos los usuarios de la base de datos ({users?.length || 0} usuarios totales)
           </div>
         </div>
       )}
@@ -206,4 +204,3 @@ const UsuariosAnalyticsContent = () => {
 export const UsuariosAnalytics = () => {
   return <UsuariosAnalyticsContent />;
 };
-
