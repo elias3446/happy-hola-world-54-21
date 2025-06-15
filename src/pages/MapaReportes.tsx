@@ -3,9 +3,11 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import { useReportes } from '@/hooks/useReportes';
 import MapaReportesMultiples from '@/components/MapaBase/MapaReportesMultiples';
-import { MapPin, Calendar, User, AlertTriangle, X } from 'lucide-react';
+import { MapPin, Calendar, User, AlertTriangle, X, Eye, Images } from 'lucide-react';
 
 const priorityConfig = {
   urgente: { color: '#DC2626', label: 'Urgente' },
@@ -17,6 +19,7 @@ const priorityConfig = {
 export const MapaReportes = () => {
   const { reportes, isLoading } = useReportes();
   const [selectedReporte, setSelectedReporte] = useState<any>(null);
+  const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
 
   // Transform reportes to match MapaReportesMultiples expected format
   const transformedReportes = reportes
@@ -39,6 +42,14 @@ export const MapaReportes = () => {
 
   const handleClosePanel = () => {
     setSelectedReporte(null);
+  };
+
+  const openImageCarousel = (index: number) => {
+    setSelectedImageIndex(index);
+  };
+
+  const closeImageCarousel = () => {
+    setSelectedImageIndex(null);
   };
 
   const getEstadoColor = (estado: any) => {
@@ -227,28 +238,46 @@ export const MapaReportes = () => {
                   {/* Imágenes */}
                   {selectedReporte.imagenes && selectedReporte.imagenes.length > 0 && (
                     <div>
-                      <label className="text-xs sm:text-sm font-medium text-muted-foreground">
+                      <label className="text-xs sm:text-sm font-medium text-muted-foreground flex items-center gap-1">
+                        <Images className="h-2 w-2 sm:h-3 sm:w-3" />
                         Imágenes ({selectedReporte.imagenes.length})
                       </label>
                       <div className="grid grid-cols-2 gap-2 mt-2">
                         {selectedReporte.imagenes.slice(0, 4).map((imagen: string, index: number) => (
-                          <div key={index} className="aspect-square rounded-md overflow-hidden bg-muted">
+                          <div 
+                            key={index} 
+                            className="relative group cursor-pointer aspect-square rounded-md overflow-hidden bg-muted"
+                            onClick={() => openImageCarousel(index)}
+                          >
                             <img
                               src={imagen}
                               alt={`Imagen ${index + 1}`}
-                              className="w-full h-full object-cover"
+                              className="w-full h-full object-cover transition-transform group-hover:scale-105"
                               onError={(e) => {
                                 const target = e.target as HTMLImageElement;
                                 target.src = '/placeholder.svg';
                               }}
                             />
+                            <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all rounded-md flex items-center justify-center">
+                              <Eye className="h-4 w-4 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                            </div>
                           </div>
                         ))}
                       </div>
                       {selectedReporte.imagenes.length > 4 && (
-                        <p className="text-xs text-muted-foreground mt-1">
-                          +{selectedReporte.imagenes.length - 4} imágenes más
-                        </p>
+                        <div className="mt-2 flex items-center justify-between">
+                          <p className="text-xs text-muted-foreground">
+                            +{selectedReporte.imagenes.length - 4} imágenes más
+                          </p>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => openImageCarousel(0)}
+                            className="text-xs h-auto p-1"
+                          >
+                            Ver todas
+                          </Button>
+                        </div>
                       )}
                     </div>
                   )}
@@ -257,6 +286,58 @@ export const MapaReportes = () => {
             </div>
           )}
         </div>
+
+        {/* Modal del Carrusel de Imágenes */}
+        <Dialog open={selectedImageIndex !== null} onOpenChange={() => closeImageCarousel()}>
+          <DialogContent className="max-w-4xl max-h-[90vh] p-0" hideCloseButton>
+            <DialogHeader className="p-6 pb-0">
+              <DialogTitle className="flex items-center justify-between">
+                <span className="break-words overflow-hidden flex-1 min-w-0">Imágenes del Reporte - {selectedReporte?.nombre}</span>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={closeImageCarousel}
+                  className="h-8 w-8 p-0 flex-shrink-0 ml-2"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </DialogTitle>
+            </DialogHeader>
+            
+            {selectedImageIndex !== null && selectedReporte?.imagenes && (
+              <div className="p-6 pt-0">
+                <Carousel className="w-full max-w-3xl mx-auto">
+                  <CarouselContent>
+                    {selectedReporte.imagenes.map((imagen: string, index: number) => (
+                      <CarouselItem key={index}>
+                        <div className="flex justify-center">
+                          <div className="max-h-[60vh] w-full flex items-center justify-center">
+                            <img
+                              src={imagen}
+                              alt={`Imagen ${index + 1} del reporte ${selectedReporte.nombre}`}
+                              className="max-w-full max-h-full object-contain rounded-lg"
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                target.src = '/placeholder.svg';
+                              }}
+                            />
+                          </div>
+                        </div>
+                        <div className="text-center mt-4">
+                          <p className="text-sm text-gray-600">
+                            Imagen {index + 1} de {selectedReporte.imagenes.length}
+                          </p>
+                        </div>
+                      </CarouselItem>
+                    ))}
+                  </CarouselContent>
+                  <CarouselPrevious />
+                  <CarouselNext />
+                </Carousel>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
