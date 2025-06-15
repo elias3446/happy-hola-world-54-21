@@ -1,4 +1,5 @@
 
+
 import React, { useState, useCallback } from 'react';
 import { Button } from "@/components/ui/button";
 import { Activity, RefreshCw } from 'lucide-react';
@@ -121,10 +122,7 @@ const UsuariosAnalyticsContent = () => {
             {hasValidFilters ? 'Análisis Comparativo de Usuarios' : 'Análisis de Usuarios'}
           </h2>
           <p className="text-muted-foreground">
-            {hasValidFilters 
-              ? 'Dashboard con filtros aplicados sobre datos reales de la base de datos (incluyendo usuario actual)'
-              : 'Dashboard en tiempo real con datos reales de la base de datos (incluyendo usuario actual)'
-            }
+            Estadísticas sobre la gestión de usuarios
           </p>
           <p className="text-sm text-blue-600 mt-1 font-semibold">
             Mostrando {users?.length || 0} usuarios totales de la base de datos (TODOS INCLUIDOS)
@@ -211,3 +209,4 @@ const UsuariosAnalyticsContent = () => {
 export const UsuariosAnalytics = () => {
   return <UsuariosAnalyticsContent />;
 };
+
