@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback } from 'react';
 import { Button } from "@/components/ui/button";
 import { Activity, RefreshCw } from 'lucide-react';
@@ -117,7 +118,7 @@ const UsuariosAnalyticsContent = () => {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold text-foreground mb-2">
-            {hasValidFilters ? 'Análisis Comparativo de Usuarios (Datos Reales)' : 'Análisis de Usuarios en Tiempo Real (Datos Reales)'}
+            {hasValidFilters ? 'Análisis Comparativo de Usuarios' : 'Análisis de Usuarios'}
           </h2>
           <p className="text-muted-foreground">
             {hasValidFilters 
@@ -184,7 +185,7 @@ const UsuariosAnalyticsContent = () => {
       {/* Indicador de vista en tiempo real */}
       {!hasValidFilters && (
         <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-          <h3 className="text-sm font-medium text-green-900 mb-2">Vista en Tiempo Real (Datos Reales):</h3>
+          <h3 className="text-sm font-medium text-green-900 mb-2">Vista en Tiempo Real:</h3>
           <div className="text-sm text-green-700">
             Mostrando todos los usuarios reales de la base de datos ({users?.length || 0} usuarios totales, incluyendo usuario actual)
           </div>
