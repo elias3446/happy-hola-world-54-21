@@ -87,7 +87,7 @@ const Dashboard = () => {
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-foreground mb-2 flex items-center gap-2">
             <BarChart3 className="h-8 w-8" />
-            Dashboard Analítico Avanzado
+            Dashboard Analítico
           </h1>
           <p className="text-muted-foreground">
             Vista interactiva y análisis en tiempo real del sistema de reportes georreferenciados
@@ -148,7 +148,7 @@ const Dashboard = () => {
                   </SheetTrigger>
                   <SheetContent side="left" className="w-64">
                     <div className="flex flex-col space-y-4 mt-4">
-                      <div className="text-lg font-semibold">Análisis Avanzado</div>
+                      <div className="text-lg font-semibold">Análisis</div>
                       
                       <div className="space-y-2">
                         {analyticsMenuItems.map((item) => {
