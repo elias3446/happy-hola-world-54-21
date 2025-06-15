@@ -51,7 +51,7 @@ const Home = () => {
             </CardHeader>
             <CardContent>
               <Button asChild variant="secondary" className="w-full">
-                <Link to="/reportes-publicos" className="my-[19px]">Ver Reportes</Link>
+                <Link to="/reportes-publicos" className="my-[23px]">Ver Reportes</Link>
               </Button>
             </CardContent>
           </Card>
