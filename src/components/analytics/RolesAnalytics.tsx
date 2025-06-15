@@ -135,9 +135,11 @@ const RolesAnalyticsContent = () => {
 
       case 'prioridad':
         if (appliedFilters.priority.length > 0) {
-          filteredUsers = filteredUsers.filter(user => 
-            user.role && appliedFilters.priority.includes(user.role)
-          );
+          filteredUsers = filteredUsers.filter(user => {
+            // Fix: user.role is string[], so we need to check if any role matches
+            const userRoles = Array.isArray(user.role) ? user.role : [user.role].filter(Boolean);
+            return userRoles.some(role => appliedFilters.priority.includes(role));
+          });
           console.log(`Filtro de rol aplicado: ${filteredUsers.length} usuarios`);
         }
         break;
@@ -177,12 +179,15 @@ const RolesAnalyticsContent = () => {
 
     // Re-agrupar por roles basado en datos filtrados
     const porRolesFiltrado = filteredUsers.reduce((acc, user) => {
-      const roleName = user.role || 'Sin rol';
+      // Fix: Handle user.role as string[] properly
+      const userRoles = Array.isArray(user.role) ? user.role : [user.role].filter(Boolean);
+      const roleName = userRoles.length > 0 ? userRoles.join(', ') : 'Sin rol';
+      
       const existing = acc.find(item => item.role === roleName);
       if (existing) {
         existing.count++;
       } else {
-        const roleData = roles?.find(r => r.nombre === roleName);
+        const roleData = roles?.find(r => userRoles.includes(r.nombre));
         acc.push({ 
           role: roleName, 
           count: 1, 
@@ -229,7 +234,7 @@ const RolesAnalyticsContent = () => {
         confirmados: confirmadosFiltrado,
         recientes: recientesFiltrado,
         porRoles: porRolesFiltrado,
-        porActivacion: porActivacionFiltrado,
+        porEstadoActivacion: porActivacionFiltrado,
         porConfirmacion: porConfirmacionFiltrado,
         datosCompletos: filteredUsers,
       }
@@ -246,7 +251,7 @@ const RolesAnalyticsContent = () => {
         id: u.id,
         nombre: `${u.first_name || ''} ${u.last_name || ''}`.trim() || u.email,
         email: u.email,
-        role: u.role || 'Sin rol',
+        role: Array.isArray(u.role) ? u.role.join(', ') : u.role || 'Sin rol',
         activo: u.asset,
         confirmado: u.confirmed,
         fechaCreacion: u.created_at
@@ -415,11 +420,11 @@ const RolesAnalyticsContent = () => {
           />
         )}
         
-        {filteredStats.usuarios.porActivacion && filteredStats.usuarios.porActivacion.length > 0 && (
+        {filteredStats.usuarios.porEstadoActivacion && filteredStats.usuarios.porEstadoActivacion.length > 0 && (
           <InteractiveCharts
             title="Distribución por Activación"
             description={hasValidFilters ? "Usuarios filtrados clasificados según su estado de activación" : "Todos los usuarios clasificados según su estado de activación"}
-            data={filteredStats.usuarios.porActivacion.map(item => ({
+            data={filteredStats.usuarios.porEstadoActivacion.map(item => ({
               name: item.estado,
               value: item.count,
               color: item.color,
@@ -434,7 +439,7 @@ const RolesAnalyticsContent = () => {
             title="Distribución por Confirmación"
             description={hasValidFilters ? "Usuarios filtrados clasificados según su estado de confirmación" : "Todos los usuarios clasificados según su estado de confirmación"}
             data={filteredStats.usuarios.porConfirmacion.map(item => ({
-              name: item.confirmacion,
+              name: item.categoria,
               value: item.count,
               color: item.color,
             }))}
