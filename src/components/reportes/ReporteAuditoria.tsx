@@ -2,12 +2,15 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Activity, History, Clock, User, Database, FileText } from 'lucide-react';
+import { Activity, History, Clock, User, Database, FileText, Search, Filter, Download, Calendar } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
@@ -70,9 +73,14 @@ const getActivityColor = (type: ActividadReporte['activity_type']) => {
 };
 
 export const ReporteAuditoria: React.FC<ReporteAuditoriaProps> = ({ reporteId }) => {
+  const [filtroTipo, setFiltroTipo] = useState<string>('');
+  const [filtroUsuario, setFiltroUsuario] = useState<string>('');
+  const [filtroFecha, setFiltroFecha] = useState<string>('');
+  const [busqueda, setBusqueda] = useState<string>('');
+
   // Hook para obtener actividades relacionadas al reporte
   const { data: actividades = [], isLoading: isLoadingActividades } = useQuery({
-    queryKey: ['reporte-actividades', reporteId],
+    queryKey: ['reporte-actividades', reporteId, filtroTipo, filtroUsuario, filtroFecha, busqueda],
     queryFn: async () => {
       const { data, error } = await supabase.rpc('get_user_activities', {
         p_user_id: null,
@@ -86,16 +94,31 @@ export const ReporteAuditoria: React.FC<ReporteAuditoriaProps> = ({ reporteId })
       }
 
       // Filtrar actividades relacionadas al reporte específico
-      return (data as ActividadReporte[]).filter(actividad => 
+      let filteredData = (data as ActividadReporte[]).filter(actividad => 
         actividad.tabla_afectada === 'reportes' && 
         actividad.registro_id === reporteId
       );
+
+      // Aplicar filtros
+      if (filtroTipo) {
+        filteredData = filteredData.filter(a => a.activity_type === filtroTipo);
+      }
+      if (filtroUsuario) {
+        filteredData = filteredData.filter(a => a.user_email.toLowerCase().includes(filtroUsuario.toLowerCase()));
+      }
+      if (busqueda) {
+        filteredData = filteredData.filter(a => 
+          a.descripcion.toLowerCase().includes(busqueda.toLowerCase())
+        );
+      }
+
+      return filteredData;
     }
   });
 
   // Hook para obtener historial de cambios del reporte
   const { data: cambios = [], isLoading: isLoadingCambios } = useQuery({
-    queryKey: ['reporte-cambios', reporteId],
+    queryKey: ['reporte-cambios', reporteId, filtroTipo, filtroUsuario, filtroFecha, busqueda],
     queryFn: async () => {
       const { data, error } = await supabase.rpc('get_change_history', {
         p_tabla_nombre: 'reportes',
@@ -110,179 +133,344 @@ export const ReporteAuditoria: React.FC<ReporteAuditoriaProps> = ({ reporteId })
         throw error;
       }
 
-      return data as CambioReporte[];
+      let filteredData = data as CambioReporte[];
+
+      // Aplicar filtros
+      if (filtroTipo) {
+        filteredData = filteredData.filter(c => c.operation_type === filtroTipo);
+      }
+      if (filtroUsuario) {
+        filteredData = filteredData.filter(c => c.user_email.toLowerCase().includes(filtroUsuario.toLowerCase()));
+      }
+      if (busqueda) {
+        filteredData = filteredData.filter(c => 
+          c.descripcion_cambio.toLowerCase().includes(busqueda.toLowerCase())
+        );
+      }
+
+      return filteredData;
     }
   });
 
+  const limpiarFiltros = () => {
+    setFiltroTipo('');
+    setFiltroUsuario('');
+    setFiltroFecha('');
+    setBusqueda('');
+  };
+
+  const exportarDatos = () => {
+    console.log('Exportar datos de auditoría del reporte');
+  };
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <History className="h-5 w-5 flex-shrink-0" />
-          <span className="truncate">Auditoría del Reporte</span>
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <Tabs defaultValue="actividades" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 h-auto">
-            <TabsTrigger value="actividades" className="flex items-center gap-1 px-2 py-2 text-xs sm:text-sm">
-              <Activity className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
-              <span className="truncate">Actividades ({actividades.length})</span>
-            </TabsTrigger>
-            <TabsTrigger value="cambios" className="flex items-center gap-1 px-2 py-2 text-xs sm:text-sm">
-              <History className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
-              <span className="truncate">Cambios ({cambios.length})</span>
-            </TabsTrigger>
-          </TabsList>
+    <div className="space-y-6">
+      {/* Header con título y acciones */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h2 className="text-2xl font-bold flex items-center gap-2">
+            <History className="h-6 w-6 text-primary" />
+            Auditoría del Reporte
+          </h2>
+          <p className="text-muted-foreground mt-1">
+            Historial completo de actividades y cambios registrados
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={exportarDatos}>
+            <Download className="h-4 w-4 mr-2" />
+            Exportar
+          </Button>
+        </div>
+      </div>
 
-          <TabsContent value="actividades" className="mt-4">
-            <ScrollArea className="h-[300px]">
-              {isLoadingActividades ? (
-                <div className="flex items-center justify-center p-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                </div>
-              ) : actividades.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  No se encontraron actividades para este reporte
-                </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="w-[100px]">Tipo</TableHead>
-                        <TableHead className="min-w-[200px]">Descripción</TableHead>
-                        <TableHead className="w-[150px]">Usuario</TableHead>
-                        <TableHead className="w-[120px]">Fecha</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {actividades.map((actividad) => (
-                        <TableRow key={actividad.id}>
-                          <TableCell className="p-2">
-                            <Badge 
-                              variant="outline" 
-                              className={`${getActivityColor(actividad.activity_type)} text-xs`}
-                            >
-                              <div className="flex items-center gap-1">
-                                {getActivityIcon(actividad.activity_type)}
-                                <span className="hidden sm:inline">{actividad.activity_type}</span>
-                              </div>
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="p-2">
-                            <div className="max-w-[250px] truncate text-sm" title={actividad.descripcion}>
-                              {actividad.descripcion}
-                            </div>
-                          </TableCell>
-                          <TableCell className="p-2">
-                            <div className="flex items-center gap-1 max-w-[120px]">
-                              <User className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-                              <span className="text-xs truncate">{actividad.user_email}</span>
-                            </div>
-                          </TableCell>
-                          <TableCell className="p-2">
-                            <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                              <Clock className="h-3 w-3 flex-shrink-0" />
-                              <span className="truncate">
-                                {format(new Date(actividad.created_at), 'dd/MM/yy HH:mm', { locale: es })}
-                              </span>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              )}
-            </ScrollArea>
-          </TabsContent>
+      {/* Filtros y búsqueda */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <Filter className="h-5 w-5" />
+            Filtros de Búsqueda
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Buscar</label>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar en descripción..."
+                  value={busqueda}
+                  onChange={(e) => setBusqueda(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+            </div>
 
-          <TabsContent value="cambios" className="mt-4">
-            <ScrollArea className="h-[300px]">
-              {isLoadingCambios ? (
-                <div className="flex items-center justify-center p-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Tipo de Actividad</label>
+              <Select value={filtroTipo} onValueChange={setFiltroTipo}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Todos los tipos" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Todos los tipos</SelectItem>
+                  <SelectItem value="CREATE">Crear</SelectItem>
+                  <SelectItem value="READ">Leer</SelectItem>
+                  <SelectItem value="UPDATE">Actualizar</SelectItem>
+                  <SelectItem value="DELETE">Eliminar</SelectItem>
+                  <SelectItem value="LOGIN">Inicio de sesión</SelectItem>
+                  <SelectItem value="LOGOUT">Cierre de sesión</SelectItem>
+                  <SelectItem value="SEARCH">Búsqueda</SelectItem>
+                  <SelectItem value="EXPORT">Exportar</SelectItem>
+                  <SelectItem value="IMPORT">Importar</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Usuario</label>
+              <Input
+                placeholder="Filtrar por email..."
+                value={filtroUsuario}
+                onChange={(e) => setFiltroUsuario(e.target.value)}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Fecha</label>
+              <div className="relative">
+                <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  type="date"
+                  value={filtroFecha}
+                  onChange={(e) => setFiltroFecha(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="flex justify-end mt-4">
+            <Button variant="outline" size="sm" onClick={limpiarFiltros}>
+              Limpiar Filtros
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Contenido principal con tabs */}
+      <Card>
+        <CardContent className="p-6">
+          <Tabs defaultValue="actividades" className="w-full">
+            <TabsList className="grid w-full grid-cols-2 mb-6">
+              <TabsTrigger value="actividades" className="flex items-center gap-2">
+                <Activity className="h-4 w-4" />
+                <span>Actividades</span>
+                <Badge variant="secondary" className="ml-2">
+                  {actividades.length}
+                </Badge>
+              </TabsTrigger>
+              <TabsTrigger value="cambios" className="flex items-center gap-2">
+                <History className="h-4 w-4" />
+                <span>Cambios</span>
+                <Badge variant="secondary" className="ml-2">
+                  {cambios.length}
+                </Badge>
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="actividades" className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold">Registro de Actividades</h3>
+                <div className="text-sm text-muted-foreground">
+                  {isLoadingActividades ? 'Cargando...' : `${actividades.length} registros encontrados`}
                 </div>
-              ) : cambios.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  No se encontraron cambios registrados para este reporte
-                </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="w-[100px]">Operación</TableHead>
-                        <TableHead className="min-w-[200px]">Descripción</TableHead>
-                        <TableHead className="w-[150px]">Campos</TableHead>
-                        <TableHead className="w-[120px]">Usuario</TableHead>
-                        <TableHead className="w-[120px]">Fecha</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {cambios.map((cambio) => (
-                        <TableRow key={cambio.id}>
-                          <TableCell className="p-2">
-                            <Badge 
-                              variant="outline"
-                              className={`text-xs ${
-                                cambio.operation_type === 'INSERT' ? 'bg-green-100 text-green-800 border-green-200' :
-                                cambio.operation_type === 'UPDATE' ? 'bg-orange-100 text-orange-800 border-orange-200' :
-                                cambio.operation_type === 'DELETE' ? 'bg-red-100 text-red-800 border-red-200' :
-                                'bg-blue-100 text-blue-800 border-blue-200'
-                              }`}
-                            >
-                              {cambio.operation_type}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="p-2">
-                            <div className="max-w-[250px] truncate text-sm" title={cambio.descripcion_cambio}>
-                              {cambio.descripcion_cambio}
-                            </div>
-                          </TableCell>
-                          <TableCell className="p-2">
-                            {cambio.campos_modificados && cambio.campos_modificados.length > 0 ? (
-                              <div className="flex flex-wrap gap-1 max-w-[120px]">
-                                {cambio.campos_modificados.slice(0, 2).map((campo, index) => (
-                                  <Badge key={index} variant="secondary" className="text-xs">
-                                    {campo}
-                                  </Badge>
-                                ))}
-                                {cambio.campos_modificados.length > 2 && (
-                                  <Badge variant="secondary" className="text-xs">
-                                    +{cambio.campos_modificados.length - 2}
-                                  </Badge>
-                                )}
-                              </div>
-                            ) : (
-                              <span className="text-muted-foreground text-xs">-</span>
-                            )}
-                          </TableCell>
-                          <TableCell className="p-2">
-                            <div className="flex items-center gap-1 max-w-[100px]">
-                              <User className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-                              <span className="text-xs truncate">{cambio.user_email}</span>
-                            </div>
-                          </TableCell>
-                          <TableCell className="p-2">
-                            <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                              <Clock className="h-3 w-3 flex-shrink-0" />
-                              <span className="truncate">
-                                {format(new Date(cambio.created_at), 'dd/MM/yy HH:mm', { locale: es })}
-                              </span>
-                            </div>
-                          </TableCell>
+              </div>
+              
+              <div className="border rounded-lg">
+                <ScrollArea className="h-[400px]">
+                  {isLoadingActividades ? (
+                    <div className="flex items-center justify-center p-8">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                    </div>
+                  ) : actividades.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <Activity className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                      <p className="text-lg font-medium">No se encontraron actividades</p>
+                      <p className="text-sm">No hay actividades registradas para este reporte con los filtros aplicados.</p>
+                    </div>
+                  ) : (
+                    <Table>
+                      <TableHeader className="sticky top-0 bg-background">
+                        <TableRow>
+                          <TableHead className="w-[120px]">Tipo</TableHead>
+                          <TableHead className="min-w-[300px]">Descripción</TableHead>
+                          <TableHead className="w-[180px]">Usuario</TableHead>
+                          <TableHead className="w-[150px]">Fecha y Hora</TableHead>
+                          <TableHead className="w-[100px]">Tabla</TableHead>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                      </TableHeader>
+                      <TableBody>
+                        {actividades.map((actividad) => (
+                          <TableRow key={actividad.id} className="hover:bg-muted/50">
+                            <TableCell>
+                              <Badge 
+                                variant="outline" 
+                                className={`${getActivityColor(actividad.activity_type)} text-xs font-medium`}
+                              >
+                                <div className="flex items-center gap-1">
+                                  {getActivityIcon(actividad.activity_type)}
+                                  <span>{actividad.activity_type}</span>
+                                </div>
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <div className="max-w-[300px]">
+                                <p className="text-sm font-medium truncate" title={actividad.descripcion}>
+                                  {actividad.descripcion}
+                                </p>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                <User className="h-4 w-4 text-muted-foreground" />
+                                <span className="text-sm font-medium truncate" title={actividad.user_email}>
+                                  {actividad.user_email}
+                                </span>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                                <Clock className="h-3 w-3" />
+                                <div className="space-y-1">
+                                  <div className="font-medium">
+                                    {format(new Date(actividad.created_at), 'dd/MM/yyyy', { locale: es })}
+                                  </div>
+                                  <div className="text-xs">
+                                    {format(new Date(actividad.created_at), 'HH:mm:ss', { locale: es })}
+                                  </div>
+                                </div>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant="secondary" className="text-xs">
+                                {actividad.tabla_afectada || 'N/A'}
+                              </Badge>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  )}
+                </ScrollArea>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="cambios" className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold">Historial de Cambios</h3>
+                <div className="text-sm text-muted-foreground">
+                  {isLoadingCambios ? 'Cargando...' : `${cambios.length} registros encontrados`}
                 </div>
-              )}
-            </ScrollArea>
-          </TabsContent>
-        </Tabs>
-      </CardContent>
-    </Card>
+              </div>
+
+              <div className="border rounded-lg">
+                <ScrollArea className="h-[400px]">
+                  {isLoadingCambios ? (
+                    <div className="flex items-center justify-center p-8">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                    </div>
+                  ) : cambios.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <History className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                      <p className="text-lg font-medium">No se encontraron cambios</p>
+                      <p className="text-sm">No hay cambios registrados para este reporte con los filtros aplicados.</p>
+                    </div>
+                  ) : (
+                    <Table>
+                      <TableHeader className="sticky top-0 bg-background">
+                        <TableRow>
+                          <TableHead className="w-[120px]">Operación</TableHead>
+                          <TableHead className="min-w-[300px]">Descripción del Cambio</TableHead>
+                          <TableHead className="w-[200px]">Campos Modificados</TableHead>
+                          <TableHead className="w-[180px]">Usuario</TableHead>
+                          <TableHead className="w-[150px]">Fecha y Hora</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {cambios.map((cambio) => (
+                          <TableRow key={cambio.id} className="hover:bg-muted/50">
+                            <TableCell>
+                              <Badge 
+                                variant="outline"
+                                className={`text-xs font-medium ${
+                                  cambio.operation_type === 'INSERT' ? 'bg-green-100 text-green-800 border-green-200' :
+                                  cambio.operation_type === 'UPDATE' ? 'bg-orange-100 text-orange-800 border-orange-200' :
+                                  cambio.operation_type === 'DELETE' ? 'bg-red-100 text-red-800 border-red-200' :
+                                  'bg-blue-100 text-blue-800 border-blue-200'
+                                }`}
+                              >
+                                {cambio.operation_type}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <div className="max-w-[300px]">
+                                <p className="text-sm font-medium truncate" title={cambio.descripcion_cambio}>
+                                  {cambio.descripcion_cambio}
+                                </p>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              {cambio.campos_modificados && cambio.campos_modificados.length > 0 ? (
+                                <div className="flex flex-wrap gap-1 max-w-[180px]">
+                                  {cambio.campos_modificados.slice(0, 3).map((campo, index) => (
+                                    <Badge key={index} variant="secondary" className="text-xs">
+                                      {campo}
+                                    </Badge>
+                                  ))}
+                                  {cambio.campos_modificados.length > 3 && (
+                                    <Badge variant="secondary" className="text-xs">
+                                      +{cambio.campos_modificados.length - 3}
+                                    </Badge>
+                                  )}
+                                </div>
+                              ) : (
+                                <span className="text-muted-foreground text-xs">Sin campos</span>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                <User className="h-4 w-4 text-muted-foreground" />
+                                <span className="text-sm font-medium truncate" title={cambio.user_email}>
+                                  {cambio.user_email}
+                                </span>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                                <Clock className="h-3 w-3" />
+                                <div className="space-y-1">
+                                  <div className="font-medium">
+                                    {format(new Date(cambio.created_at), 'dd/MM/yyyy', { locale: es })}
+                                  </div>
+                                  <div className="text-xs">
+                                    {format(new Date(cambio.created_at), 'HH:mm:ss', { locale: es })}
+                                  </div>
+                                </div>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  )}
+                </ScrollArea>
+              </div>
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
