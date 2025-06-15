@@ -14,7 +14,7 @@ export const UsuariosCharts: React.FC<UsuariosChartsProps> = ({ filteredStats, h
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <InteractiveCharts
           title="Distribución por Estado de Activación"
-          description={hasValidFilters ? "Usuarios filtrados según su estado de activación (datos reales, incluyendo usuario actual)" : "Todos los usuarios según su estado de activación (datos reales, incluyendo usuario actual)"}
+          description={hasValidFilters ? "Usuarios filtrados según su estado de activación" : "Todos los usuarios según su estado de activación"}
           data={filteredStats.usuarios.porEstadoActivacion.map((item: any) => ({
             name: item.estado,
             value: item.count,
@@ -24,7 +24,7 @@ export const UsuariosCharts: React.FC<UsuariosChartsProps> = ({ filteredStats, h
         
         <InteractiveCharts
           title="Distribución por Confirmación de Email"
-          description={hasValidFilters ? "Usuarios filtrados según su confirmación de email (datos reales, incluyendo usuario actual)" : "Todos los usuarios según su confirmación de email (datos reales, incluyendo usuario actual)"}
+          description={hasValidFilters ? "Usuarios filtrados según su confirmación de email" : "Todos los usuarios según su confirmación de email"}
           data={filteredStats.usuarios.porConfirmacion.map((item: any) => ({
             name: item.categoria,
             value: item.count,
@@ -38,7 +38,7 @@ export const UsuariosCharts: React.FC<UsuariosChartsProps> = ({ filteredStats, h
         {filteredStats.usuarios.porRoles && filteredStats.usuarios.porRoles.length > 0 && (
           <InteractiveCharts
             title="Distribución por Roles"
-            description={hasValidFilters ? "Usuarios filtrados distribuidos por roles asignados (datos reales, incluyendo usuario actual)" : "Todos los usuarios distribuidos por roles asignados (datos reales, incluyendo usuario actual)"}
+            description={hasValidFilters ? "Usuarios filtrados distribuidos por roles asignados" : "Todos los usuarios distribuidos por roles asignados"}
             data={filteredStats.usuarios.porRoles}
           />
         )}
@@ -46,7 +46,7 @@ export const UsuariosCharts: React.FC<UsuariosChartsProps> = ({ filteredStats, h
         {filteredStats.usuarios.porTipoUsuario && filteredStats.usuarios.porTipoUsuario.length > 0 && (
           <InteractiveCharts
             title="Distribución por Tipo de Usuario"
-            description={hasValidFilters ? "Usuarios filtrados según tipo: solo admin, solo usuario, o ambos (datos reales, incluyendo usuario actual)" : "Todos los usuarios según tipo: solo admin, solo usuario, o ambos (datos reales, incluyendo usuario actual)"}
+            description={hasValidFilters ? "Usuarios filtrados según tipo de usuario" : "Todos los usuarios según tipo de usuario"}
             data={filteredStats.usuarios.porTipoUsuario}
           />
         )}
