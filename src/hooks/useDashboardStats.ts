@@ -43,6 +43,8 @@ interface DashboardStats {
     total: number;
     activos: number;
     asignaciones: number;
+    recientes: number;
+    datosCompletos: any[];
   };
   categorias: {
     total: number;
@@ -111,7 +113,7 @@ export const useDashboardStats = () => {
       // Obtener todos los roles para referencia
       const { data: roles, error: rolesError } = await supabase
         .from('roles')
-        .select('id, nombre, color, activo')
+        .select('id, nombre, color, activo, permisos, created_at, descripcion')
         .is('deleted_at', null);
 
       if (rolesError) {
@@ -313,6 +315,9 @@ export const useDashboardStats = () => {
 
       // Estadísticas de roles
       const rolesActivos = roles?.filter(r => r.activo) || [];
+      const rolesRecientes = roles?.filter(r => 
+        new Date(r.created_at) >= sevenDaysAgo
+      ) || [];
 
       // Estadísticas de categorías
       const categoriasActivas = categorias?.filter(c => c.activo) || [];
@@ -345,6 +350,8 @@ export const useDashboardStats = () => {
           total: roles?.length || 0,
           activos: rolesActivos.length,
           asignaciones: userRoles?.length || 0,
+          recientes: rolesRecientes.length,
+          datosCompletos: roles || [],
         },
         categorias: {
           total: categorias?.length || 0,
@@ -359,7 +366,9 @@ export const useDashboardStats = () => {
       console.log('Dashboard stats calculated with ALL users (including current):', {
         totalUsuarios: stats.usuarios.total,
         usuariosActivos: stats.usuarios.activos,
-        usuariosCompletos: usuariosCompletos.length
+        usuariosCompletos: usuariosCompletos.length,
+        totalRoles: stats.roles.total,
+        rolesActivos: stats.roles.activos
       });
       return stats;
     },
