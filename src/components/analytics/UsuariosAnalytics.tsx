@@ -124,9 +124,6 @@ const UsuariosAnalyticsContent = () => {
           <p className="text-muted-foreground">
             Estadísticas sobre la gestión de usuarios
           </p>
-          <p className="text-sm text-blue-600 mt-1 font-semibold">
-            Mostrando {users?.length || 0} usuarios totales de la base de datos (TODOS INCLUIDOS)
-          </p>
         </div>
         <Button onClick={handleRefreshData} variant="outline" className="w-fit">
           <RefreshCw className="h-4 w-4 mr-2" />
