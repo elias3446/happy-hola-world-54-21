@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -309,10 +308,6 @@ export const RoleDetail = ({ role: initialRole, onEdit, onBack }: RoleDetailProp
                   <Users className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
                   <span className="hidden xs:inline sm:inline">Usuarios</span>
                 </TabsTrigger>
-                <TabsTrigger value="detalles" className="flex items-center gap-1 px-2 py-1.5 text-xs sm:text-sm sm:px-4 sm:py-2 whitespace-nowrap">
-                  <FileText className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
-                  <span className="hidden xs:inline sm:inline">Detalles</span>
-                </TabsTrigger>
                 <TabsTrigger value="auditoria" className="flex items-center gap-1 px-2 py-1.5 text-xs sm:text-sm sm:px-4 sm:py-2 whitespace-nowrap">
                   <History className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
                   <span className="hidden xs:inline sm:inline">Auditoría</span>
@@ -356,95 +351,6 @@ export const RoleDetail = ({ role: initialRole, onEdit, onBack }: RoleDetailProp
 
             <TabsContent value="usuarios">
               <RoleUsersList role={currentRole} onViewUser={handleViewUser} />
-            </TabsContent>
-
-            <TabsContent value="detalles">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <FileText className="h-5 w-5" />
-                    Información del Rol
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <label className="text-sm font-medium text-gray-700">Nombre del Rol</label>
-                      <div className="mt-1">
-                        <p className="font-medium text-gray-900 break-words">{currentRole.nombre}</p>
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <label className="text-sm font-medium text-gray-700">Estado</label>
-                      <div className="flex items-center gap-3 mt-1">
-                        <Switch
-                          checked={currentRole.activo}
-                          onCheckedChange={handleToggleStatus}
-                          disabled={isToggling || isSystemRoleItem}
-                        />
-                        <Badge variant={currentRole.activo ? "default" : "secondary"} className="flex items-center gap-1">
-                          {currentRole.activo ? (
-                            <CheckCircle className="h-3 w-3" />
-                          ) : (
-                            <XCircle className="h-3 w-3" />
-                          )}
-                          {currentRole.activo ? 'Activo' : 'Inactivo'}
-                        </Badge>
-                        {isSystemRoleItem && (
-                          <span className="text-xs text-gray-500 flex items-center gap-1">
-                            <Lock className="h-3 w-3" />
-                            Protegido
-                          </span>
-                        )}
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="text-sm font-medium text-gray-700">Color</label>
-                      <div className="flex items-center gap-2 mt-1">
-                        <div 
-                          className="w-6 h-6 rounded border"
-                          style={{ backgroundColor: currentRole.color }}
-                        />
-                        <span className="text-gray-900 font-mono">{currentRole.color}</span>
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <label className="text-sm font-medium text-gray-700">Ícono</label>
-                      <p className="text-gray-900 mt-1">{currentRole.icono}</p>
-                    </div>
-
-                    <div>
-                      <label className="text-sm font-medium text-gray-700">Fecha de Creación</label>
-                      <div className="flex items-center gap-2 mt-1">
-                        <Calendar className="h-4 w-4 text-gray-400 flex-shrink-0" />
-                        <span className="text-gray-900 break-words">
-                          {format(new Date(currentRole.created_at), 'dd/MM/yyyy HH:mm', { locale: es })}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="text-sm font-medium text-gray-700">Última Actualización</label>
-                      <div className="flex items-center gap-2 mt-1">
-                        <Clock className="h-4 w-4 text-gray-400 flex-shrink-0" />
-                        <span className="text-gray-900 break-words">
-                          {format(new Date(currentRole.updated_at), 'dd/MM/yyyy HH:mm', { locale: es })}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <Separator />
-
-                  <div>
-                    <label className="text-sm font-medium text-gray-700">Descripción</label>
-                    <p className="text-gray-900 mt-1 break-words whitespace-pre-wrap">{currentRole.descripcion}</p>
-                  </div>
-                </CardContent>
-              </Card>
             </TabsContent>
 
             <TabsContent value="auditoria">
