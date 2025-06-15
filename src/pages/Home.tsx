@@ -1,16 +1,14 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Map, FileText, LayoutDashboard, Users } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-
 const Home = () => {
-  const { user } = useAuth();
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-secondary/20">
+  const {
+    user
+  } = useAuth();
+  return <div className="min-h-screen bg-gradient-to-br from-background to-secondary/20">
       <div className="container mx-auto px-4 py-12">
         {/* Hero Section */}
         <div className="text-center mb-12">
@@ -53,13 +51,12 @@ const Home = () => {
             </CardHeader>
             <CardContent>
               <Button asChild variant="secondary" className="w-full">
-                <Link to="/reportes-publicos">Ver Reportes</Link>
+                <Link to="/reportes-publicos" className="my-[19px]">Ver Reportes</Link>
               </Button>
             </CardContent>
           </Card>
 
-          {user && (
-            <Card className="hover:shadow-lg transition-shadow">
+          {user && <Card className="hover:shadow-lg transition-shadow">
               <CardHeader>
                 <div className="flex items-center space-x-2">
                   <LayoutDashboard className="h-8 w-8 text-purple-600" />
@@ -74,13 +71,11 @@ const Home = () => {
                   <Link to="/dashboard">Ir al Dashboard</Link>
                 </Button>
               </CardContent>
-            </Card>
-          )}
+            </Card>}
         </div>
 
         {/* Welcome Message for Authenticated Users */}
-        {user && (
-          <div className="text-center">
+        {user && <div className="text-center">
             <Card className="max-w-md mx-auto">
               <CardHeader>
                 <div className="flex items-center justify-center space-x-2">
@@ -97,11 +92,8 @@ const Home = () => {
                 </p>
               </CardContent>
             </Card>
-          </div>
-        )}
+          </div>}
       </div>
-    </div>
-  );
+    </div>;
 };
-
 export default Home;
