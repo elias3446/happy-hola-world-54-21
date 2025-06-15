@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -64,7 +63,15 @@ export const AdvancedFiltersPanel: React.FC<AdvancedFiltersPanelProps> = ({
   const { data: stats } = useDashboardStats();
   const { reportes } = useReportes();
   const { roles } = useRoles();
-  const { users } = useUsers();
+  // CRÍTICO: Para el contexto de usuarios, SIEMPRE incluir al usuario actual
+  const { users } = useUsers(context === 'usuarios' ? true : false);
+
+  console.log('AdvancedFiltersPanel - VERIFICACIÓN CRÍTICA:', {
+    context,
+    totalUsers: users?.length || 0,
+    includeCurrentUser: context === 'usuarios' ? true : false,
+    userEmails: users?.map(u => u.email),
+  });
 
   React.useEffect(() => {
     onFiltersChange(filters);
@@ -94,6 +101,11 @@ export const AdvancedFiltersPanel: React.FC<AdvancedFiltersPanelProps> = ({
   // Transform data for the SearchCombobox based on context
   const searchData = React.useMemo(() => {
     if (context === 'usuarios') {
+      console.log('AdvancedFiltersPanel - Transformando datos de usuarios para búsqueda:', {
+        totalUsers: users?.length || 0,
+        usersList: users?.map(u => ({ id: u.id, email: u.email }))
+      });
+      
       return users?.map(user => ({
         id: user.id,
         titulo: `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.email,
@@ -113,6 +125,12 @@ export const AdvancedFiltersPanel: React.FC<AdvancedFiltersPanelProps> = ({
       })) || [];
     }
   }, [context, users, reportes]);
+
+  console.log('AdvancedFiltersPanel - Datos de búsqueda finales:', {
+    context,
+    searchDataLength: searchData.length,
+    searchDataItems: searchData.slice(0, 3) // Mostrar solo los primeros 3 para debugging
+  });
 
   const getTabsForContext = () => {
     if (context === 'usuarios') {
@@ -227,6 +245,9 @@ export const AdvancedFiltersPanel: React.FC<AdvancedFiltersPanelProps> = ({
               <label className="text-sm font-medium">
                 Selecciona {context === 'usuarios' ? 'Usuarios' : 'Reportes'} para Comparar (mínimo 2)
               </label>
+              <div className="text-xs text-muted-foreground mb-2">
+                Usuarios disponibles: {searchData.length} {context === 'usuarios' ? '(incluyendo usuario actual)' : ''}
+              </div>
               <SearchCombobox
                 reportes={searchData}
                 value={filters.searchTerm}
