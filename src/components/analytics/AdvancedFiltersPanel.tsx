@@ -246,7 +246,7 @@ export const AdvancedFiltersPanel: React.FC<AdvancedFiltersPanelProps> = ({
                 Selecciona {context === 'usuarios' ? 'Usuarios' : 'Reportes'} para Comparar (mínimo 2)
               </label>
               <div className="text-xs text-muted-foreground mb-2">
-                Usuarios disponibles: {searchData.length} {context === 'usuarios' ? '(incluyendo usuario actual)' : ''}
+                {context === 'usuarios' ? 'Usuarios disponibles:' : 'Reportes disponibles:'} {searchData.length} {context === 'usuarios' ? '(incluyendo usuario actual)' : ''}
               </div>
               <SearchCombobox
                 reportes={searchData}
