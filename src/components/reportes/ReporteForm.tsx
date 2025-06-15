@@ -21,7 +21,6 @@ import { MapaNuevaPosicion, MapaReporteEditable } from '@/components/MapaBase';
 import { ImageUploader } from './ImageUploader';
 import type { Reporte, CreateReporteData, UpdateReporteData } from '@/types/reportes';
 import { ArrowLeft, Save, X, FileText, MapPin, AlertTriangle } from 'lucide-react';
-
 const reporteSchema = z.object({
   nombre: z.string().min(1, 'El nombre es requerido').max(255, 'El nombre es muy largo'),
   descripcion: z.string().min(1, 'La descripción es requerida'),
@@ -34,34 +33,55 @@ const reporteSchema = z.object({
   referencia_direccion: z.string().optional(),
   imagenes: z.array(z.string()).optional(),
   activo: z.boolean().optional(),
-  priority: z.enum(['alto', 'medio', 'bajo', 'urgente']).optional(),
+  priority: z.enum(['alto', 'medio', 'bajo', 'urgente']).optional()
 });
-
 type ReporteFormData = z.infer<typeof reporteSchema>;
-
 interface ReporteFormProps {
   reporte?: Reporte;
   onSubmit: (data: any) => void; // Changed to any to allow pendingImages
   onCancel: () => void;
   isLoading: boolean;
 }
-
 const priorityConfig = {
-  urgente: { color: '#DC2626', label: 'Urgente' },
-  alto: { color: '#EA580C', label: 'Alto' },
-  medio: { color: '#D97706', label: 'Medio' },
-  bajo: { color: '#059669', label: 'Bajo' },
+  urgente: {
+    color: '#DC2626',
+    label: 'Urgente'
+  },
+  alto: {
+    color: '#EA580C',
+    label: 'Alto'
+  },
+  medio: {
+    color: '#D97706',
+    label: 'Medio'
+  },
+  bajo: {
+    color: '#059669',
+    label: 'Bajo'
+  }
 };
-
-export const ReporteForm = ({ reporte, onSubmit, onCancel, isLoading }: ReporteFormProps) => {
-  const { categories } = useCategories();
-  const { estados } = useEstados();
-  const { users } = useUsers();
-  const { user } = useAuth();
-  const { isUploading } = useCloudinary();
-
+export const ReporteForm = ({
+  reporte,
+  onSubmit,
+  onCancel,
+  isLoading
+}: ReporteFormProps) => {
+  const {
+    categories
+  } = useCategories();
+  const {
+    estados
+  } = useEstados();
+  const {
+    users
+  } = useUsers();
+  const {
+    user
+  } = useAuth();
+  const {
+    isUploading
+  } = useCloudinary();
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
-
   const form = useForm<ReporteFormData>({
     resolver: zodResolver(reporteSchema),
     defaultValues: {
@@ -76,10 +96,9 @@ export const ReporteForm = ({ reporte, onSubmit, onCancel, isLoading }: ReporteF
       referencia_direccion: '',
       imagenes: [],
       activo: true,
-      priority: 'urgente',
-    },
+      priority: 'urgente'
+    }
   });
-
   useEffect(() => {
     if (reporte) {
       form.reset({
@@ -94,33 +113,32 @@ export const ReporteForm = ({ reporte, onSubmit, onCancel, isLoading }: ReporteF
         referencia_direccion: reporte.referencia_direccion || '',
         imagenes: reporte.imagenes || [],
         activo: reporte.activo,
-        priority: reporte.priority || 'urgente',
+        priority: reporte.priority || 'urgente'
       });
     }
   }, [reporte, form]);
-
   const handleSubmit = async (data: ReporteFormData) => {
     try {
       // Convert 'unassigned' back to null for the API
       const processedData = {
         ...data,
         assigned_to: data.assigned_to === 'unassigned' ? undefined : data.assigned_to,
-        priority: data.priority || 'urgente', // Default to urgente if not provided
+        priority: data.priority || 'urgente' // Default to urgente if not provided
       };
 
       // Create the submit data with pending images and id if editing
-      const submitData = { 
+      const submitData = {
         ...processedData,
         pendingImages: pendingFiles,
-        ...(reporte && { id: reporte.id }) // Add id only if editing
+        ...(reporte && {
+          id: reporte.id
+        }) // Add id only if editing
       };
-      
       onSubmit(submitData);
     } catch (error) {
       console.error('Error in form submission:', error);
     }
   };
-
   const handlePosicionSeleccionada = (pos: [number, number], direccion?: string, referencia?: string) => {
     form.setValue('latitud', pos[0]);
     form.setValue('longitud', pos[1]);
@@ -131,30 +149,25 @@ export const ReporteForm = ({ reporte, onSubmit, onCancel, isLoading }: ReporteF
       form.setValue('referencia_direccion', referencia);
     }
   };
-
   const handlePosicionActualizada = (nuevaPos: [number, number]) => {
     form.setValue('latitud', nuevaPos[0]);
     form.setValue('longitud', nuevaPos[1]);
   };
-
   const handleImagesChange = (newImages: string[]) => {
     form.setValue('imagenes', newImages);
   };
-
   const getProfileName = (userData: any) => {
     if (!userData) return userData;
     return `${userData.first_name || ''} ${userData.last_name || ''}`.trim() || userData.email;
   };
 
   // Filtrar solo usuarios activos (asset = true) y no eliminados
-  const activeUsers = users.filter(userItem => 
-    userItem.asset === true && !userItem.deleted_at
-  );
+  const activeUsers = users.filter(userItem => userItem.asset === true && !userItem.deleted_at);
 
   // Crear lista de usuarios disponibles para asignación incluyendo el usuario autenticado si está activo
   const availableUsersForAssignment = React.useMemo(() => {
     let usersList = [...activeUsers];
-    
+
     // Si hay un usuario autenticado y está activo, agregarlo si no está en la lista
     if (user && user.user_metadata?.asset !== false && !activeUsers.find(u => u.id === user.id)) {
       const currentUser = {
@@ -162,35 +175,32 @@ export const ReporteForm = ({ reporte, onSubmit, onCancel, isLoading }: ReporteF
         email: user.email || '',
         first_name: user.user_metadata?.first_name || '',
         last_name: user.user_metadata?.last_name || '',
-        role: ['user'], // Agregar rol por defecto
-        confirmed: true, // Usuario autenticado ya está confirmado
-        asset: true, // Usuario autenticado activo
-        avatar: null, // Valor por defecto
+        role: ['user'],
+        // Agregar rol por defecto
+        confirmed: true,
+        // Usuario autenticado ya está confirmado
+        asset: true,
+        // Usuario autenticado activo
+        avatar: null,
+        // Valor por defecto
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
-        deleted_at: null, // Valor por defecto
+        deleted_at: null,
+        // Valor por defecto
         user_roles: []
       };
       usersList.push(currentUser);
     }
-    
     return usersList;
   }, [activeUsers, user]);
-
   const currentLatitud = form.watch('latitud');
   const currentLongitud = form.watch('longitud');
   const currentImages = form.watch('imagenes') || [];
   const currentPriority = form.watch('priority');
   const hasCoordinates = currentLatitud && currentLongitud;
-
-  return (
-    <div className="container mx-auto px-4 py-6">
+  return <div className="container mx-auto px-4 py-6">
       <div className="mb-6">
-        <Button 
-          variant="ghost" 
-          onClick={onCancel}
-          className="mb-4 flex items-center gap-2"
-        >
+        <Button variant="ghost" onClick={onCancel} className="mb-4 flex items-center gap-2">
           <ArrowLeft className="h-4 w-4" />
           Volver a Reportes
         </Button>
@@ -218,25 +228,19 @@ export const ReporteForm = ({ reporte, onSubmit, onCancel, isLoading }: ReporteF
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="nombre"
-                    render={({ field }) => (
-                      <FormItem>
+                  <FormField control={form.control} name="nombre" render={({
+                  field
+                }) => <FormItem>
                         <FormLabel>Nombre del Reporte *</FormLabel>
                         <FormControl>
                           <Input placeholder="Ej: Bache en calle principal" {...field} />
                         </FormControl>
                         <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                      </FormItem>} />
 
-                  <FormField
-                    control={form.control}
-                    name="categoria_id"
-                    render={({ field }) => (
-                      <FormItem>
+                  <FormField control={form.control} name="categoria_id" render={({
+                  field
+                }) => <FormItem>
                         <FormLabel>Categoría *</FormLabel>
                         <Select onValueChange={field.onChange} value={field.value}>
                           <FormControl>
@@ -245,29 +249,22 @@ export const ReporteForm = ({ reporte, onSubmit, onCancel, isLoading }: ReporteF
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            {categories.map((categoria) => (
-                              <SelectItem key={categoria.id} value={categoria.id}>
+                            {categories.map(categoria => <SelectItem key={categoria.id} value={categoria.id}>
                                 <div className="flex items-center gap-2">
-                                  <div 
-                                    className="w-3 h-3 rounded"
-                                    style={{ backgroundColor: categoria.color }}
-                                  />
+                                  <div className="w-3 h-3 rounded" style={{
+                            backgroundColor: categoria.color
+                          }} />
                                   {categoria.nombre}
                                 </div>
-                              </SelectItem>
-                            ))}
+                              </SelectItem>)}
                           </SelectContent>
                         </Select>
                         <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                      </FormItem>} />
 
-                  <FormField
-                    control={form.control}
-                    name="estado_id"
-                    render={({ field }) => (
-                      <FormItem>
+                  <FormField control={form.control} name="estado_id" render={({
+                  field
+                }) => <FormItem>
                         <FormLabel>Estado *</FormLabel>
                         <Select onValueChange={field.onChange} value={field.value}>
                           <FormControl>
@@ -276,29 +273,22 @@ export const ReporteForm = ({ reporte, onSubmit, onCancel, isLoading }: ReporteF
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            {estados.map((estado) => (
-                              <SelectItem key={estado.id} value={estado.id}>
+                            {estados.map(estado => <SelectItem key={estado.id} value={estado.id}>
                                 <div className="flex items-center gap-2">
-                                  <div 
-                                    className="w-3 h-3 rounded"
-                                    style={{ backgroundColor: estado.color }}
-                                  />
+                                  <div className="w-3 h-3 rounded" style={{
+                            backgroundColor: estado.color
+                          }} />
                                   {estado.nombre}
                                 </div>
-                              </SelectItem>
-                            ))}
+                              </SelectItem>)}
                           </SelectContent>
                         </Select>
                         <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                      </FormItem>} />
 
-                  <FormField
-                    control={form.control}
-                    name="priority"
-                    render={({ field }) => (
-                      <FormItem>
+                  <FormField control={form.control} name="priority" render={({
+                  field
+                }) => <FormItem className="my-[8px]">
                         <FormLabel className="flex items-center gap-2">
                           <AlertTriangle className="h-4 w-4" />
                           Prioridad *
@@ -310,48 +300,34 @@ export const ReporteForm = ({ reporte, onSubmit, onCancel, isLoading }: ReporteF
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            {Object.entries(priorityConfig).map(([value, config]) => (
-                              <SelectItem key={value} value={value}>
+                            {Object.entries(priorityConfig).map(([value, config]) => <SelectItem key={value} value={value}>
                                 <div className="flex items-center gap-2">
-                                  <Badge
-                                    variant="secondary"
-                                    style={{ 
-                                      backgroundColor: `${config.color}20`,
-                                      color: config.color,
-                                      borderColor: config.color
-                                    }}
-                                  >
+                                  <Badge variant="secondary" style={{
+                            backgroundColor: `${config.color}20`,
+                            color: config.color,
+                            borderColor: config.color
+                          }}>
                                     {config.label}
                                   </Badge>
                                 </div>
-                              </SelectItem>
-                            ))}
+                              </SelectItem>)}
                           </SelectContent>
                         </Select>
                         <FormMessage />
-                        {currentPriority && (
-                          <div className="mt-2">
-                            <Badge
-                              variant="secondary"
-                              style={{ 
-                                backgroundColor: `${priorityConfig[currentPriority].color}20`,
-                                color: priorityConfig[currentPriority].color,
-                                borderColor: priorityConfig[currentPriority].color
-                              }}
-                            >
+                        {currentPriority && <div className="mt-2">
+                            <Badge variant="secondary" style={{
+                      backgroundColor: `${priorityConfig[currentPriority].color}20`,
+                      color: priorityConfig[currentPriority].color,
+                      borderColor: priorityConfig[currentPriority].color
+                    }}>
                               Prioridad: {priorityConfig[currentPriority].label}
                             </Badge>
-                          </div>
-                        )}
-                      </FormItem>
-                    )}
-                  />
+                          </div>}
+                      </FormItem>} />
 
-                  <FormField
-                    control={form.control}
-                    name="assigned_to"
-                    render={({ field }) => (
-                      <FormItem>
+                  <FormField control={form.control} name="assigned_to" render={({
+                  field
+                }) => <FormItem>
                         <FormLabel>Asignar a Usuario</FormLabel>
                         <Select onValueChange={field.onChange} value={field.value}>
                           <FormControl>
@@ -361,12 +337,9 @@ export const ReporteForm = ({ reporte, onSubmit, onCancel, isLoading }: ReporteF
                           </FormControl>
                           <SelectContent>
                             <SelectItem value="unassigned">Sin asignar</SelectItem>
-                            {availableUsersForAssignment.map((userData) => (
-                              <SelectItem key={userData.id} value={userData.id}>
+                            {availableUsersForAssignment.map(userData => <SelectItem key={userData.id} value={userData.id}>
                                 <div className="flex items-center gap-2">
-                                  <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium ${
-                                    userData.id === user?.id ? 'bg-green-100' : 'bg-blue-100'
-                                  }`}>
+                                  <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium ${userData.id === user?.id ? 'bg-green-100' : 'bg-blue-100'}`}>
                                     {getProfileName(userData).charAt(0).toUpperCase()}
                                   </div>
                                   <span>
@@ -376,45 +349,28 @@ export const ReporteForm = ({ reporte, onSubmit, onCancel, isLoading }: ReporteF
                                   <span className="text-gray-500 text-xs">({userData.email})</span>
                                   <span className="text-green-600 text-xs">(Activo)</span>
                                 </div>
-                              </SelectItem>
-                            ))}
+                              </SelectItem>)}
                           </SelectContent>
                         </Select>
                         <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                      </FormItem>} />
                 </div>
 
-                <FormField
-                  control={form.control}
-                  name="descripcion"
-                  render={({ field }) => (
-                    <FormItem>
+                <FormField control={form.control} name="descripcion" render={({
+                field
+              }) => <FormItem>
                       <FormLabel>Descripción *</FormLabel>
                       <FormControl>
-                        <Textarea 
-                          placeholder="Describe detalladamente el reporte..."
-                          className="min-h-24"
-                          {...field} 
-                        />
+                        <Textarea placeholder="Describe detalladamente el reporte..." className="min-h-24" {...field} />
                       </FormControl>
                       <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                    </FormItem>} />
 
-                {reporte && (
-                  <FormField
-                    control={form.control}
-                    name="activo"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                {reporte && <FormField control={form.control} name="activo" render={({
+                field
+              }) => <FormItem className="flex flex-row items-center space-x-3 space-y-0">
                         <FormControl>
-                          <Switch
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                          />
+                          <Switch checked={field.value} onCheckedChange={field.onChange} />
                         </FormControl>
                         <div className="space-y-1 leading-none">
                           <FormLabel>Reporte Activo</FormLabel>
@@ -422,21 +378,11 @@ export const ReporteForm = ({ reporte, onSubmit, onCancel, isLoading }: ReporteF
                             El reporte está disponible cuando está activo
                           </p>
                         </div>
-                      </FormItem>
-                    )}
-                  />
-                )}
+                      </FormItem>} />}
 
                 <Separator />
 
-                <ImageUploader
-                  images={currentImages}
-                  pendingFiles={pendingFiles}
-                  onImagesChange={handleImagesChange}
-                  onPendingFilesChange={setPendingFiles}
-                  maxImages={10}
-                  disabled={isLoading || isUploading}
-                />
+                <ImageUploader images={currentImages} pendingFiles={pendingFiles} onImagesChange={handleImagesChange} onPendingFilesChange={setPendingFiles} maxImages={10} disabled={isLoading || isUploading} />
               </CardContent>
             </Card>
 
@@ -448,46 +394,23 @@ export const ReporteForm = ({ reporte, onSubmit, onCancel, isLoading }: ReporteF
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {reporte && hasCoordinates ? (
-                  <MapaReporteEditable
-                    reporte={reporte}
-                    height="h-[400px]"
-                    onPosicionActualizada={handlePosicionActualizada}
-                  />
-                ) : (
-                  <MapaNuevaPosicion
-                    height="h-[400px]"
-                    onPosicionSeleccionada={handlePosicionSeleccionada}
-                    initialPosition={hasCoordinates ? [currentLatitud, currentLongitud] : undefined}
-                  />
-                )}
+                {reporte && hasCoordinates ? <MapaReporteEditable reporte={reporte} height="h-[400px]" onPosicionActualizada={handlePosicionActualizada} /> : <MapaNuevaPosicion height="h-[400px]" onPosicionSeleccionada={handlePosicionSeleccionada} initialPosition={hasCoordinates ? [currentLatitud, currentLongitud] : undefined} />}
               </CardContent>
             </Card>
           </div>
 
           <div className="flex gap-4">
-            <Button 
-              type="submit" 
-              disabled={isLoading || isUploading}
-              className="flex items-center gap-2"
-            >
+            <Button type="submit" disabled={isLoading || isUploading} className="flex items-center gap-2">
               <Save className="h-4 w-4" />
-              {isLoading || isUploading ? 'Guardando...' : (reporte ? 'Actualizar Reporte' : 'Crear Reporte')}
+              {isLoading || isUploading ? 'Guardando...' : reporte ? 'Actualizar Reporte' : 'Crear Reporte'}
             </Button>
             
-            <Button 
-              type="button" 
-              variant="outline" 
-              onClick={onCancel}
-              disabled={isLoading || isUploading}
-              className="flex items-center gap-2"
-            >
+            <Button type="button" variant="outline" onClick={onCancel} disabled={isLoading || isUploading} className="flex items-center gap-2">
               <X className="h-4 w-4" />
               Cancelar
             </Button>
           </div>
         </form>
       </Form>
-    </div>
-  );
+    </div>;
 };
