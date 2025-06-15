@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -287,7 +286,7 @@ const ReportesAnalyticsContent = () => {
           <p className="text-muted-foreground">
             {hasValidFilters 
               ? 'Dashboard interactivo con filtros de comparación aplicados'
-              : 'Dashboard en tiempo real mostrando todos los reportes del sistema'
+              : 'Estadísticas sobre la gestión de reportes'
             }
           </p>
         </div>
