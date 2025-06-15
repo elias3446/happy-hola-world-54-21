@@ -27,6 +27,21 @@ export const CategoriasAnalytics = () => {
     );
   }
 
+  // Calcular métricas basadas únicamente en datos reales de la base de datos
+  const totalCategorias = stats.categorias.total;
+  const categoriasActivas = stats.categorias.activas;
+  const porcentajeActivas = totalCategorias > 0 ? Math.round((categoriasActivas / totalCategorias) * 100) : 0;
+  
+  // Obtener la categoría más usada basándose en datos reales
+  const categoriaMasUsada = stats.reportes.porCategoria.length > 0 
+    ? Math.max(...stats.reportes.porCategoria.map(c => c.count)) 
+    : 0;
+  
+  // Calcular promedio de reportes por categoría usando datos reales
+  const promedioReportesPorCategoria = totalCategorias > 0 
+    ? Math.round(stats.reportes.total / totalCategorias * 10) / 10 
+    : 0;
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -35,7 +50,7 @@ export const CategoriasAnalytics = () => {
           Análisis de Categorías
         </h2>
         <p className="text-muted-foreground">
-          Estadísticas sobre las categorías de reportes
+          Estadísticas sobre las categorías de reportes basadas en datos reales
         </p>
       </div>
 
@@ -43,23 +58,23 @@ export const CategoriasAnalytics = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatsCard
           title="Total Categorías"
-          value={stats.categorias.total}
-          subtitle="Categorías configuradas"
+          value={totalCategorias}
+          subtitle="Categorías en la base de datos"
           icon={FolderOpen}
           color="text-blue-600"
         />
         
         <StatsCard
           title="Categorías Activas"
-          value={stats.categorias.activas}
-          subtitle={`${Math.round((stats.categorias.activas / stats.categorias.total) * 100)}% del total`}
+          value={categoriasActivas}
+          subtitle={`${porcentajeActivas}% del total`}
           icon={Settings}
           color="text-green-600"
         />
         
         <StatsCard
           title="Más Usada"
-          value={stats.reportes.porCategoria.length > 0 ? Math.max(...stats.reportes.porCategoria.map(c => c.count)) : 0}
+          value={categoriaMasUsada}
           subtitle="Reportes en categoría principal"
           icon={FileText}
           color="text-purple-600"
@@ -67,7 +82,7 @@ export const CategoriasAnalytics = () => {
         
         <StatsCard
           title="Promedio"
-          value={Math.round(stats.reportes.total / Math.max(stats.categorias.total, 1) * 10) / 10}
+          value={promedioReportesPorCategoria}
           subtitle="Reportes por categoría"
           icon={Activity}
           color="text-orange-600"
@@ -87,15 +102,15 @@ export const CategoriasAnalytics = () => {
             <div className="space-y-3">
               <div className="flex justify-between">
                 <span className="text-sm text-muted-foreground">Categorías totales</span>
-                <span className="text-sm font-medium">{stats.categorias.total}</span>
+                <span className="text-sm font-medium">{totalCategorias}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-sm text-muted-foreground">Categorías activas</span>
-                <span className="text-sm font-medium">{stats.categorias.activas}</span>
+                <span className="text-sm font-medium">{categoriasActivas}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-sm text-muted-foreground">Categorías inactivas</span>
-                <span className="text-sm font-medium">{stats.categorias.total - stats.categorias.activas}</span>
+                <span className="text-sm font-medium">{totalCategorias - categoriasActivas}</span>
               </div>
             </div>
           </CardContent>
@@ -120,9 +135,7 @@ export const CategoriasAnalytics = () => {
               </div>
               <div className="flex justify-between">
                 <span className="text-sm text-muted-foreground">Promedio por categoría</span>
-                <span className="text-sm font-medium">
-                  {Math.round(stats.reportes.total / Math.max(stats.categorias.total, 1) * 10) / 10}
-                </span>
+                <span className="text-sm font-medium">{promedioReportesPorCategoria}</span>
               </div>
             </div>
           </CardContent>
