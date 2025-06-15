@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -106,9 +107,9 @@ export const ReporteDetalle = () => {
               <span className="hidden sm:inline">Volver</span>
             </Link>
           </Button>
-          <div>
-            <h1 className="text-xl sm:text-2xl font-bold">Detalle del Reporte</h1>
-            <p className="text-sm text-muted-foreground">Información completa del reporte</p>
+          <div className="min-w-0">
+            <h1 className="text-xl sm:text-2xl font-bold truncate">Detalle del Reporte</h1>
+            <p className="text-sm text-muted-foreground truncate">Información completa del reporte</p>
           </div>
         </div>
       </div>
@@ -128,33 +129,33 @@ export const ReporteDetalle = () => {
                   </AvatarFallback>
                 </Avatar>
               </div>
-              <CardTitle className="text-lg sm:text-xl">{reporte.nombre}</CardTitle>
-              <p className="text-sm text-muted-foreground break-all">{reporte.categoria?.nombre || 'Sin categoría'}</p>
+              <CardTitle className="text-lg sm:text-xl break-words">{reporte.nombre}</CardTitle>
+              <p className="text-sm text-muted-foreground break-words">{reporte.categoria?.nombre || 'Sin categoría'}</p>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-3">
                 <div className="flex items-start gap-2">
                   <FileText className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-                  <span className="text-sm break-words">{reporte.descripcion}</span>
+                  <span className="text-sm break-words overflow-hidden">{reporte.descripcion}</span>
                 </div>
                 
                 <div className="flex items-start gap-2">
                   <Calendar className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-                  <span className="text-sm">
+                  <span className="text-sm break-words">
                     Creado: {format(new Date(reporte.created_at), 'dd/MM/yyyy', { locale: es })}
                   </span>
                 </div>
                 
                 <div className="flex items-start gap-2">
                   <Clock className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-                  <span className="text-sm">
+                  <span className="text-sm break-words">
                     Actualizado: {format(new Date(reporte.updated_at), 'dd/MM/yyyy', { locale: es })}
                   </span>
                 </div>
 
                 <div className="flex items-start gap-2">
                   <User className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-                  <span className="text-sm">
+                  <span className="text-sm break-words">
                     Creado por: {getProfileName(reporte.created_by_profile)}
                   </span>
                 </div>
@@ -193,7 +194,7 @@ export const ReporteDetalle = () => {
                 <div className="space-y-2">
                   <div className="text-sm">
                     <span className="text-muted-foreground">Asignado a: </span>
-                    <span>{reporte.assigned_to_profile ? getProfileName(reporte.assigned_to_profile) : 'Sin asignar'}</span>
+                    <span className="break-words">{reporte.assigned_to_profile ? getProfileName(reporte.assigned_to_profile) : 'Sin asignar'}</span>
                   </div>
                 </div>
               </div>
@@ -206,7 +207,7 @@ export const ReporteDetalle = () => {
                       <MapPin className="h-4 w-4 flex-shrink-0" />
                       Ubicación
                     </h4>
-                    <div className="text-sm text-muted-foreground">
+                    <div className="text-sm text-muted-foreground break-all">
                       Lat: {reporte.latitud}, Lng: {reporte.longitud}
                     </div>
                   </div>
@@ -336,18 +337,18 @@ export const ReporteDetalle = () => {
                     <div className="space-y-4 max-h-60 overflow-y-auto">
                       {historial.map((entry) => (
                         <div key={entry.id} className="border-l-2 border-gray-200 pl-4 pb-4 last:pb-0">
-                          <div className="text-sm font-medium text-gray-900 break-words">
+                          <div className="text-sm font-medium text-gray-900 break-words overflow-hidden">
                             {entry.comentario}
                           </div>
                           <div className="text-xs text-gray-600 mt-1 space-y-1">
-                            <div className="break-words">Por: {getProfileName(entry.assigned_by_profile)}</div>
+                            <div className="break-words overflow-hidden">Por: {getProfileName(entry.assigned_by_profile)}</div>
                             {entry.assigned_from_profile && (
-                              <div className="break-words">De: {getProfileName(entry.assigned_from_profile)}</div>
+                              <div className="break-words overflow-hidden">De: {getProfileName(entry.assigned_from_profile)}</div>
                             )}
                             {entry.assigned_to_profile && (
-                              <div className="break-words">A: {getProfileName(entry.assigned_to_profile)}</div>
+                              <div className="break-words overflow-hidden">A: {getProfileName(entry.assigned_to_profile)}</div>
                             )}
-                            <div className="text-gray-500">
+                            <div className="text-gray-500 break-words">
                               {new Date(entry.fecha_asignacion).toLocaleDateString('es-ES', {
                                 year: 'numeric',
                                 month: 'short',
@@ -373,12 +374,12 @@ export const ReporteDetalle = () => {
         <DialogContent className="max-w-4xl max-h-[90vh] p-0">
           <DialogHeader className="p-6 pb-0">
             <DialogTitle className="flex items-center justify-between">
-              <span className="break-words">Imágenes del Reporte - {reporte.nombre}</span>
+              <span className="break-words overflow-hidden flex-1 min-w-0">Imágenes del Reporte - {reporte.nombre}</span>
               <Button 
                 variant="ghost" 
                 size="sm" 
                 onClick={closeImageCarousel}
-                className="h-8 w-8 p-0 flex-shrink-0"
+                className="h-8 w-8 p-0 flex-shrink-0 ml-2"
               >
                 <X className="h-4 w-4" />
               </Button>
