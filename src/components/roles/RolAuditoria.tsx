@@ -15,6 +15,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Activity, History, Clock, User, Database, FileText, Search, Filter, RefreshCw, Download, Shield, Eye, Calendar, AlertTriangle, CheckCircle, Info } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { CambioDetalleModal } from './dialogs/CambioDetalleModal';
 
 interface RolAuditoriaProps {
   rolId: string;
@@ -283,6 +284,8 @@ export const RolAuditoria: React.FC<RolAuditoriaProps> = ({ rolId }) => {
   const [filtroUsuario, setFiltroUsuario] = useState<string>('');
   const [busqueda, setBusqueda] = useState<string>('');
   const [activeTab, setActiveTab] = useState('actividades');
+  const [selectedCambio, setSelectedCambio] = useState<CambioRol | null>(null);
+  const [detalleModalOpen, setDetalleModalOpen] = useState(false);
 
   // Hook para obtener actividades relacionadas con el rol
   const { data: actividades = [], isLoading: isLoadingActividades } = useQuery({
@@ -360,6 +363,11 @@ export const RolAuditoria: React.FC<RolAuditoriaProps> = ({ rolId }) => {
 
   const exportarDatos = () => {
     console.log('Exportar datos de auditoría del rol');
+  };
+
+  const handleVerDetalles = (cambio: CambioRol) => {
+    setSelectedCambio(cambio);
+    setDetalleModalOpen(true);
   };
 
   return (
@@ -660,23 +668,14 @@ export const RolAuditoria: React.FC<RolAuditoriaProps> = ({ rolId }) => {
                               </div>
                             </TableCell>
                             <TableCell>
-                              <Dialog>
-                                <DialogTrigger asChild>
-                                  <Button variant="outline" size="sm">
-                                    <Eye className="h-3 w-3 mr-1" />
-                                    Ver Detalles
-                                  </Button>
-                                </DialogTrigger>
-                                <DialogContent className="max-w-7xl max-h-[90vh] overflow-y-auto">
-                                  <DialogHeader>
-                                    <DialogTitle className="flex items-center gap-2">
-                                      <History className="h-5 w-5" />
-                                      Detalles del Cambio - Rol
-                                    </DialogTitle>
-                                  </DialogHeader>
-                                  <DetallesCambio cambio={cambio} />
-                                </DialogContent>
-                              </Dialog>
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => handleVerDetalles(cambio)}
+                              >
+                                <Eye className="h-3 w-3 mr-1" />
+                                Ver Detalles
+                              </Button>
                             </TableCell>
                           </TableRow>
                         ))}
@@ -689,6 +688,13 @@ export const RolAuditoria: React.FC<RolAuditoriaProps> = ({ rolId }) => {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Modal de detalles del cambio */}
+      <CambioDetalleModal
+        cambio={selectedCambio}
+        open={detalleModalOpen}
+        onOpenChange={setDetalleModalOpen}
+      />
     </div>
   );
 };
