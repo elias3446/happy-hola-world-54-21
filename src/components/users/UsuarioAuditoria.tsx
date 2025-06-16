@@ -9,12 +9,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Separator } from '@/components/ui/separator';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Activity, History, Clock, User, Database, FileText, Search, Filter, Download, RefreshCw, Shield, Eye } from 'lucide-react';
+import { Activity, History, Clock, User, Database, FileText, Search, Filter, RefreshCw, Download, Shield, Eye, Calendar, AlertTriangle, CheckCircle, Info } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { CambioDetalleModal } from '../roles/dialogs/CambioDetalleModal';
 
 interface UsuarioAuditoriaProps {
   usuarioId: string;
@@ -85,82 +86,18 @@ const getOperationColor = (operation: CambioUsuario['operation_type']) => {
   }
 };
 
-const DetallesCambio: React.FC<{ cambio: CambioUsuario }> = ({ cambio }) => {
-  return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <h4 className="font-semibold mb-2">Información General</h4>
-          <div className="space-y-2 text-sm">
-            <div>
-              <span className="font-medium">Tabla:</span> {cambio.tabla_nombre}
-            </div>
-            <div>
-              <span className="font-medium">Registro ID:</span> {cambio.registro_id}
-            </div>
-            <div>
-              <span className="font-medium">Operación:</span>
-              <Badge className={`ml-2 ${getOperationColor(cambio.operation_type)}`}>
-                {cambio.operation_type}
-              </Badge>
-            </div>
-            <div>
-              <span className="font-medium">Usuario:</span> {cambio.user_email}
-            </div>
-            <div>
-              <span className="font-medium">Fecha:</span> 
-              {format(new Date(cambio.created_at), 'dd/MM/yyyy HH:mm:ss', { locale: es })}
-            </div>
-          </div>
-        </div>
-        
-        <div>
-          <h4 className="font-semibold mb-2">Campos Modificados</h4>
-          <div className="space-y-1">
-            {cambio.campos_modificados?.map((campo, index) => (
-              <Badge key={index} variant="outline" className="mr-1">
-                {campo}
-              </Badge>
-            ))}
-            {(!cambio.campos_modificados || cambio.campos_modificados.length === 0) && (
-              <span className="text-sm text-muted-foreground">Sin campos modificados</span>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {cambio.valores_anteriores && (
-        <div>
-          <h4 className="font-semibold mb-2">Valores Anteriores</h4>
-          <pre className="bg-gray-50 p-3 rounded-md text-xs overflow-auto max-h-40">
-            {JSON.stringify(cambio.valores_anteriores, null, 2)}
-          </pre>
-        </div>
-      )}
-
-      {cambio.valores_nuevos && (
-        <div>
-          <h4 className="font-semibold mb-2">Valores Nuevos</h4>
-          <pre className="bg-gray-50 p-3 rounded-md text-xs overflow-auto max-h-40">
-            {JSON.stringify(cambio.valores_nuevos, null, 2)}
-          </pre>
-        </div>
-      )}
-    </div>
-  );
-};
-
 export const UsuarioAuditoria: React.FC<UsuarioAuditoriaProps> = ({ usuarioId, usuarioEmail }) => {
   const [filtroTipo, setFiltroTipo] = useState<string>('all');
-  const [filtroUsuario, setFiltroUsuario] = useState<string>('');
   const [busqueda, setBusqueda] = useState<string>('');
   const [activeTab, setActiveTab] = useState('actividades');
+  const [selectedCambio, setSelectedCambio] = useState<CambioUsuario | null>(null);
+  const [detalleModalOpen, setDetalleModalOpen] = useState(false);
 
-  // Hook para obtener actividades del usuario
+  // Hook para obtener actividades realizadas POR el usuario
   const { data: actividades = [], isLoading: isLoadingActividades } = useQuery({
-    queryKey: ['usuario-actividades', usuarioId, filtroTipo, busqueda],
+    queryKey: ['usuario-actividades-propias', usuarioId, filtroTipo, busqueda],
     queryFn: async () => {
-      console.log('Fetching activities for user:', usuarioId);
+      console.log('Fetching activities performed BY user:', usuarioId);
       
       const { data, error } = await supabase.rpc('get_user_activities', {
         p_user_id: usuarioId,
@@ -173,69 +110,120 @@ export const UsuarioAuditoria: React.FC<UsuarioAuditoriaProps> = ({ usuarioId, u
         throw error;
       }
 
-      let filteredData = (data || []) as ActividadUsuario[];
+      console.log('Fetched activities performed BY user:', data);
+
+      let actividadesFiltradas = (data as ActividadUsuario[]) || [];
 
       // Aplicar filtros
       if (filtroTipo && filtroTipo !== 'all') {
-        filteredData = filteredData.filter(a => a.activity_type === filtroTipo);
+        actividadesFiltradas = actividadesFiltradas.filter(a => a.activity_type === filtroTipo);
       }
       if (busqueda) {
-        filteredData = filteredData.filter(a => 
+        actividadesFiltradas = actividadesFiltradas.filter(a => 
           a.descripcion.toLowerCase().includes(busqueda.toLowerCase())
         );
       }
 
-      console.log('Fetched activities:', filteredData);
-      return filteredData;
+      return actividadesFiltradas;
     },
     enabled: !!usuarioId,
   });
 
-  // Hook para obtener historial de cambios realizados POR el usuario
-  const { data: cambiosRealizados = [], isLoading: isLoadingCambiosRealizados } = useQuery({
-    queryKey: ['usuario-cambios-realizados', usuarioId, filtroTipo, busqueda],
+  // Hook para obtener cambios realizados EN el usuario
+  const { data: cambios = [], isLoading: isLoadingCambios } = useQuery({
+    queryKey: ['usuario-cambios-recibidos', usuarioId, filtroTipo, busqueda],
     queryFn: async () => {
-      console.log('Fetching changes made by user:', usuarioId);
+      console.log('Fetching changes made TO user:', usuarioId);
       
-      const { data, error } = await supabase.rpc('get_change_history', {
-        p_tabla_nombre: null,
-        p_registro_id: null,
-        p_user_id: usuarioId,
+      // Obtener cambios en el perfil del usuario
+      const { data: cambiosPerfil, error: errorPerfil } = await supabase.rpc('get_change_history', {
+        p_tabla_nombre: 'profiles',
+        p_registro_id: usuarioId,
+        p_user_id: null,
         p_limit: 100,
         p_offset: 0
       });
 
-      if (error) {
-        console.error('Error fetching usuario cambios realizados:', error);
-        throw error;
+      if (errorPerfil) {
+        console.error('Error fetching cambios perfil:', errorPerfil);
+        throw errorPerfil;
       }
 
-      let filteredData = (data || []) as CambioUsuario[];
+      // Obtener cambios en asignaciones de roles del usuario
+      const { data: cambiosRoles, error: errorRoles } = await supabase.rpc('get_change_history', {
+        p_tabla_nombre: 'user_roles',
+        p_registro_id: null,
+        p_user_id: null,
+        p_limit: 100,
+        p_offset: 0
+      });
+
+      if (errorRoles) {
+        console.error('Error fetching cambios roles:', errorRoles);
+        throw errorRoles;
+      }
+
+      // Filtrar cambios de roles que afecten a este usuario
+      const cambiosRolesFiltrados = (cambiosRoles || []).filter((cambio: CambioUsuario) => {
+        return (
+          (cambio.valores_anteriores?.user_id === usuarioId) ||
+          (cambio.valores_nuevos?.user_id === usuarioId)
+        );
+      });
+
+      // Combinar todos los cambios
+      let todosCambios = [
+        ...(cambiosPerfil || []),
+        ...cambiosRolesFiltrados
+      ];
+
+      console.log('Fetched changes made TO user:', todosCambios);
 
       // Aplicar filtros
       if (filtroTipo && filtroTipo !== 'all') {
-        filteredData = filteredData.filter(c => c.operation_type === filtroTipo);
+        todosCambios = todosCambios.filter(c => c.operation_type === filtroTipo);
       }
       if (busqueda) {
-        filteredData = filteredData.filter(c => 
+        todosCambios = todosCambios.filter(c => 
           c.descripcion_cambio.toLowerCase().includes(busqueda.toLowerCase())
         );
       }
 
-      console.log('Fetched changes made by user:', filteredData);
-      return filteredData;
+      // Ordenar por fecha descendente
+      todosCambios.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+      return todosCambios as CambioUsuario[];
     },
     enabled: !!usuarioId,
   });
 
   const limpiarFiltros = () => {
     setFiltroTipo('all');
-    setFiltroUsuario('');
     setBusqueda('');
   };
 
   const exportarDatos = () => {
     console.log('Exportar datos de auditoría del usuario');
+  };
+
+  const handleVerDetalles = (cambio: CambioUsuario) => {
+    setSelectedCambio(cambio);
+    setDetalleModalOpen(true);
+  };
+
+  const getDescripcionCambio = (cambio: CambioUsuario) => {
+    if (cambio.tabla_nombre === 'profiles') {
+      return `Cambio en perfil del usuario`;
+    } else if (cambio.tabla_nombre === 'user_roles') {
+      if (cambio.operation_type === 'INSERT') {
+        return `Rol asignado al usuario`;
+      } else if (cambio.operation_type === 'DELETE') {
+        return `Rol removido del usuario`;
+      } else {
+        return `Cambio en rol del usuario`;
+      }
+    }
+    return cambio.descripcion_cambio;
   };
 
   return (
@@ -246,7 +234,7 @@ export const UsuarioAuditoria: React.FC<UsuarioAuditoriaProps> = ({ usuarioId, u
           <h1 className="text-2xl font-bold">Auditoría del Usuario</h1>
         </div>
         <p className="text-muted-foreground">
-          Monitoreo completo de actividades y cambios para {usuarioEmail}
+          Monitoreo completo de actividades realizadas por {usuarioEmail} y cambios realizados en su cuenta
         </p>
       </div>
 
@@ -259,7 +247,7 @@ export const UsuarioAuditoria: React.FC<UsuarioAuditoriaProps> = ({ usuarioId, u
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <Label htmlFor="busqueda">Buscar</Label>
               <div className="relative">
@@ -298,16 +286,6 @@ export const UsuarioAuditoria: React.FC<UsuarioAuditoriaProps> = ({ usuarioId, u
               </Select>
             </div>
 
-            <div>
-              <Label htmlFor="filtro_usuario">Usuario</Label>
-              <Input
-                id="filtro_usuario"
-                placeholder="Filtrar por email..."
-                value={filtroUsuario}
-                onChange={(e) => setFiltroUsuario(e.target.value)}
-              />
-            </div>
-
             <div className="flex items-end gap-2">
               <Button onClick={limpiarFiltros} className="flex-1">
                 <Filter className="h-4 w-4 mr-2" />
@@ -327,17 +305,17 @@ export const UsuarioAuditoria: React.FC<UsuarioAuditoriaProps> = ({ usuarioId, u
           <TabsList className="grid w-full sm:w-auto grid-cols-2">
             <TabsTrigger value="actividades" className="flex items-center gap-2">
               <Activity className="h-4 w-4" />
-              Actividades
+              Actividades Realizadas
             </TabsTrigger>
             <TabsTrigger value="cambios" className="flex items-center gap-2">
               <History className="h-4 w-4" />
-              Historial de Cambios
+              Cambios Recibidos
             </TabsTrigger>
           </TabsList>
 
           <Button 
             onClick={exportarDatos}
-            disabled={activeTab === 'actividades' ? actividades.length === 0 : cambiosRealizados.length === 0}
+            disabled={activeTab === 'actividades' ? actividades.length === 0 : cambios.length === 0}
             className="flex items-center gap-2"
           >
             <Download className="h-4 w-4" />
@@ -351,7 +329,7 @@ export const UsuarioAuditoria: React.FC<UsuarioAuditoriaProps> = ({ usuarioId, u
               <CardTitle className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Activity className="h-5 w-5" />
-                  Registro de Actividades
+                  Actividades Realizadas por el Usuario
                 </div>
                 <div className="text-sm text-muted-foreground">
                   {isLoadingActividades ? 'Cargando...' : `${actividades.length} registros encontrados`}
@@ -369,7 +347,7 @@ export const UsuarioAuditoria: React.FC<UsuarioAuditoriaProps> = ({ usuarioId, u
                     <div className="text-center py-8 text-muted-foreground">
                       <Activity className="h-12 w-12 mx-auto mb-4 text-gray-300" />
                       <p className="text-lg font-medium">No se encontraron actividades</p>
-                      <p className="text-sm">No hay actividades registradas para este usuario con los filtros aplicados.</p>
+                      <p className="text-sm">No hay actividades realizadas por este usuario con los filtros aplicados.</p>
                     </div>
                   ) : (
                     <Table>
@@ -377,7 +355,6 @@ export const UsuarioAuditoria: React.FC<UsuarioAuditoriaProps> = ({ usuarioId, u
                         <TableRow>
                           <TableHead className="w-[120px]">Tipo</TableHead>
                           <TableHead className="min-w-[300px]">Descripción</TableHead>
-                          <TableHead className="w-[180px]">Usuario</TableHead>
                           <TableHead className="w-[150px]">Fecha y Hora</TableHead>
                           <TableHead className="w-[100px]">Tabla</TableHead>
                         </TableRow>
@@ -401,14 +378,6 @@ export const UsuarioAuditoria: React.FC<UsuarioAuditoriaProps> = ({ usuarioId, u
                                 <p className="text-sm font-medium truncate" title={actividad.descripcion}>
                                   {actividad.descripcion}
                                 </p>
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex items-center gap-2">
-                                <User className="h-4 w-4 text-muted-foreground" />
-                                <span className="text-sm font-medium truncate" title={actividad.user_email}>
-                                  {actividad.user_email}
-                                </span>
                               </div>
                             </TableCell>
                             <TableCell>
@@ -446,25 +415,25 @@ export const UsuarioAuditoria: React.FC<UsuarioAuditoriaProps> = ({ usuarioId, u
               <CardTitle className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <History className="h-5 w-5" />
-                  Historial de Cambios
+                  Cambios Realizados en el Usuario
                 </div>
                 <div className="text-sm text-muted-foreground">
-                  {isLoadingCambiosRealizados ? 'Cargando...' : `${cambiosRealizados.length} registros encontrados`}
+                  {isLoadingCambios ? 'Cargando...' : `${cambios.length} registros encontrados`}
                 </div>
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="border rounded-lg">
                 <ScrollArea className="h-[400px]">
-                  {isLoadingCambiosRealizados ? (
+                  {isLoadingCambios ? (
                     <div className="flex items-center justify-center p-8">
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
                     </div>
-                  ) : cambiosRealizados.length === 0 ? (
+                  ) : cambios.length === 0 ? (
                     <div className="text-center py-8 text-muted-foreground">
                       <History className="h-12 w-12 mx-auto mb-4 text-gray-300" />
                       <p className="text-lg font-medium">No se encontraron cambios</p>
-                      <p className="text-sm">No hay cambios registrados realizados por este usuario con los filtros aplicados.</p>
+                      <p className="text-sm">No hay cambios registrados en este usuario con los filtros aplicados.</p>
                     </div>
                   ) : (
                     <Table>
@@ -473,13 +442,13 @@ export const UsuarioAuditoria: React.FC<UsuarioAuditoriaProps> = ({ usuarioId, u
                           <TableHead className="w-[120px]">Operación</TableHead>
                           <TableHead className="min-w-[300px]">Descripción del Cambio</TableHead>
                           <TableHead className="w-[200px]">Campos Modificados</TableHead>
-                          <TableHead className="w-[180px]">Usuario</TableHead>
+                          <TableHead className="w-[180px]">Realizado por</TableHead>
                           <TableHead className="w-[150px]">Fecha y Hora</TableHead>
                           <TableHead className="w-[100px]">Acciones</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {cambiosRealizados.map((cambio) => (
+                        {cambios.map((cambio) => (
                           <TableRow key={cambio.id} className="hover:bg-muted/50">
                             <TableCell>
                               <Badge 
@@ -491,8 +460,8 @@ export const UsuarioAuditoria: React.FC<UsuarioAuditoriaProps> = ({ usuarioId, u
                             </TableCell>
                             <TableCell>
                               <div className="max-w-[300px]">
-                                <p className="text-sm font-medium truncate" title={cambio.descripcion_cambio}>
-                                  {cambio.descripcion_cambio}
+                                <p className="text-sm font-medium truncate" title={getDescripcionCambio(cambio)}>
+                                  {getDescripcionCambio(cambio)}
                                 </p>
                               </div>
                             </TableCell>
@@ -536,20 +505,14 @@ export const UsuarioAuditoria: React.FC<UsuarioAuditoriaProps> = ({ usuarioId, u
                               </div>
                             </TableCell>
                             <TableCell>
-                              <Dialog>
-                                <DialogTrigger asChild>
-                                  <Button variant="outline" size="sm">
-                                    <Eye className="h-3 w-3 mr-1" />
-                                    Ver Detalles
-                                  </Button>
-                                </DialogTrigger>
-                                <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-                                  <DialogHeader>
-                                    <DialogTitle>Detalles del Cambio</DialogTitle>
-                                  </DialogHeader>
-                                  <DetallesCambio cambio={cambio} />
-                                </DialogContent>
-                              </Dialog>
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => handleVerDetalles(cambio)}
+                              >
+                                <Eye className="h-3 w-3 mr-1" />
+                                Ver Detalles
+                              </Button>
                             </TableCell>
                           </TableRow>
                         ))}
@@ -562,6 +525,13 @@ export const UsuarioAuditoria: React.FC<UsuarioAuditoriaProps> = ({ usuarioId, u
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Modal de detalles del cambio */}
+      <CambioDetalleModal
+        cambio={selectedCambio}
+        open={detalleModalOpen}
+        onOpenChange={setDetalleModalOpen}
+      />
     </div>
   );
 };
