@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -6,6 +5,7 @@ import * as z from 'zod';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Form,
   FormControl,
@@ -17,9 +17,10 @@ import {
 import { useAuth } from '@/hooks/useAuth';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { User, Save, X, ArrowLeft } from 'lucide-react';
+import { User, Save, X, ArrowLeft, Lock } from 'lucide-react';
 import { isValidEmail } from '@/utils/validations';
 import { useToast } from '@/hooks/use-toast';
+import { UsuarioPasswordEdit } from './UsuarioPasswordEdit';
 
 interface UsuarioLogueadoEditProps {
   onClose: () => void;
@@ -42,6 +43,7 @@ export const UsuarioLogueadoEdit: React.FC<UsuarioLogueadoEditProps> = ({ onClos
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [activeTab, setActiveTab] = useState('perfil');
 
   // Obtener datos del perfil del usuario logueado
   const { data: perfilUsuario, isLoading } = useQuery({
@@ -197,94 +199,113 @@ export const UsuarioLogueadoEdit: React.FC<UsuarioLogueadoEditProps> = ({ onClos
             </Button>
           </div>
 
-          {/* Formulario */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <User className="h-5 w-5" />
+          {/* Tabs de edición */}
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="perfil" className="flex items-center gap-2">
+                <User className="h-4 w-4" />
                 Información Personal
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="first_name"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Nombre *</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Ingresa tu nombre" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+              </TabsTrigger>
+              <TabsTrigger value="password" className="flex items-center gap-2">
+                <Lock className="h-4 w-4" />
+                Contraseña
+              </TabsTrigger>
+            </TabsList>
 
-                    <FormField
-                      control={form.control}
-                      name="last_name"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Apellido *</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Ingresa tu apellido" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
+            <TabsContent value="perfil">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <User className="h-5 w-5" />
+                    Información Personal
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Form {...form}>
+                    <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <FormField
+                          control={form.control}
+                          name="first_name"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Nombre *</FormLabel>
+                              <FormControl>
+                                <Input placeholder="Ingresa tu nombre" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
 
-                  <FormField
-                    control={form.control}
-                    name="email"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Correo Electrónico *</FormLabel>
-                        <FormControl>
-                          <Input 
-                            type="email" 
-                            placeholder="tu@email.com" 
-                            {...field} 
-                          />
-                        </FormControl>
-                        <FormMessage />
-                        {form.watch('email') !== perfilUsuario?.email && (
-                          <p className="text-sm text-muted-foreground">
-                            ⚠️ Al cambiar tu email, recibirás un correo de confirmación.
-                          </p>
+                        <FormField
+                          control={form.control}
+                          name="last_name"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Apellido *</FormLabel>
+                              <FormControl>
+                                <Input placeholder="Ingresa tu apellido" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+
+                      <FormField
+                        control={form.control}
+                        name="email"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Correo Electrónico *</FormLabel>
+                            <FormControl>
+                              <Input 
+                                type="email" 
+                                placeholder="tu@email.com" 
+                                {...field} 
+                              />
+                            </FormControl>
+                            <FormMessage />
+                            {form.watch('email') !== perfilUsuario?.email && (
+                              <p className="text-sm text-muted-foreground">
+                                ⚠️ Al cambiar tu email, recibirás un correo de confirmación.
+                              </p>
+                            )}
+                          </FormItem>
                         )}
-                      </FormItem>
-                    )}
-                  />
+                      />
 
-                  <div className="flex gap-4">
-                    <Button 
-                      type="submit" 
-                      disabled={updateProfileMutation.isPending}
-                      className="flex items-center gap-2"
-                    >
-                      <Save className="h-4 w-4" />
-                      {updateProfileMutation.isPending ? 'Guardando...' : 'Guardar Cambios'}
-                    </Button>
-                    
-                    <Button 
-                      type="button" 
-                      variant="outline" 
-                      onClick={onBack}
-                      className="flex items-center gap-2"
-                    >
-                      <X className="h-4 w-4" />
-                      Cancelar
-                    </Button>
-                  </div>
-                </form>
-              </Form>
-            </CardContent>
-          </Card>
+                      <div className="flex gap-4">
+                        <Button 
+                          type="submit" 
+                          disabled={updateProfileMutation.isPending}
+                          className="flex items-center gap-2"
+                        >
+                          <Save className="h-4 w-4" />
+                          {updateProfileMutation.isPending ? 'Guardando...' : 'Guardar Cambios'}
+                        </Button>
+                        
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          onClick={onBack}
+                          className="flex items-center gap-2"
+                        >
+                          <X className="h-4 w-4" />
+                          Cancelar
+                        </Button>
+                      </div>
+                    </form>
+                  </Form>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="password">
+              <UsuarioPasswordEdit onBack={() => setActiveTab('perfil')} />
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
     </div>
