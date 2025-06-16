@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -18,7 +19,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useAuth } from '@/hooks/useAuth';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 import {
   Menu,
@@ -44,10 +48,43 @@ export const MainNavigation = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
 
+  // Obtener datos del perfil del usuario para mostrar el avatar
+  const { data: perfilUsuario } = useQuery({
+    queryKey: ['perfil-usuario-nav', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('first_name, last_name, avatar')
+        .eq('id', user.id)
+        .single();
+
+      if (error) {
+        console.error('Error fetching user profile for nav:', error);
+        return null;
+      }
+
+      return data;
+    },
+    enabled: !!user?.id,
+  });
+
   const isActive = (path: string) => location.pathname === path;
 
   const handleSignOut = async () => {
     await signOut();
+  };
+
+  // Función para obtener iniciales
+  const getInitials = (firstName?: string, lastName?: string, email?: string) => {
+    if (firstName && lastName) {
+      return (firstName.charAt(0) + lastName.charAt(0)).toUpperCase();
+    }
+    if (email) {
+      return email.charAt(0).toUpperCase();
+    }
+    return 'U';
   };
 
   // Hook to detect screen size changes and close dropdowns
@@ -144,8 +181,21 @@ export const MainNavigation = () => {
               
               {/* User Menu */}
               <div className="space-y-2">
-                <div className="px-3 text-xs text-muted-foreground truncate">
-                  {user.email}
+                <div className="flex items-center space-x-2 px-3">
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage 
+                      src={perfilUsuario?.avatar || undefined} 
+                      alt="Foto de perfil" 
+                    />
+                    <AvatarFallback>
+                      {getInitials(perfilUsuario?.first_name, perfilUsuario?.last_name, user.email)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-xs text-muted-foreground truncate">
+                      {user.email}
+                    </div>
+                  </div>
                 </div>
                 <Link
                   to="/mi-perfil"
@@ -259,9 +309,17 @@ export const MainNavigation = () => {
             {user ? (
               <DropdownMenu open={userDropdownOpen} onOpenChange={setUserDropdownOpen}>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" className="flex items-center space-x-2 max-w-[200px]">
-                    <User className="h-4 w-4 shrink-0" />
-                    <span className="text-sm truncate hidden md:inline">{user.email}</span>
+                  <Button variant="ghost" size="sm" className="flex items-center space-x-2 max-w-[200px] h-auto p-1">
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage 
+                        src={perfilUsuario?.avatar || undefined} 
+                        alt="Foto de perfil" 
+                      />
+                      <AvatarFallback className="text-sm">
+                        {getInitials(perfilUsuario?.first_name, perfilUsuario?.last_name, user.email)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span className="text-sm truncate hidden md:inline ml-2">{user.email}</span>
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
