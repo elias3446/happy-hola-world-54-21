@@ -94,7 +94,7 @@ export const UsuarioLogueadoDetalle: React.FC<UsuarioLogueadoDetalleProps> = ({ 
   }
 
   return (
-    <div className="fixed inset-0 bg-background z-50">
+    <div className="fixed inset-0 bg-background z-50 overflow-y-auto">
       <div className="container mx-auto px-4 py-4 sm:py-6 max-w-6xl min-h-screen">
         {/* Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 sm:mb-6 gap-4">
