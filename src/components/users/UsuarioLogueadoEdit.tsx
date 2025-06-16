@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -49,8 +48,12 @@ export const UsuarioLogueadoEdit: React.FC<UsuarioLogueadoEditProps> = ({ onClos
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState('perfil');
   const [newAvatarUrl, setNewAvatarUrl] = useState<string | null>(null);
+  const [isCapturing, setIsCapturing] = useState(false);
   const isMobile = useIsMobile();
   const { uploadImage, isUploading } = useCloudinary();
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
 
   // Obtener datos del perfil del usuario logueado
   const { data: perfilUsuario, isLoading } = useQuery({
@@ -140,28 +143,82 @@ export const UsuarioLogueadoEdit: React.FC<UsuarioLogueadoEditProps> = ({ onClos
     }
   };
 
-  // Manejar captura desde cámara
-  const handleCameraCapture = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
+  // Iniciar cámara
+  const startCamera = async () => {
     try {
-      const imageUrl = await uploadImage(file);
-      if (imageUrl) {
-        setNewAvatarUrl(imageUrl);
-        toast({
-          title: "Foto capturada",
-          description: "Tu foto de perfil se ha capturado y subido correctamente.",
-        });
+      setIsCapturing(true);
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { 
+          facingMode: 'user',
+          width: { ideal: 640 },
+          height: { ideal: 480 }
+        } 
+      });
+      
+      streamRef.current = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        videoRef.current.play();
       }
     } catch (error) {
-      console.error('Error uploading camera capture:', error);
+      console.error('Error accessing camera:', error);
       toast({
-        title: "Error",
-        description: "No se pudo procesar la foto. Inténtalo de nuevo.",
+        title: "Error de cámara",
+        description: "No se pudo acceder a la cámara. Verifica los permisos.",
         variant: "destructive",
       });
+      setIsCapturing(false);
     }
+  };
+
+  // Detener cámara
+  const stopCamera = () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+    setIsCapturing(false);
+  };
+
+  // Capturar foto
+  const capturePhoto = async () => {
+    if (!videoRef.current || !canvasRef.current) return;
+
+    const canvas = canvasRef.current;
+    const video = videoRef.current;
+    
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    ctx.drawImage(video, 0, 0);
+    
+    canvas.toBlob(async (blob) => {
+      if (!blob) return;
+      
+      const file = new File([blob], 'camera-capture.jpg', { type: 'image/jpeg' });
+      
+      try {
+        const imageUrl = await uploadImage(file);
+        if (imageUrl) {
+          setNewAvatarUrl(imageUrl);
+          toast({
+            title: "Foto capturada",
+            description: "Tu foto de perfil se ha capturado y subido correctamente.",
+          });
+          stopCamera();
+        }
+      } catch (error) {
+        console.error('Error uploading camera capture:', error);
+        toast({
+          title: "Error",
+          description: "No se pudo procesar la foto. Inténtalo de nuevo.",
+          variant: "destructive",
+        });
+      }
+    }, 'image/jpeg', 0.8);
   };
 
   // Mutación para actualizar el perfil
@@ -330,48 +387,76 @@ export const UsuarioLogueadoEdit: React.FC<UsuarioLogueadoEditProps> = ({ onClos
                         </AvatarFallback>
                       </Avatar>
                       
-                      <div className="flex flex-col sm:flex-row gap-2">
+                      {/* Cámara en vivo si está capturando */}
+                      {isCapturing && (
                         <div className="relative">
-                          <Button 
-                            type="button" 
-                            variant="outline" 
-                            size="sm"
-                            disabled={isUploading}
-                            className="flex items-center gap-2"
-                          >
-                            <Upload className="h-4 w-4" />
-                            {isUploading ? 'Subiendo...' : 'Subir Imagen'}
-                          </Button>
-                          <input
-                            type="file"
-                            accept="image/*"
-                            onChange={handleImageUpload}
-                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                            disabled={isUploading}
+                          <video
+                            ref={videoRef}
+                            className="w-64 h-48 rounded-lg border"
+                            autoPlay
+                            playsInline
+                            muted
                           />
+                          <canvas
+                            ref={canvasRef}
+                            className="hidden"
+                          />
+                          <div className="flex gap-2 mt-2">
+                            <Button
+                              type="button"
+                              onClick={capturePhoto}
+                              disabled={isUploading}
+                              size="sm"
+                            >
+                              Capturar
+                            </Button>
+                            <Button
+                              type="button"
+                              onClick={stopCamera}
+                              variant="outline"
+                              size="sm"
+                            >
+                              Cancelar
+                            </Button>
+                          </div>
                         </div>
-                        
-                        <div className="relative">
+                      )}
+                      
+                      {!isCapturing && (
+                        <div className="flex flex-col sm:flex-row gap-2">
+                          <div className="relative">
+                            <Button 
+                              type="button" 
+                              variant="outline" 
+                              size="sm"
+                              disabled={isUploading}
+                              className="flex items-center gap-2"
+                            >
+                              <Upload className="h-4 w-4" />
+                              {isUploading ? 'Subiendo...' : 'Subir Imagen'}
+                            </Button>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={handleImageUpload}
+                              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                              disabled={isUploading}
+                            />
+                          </div>
+                          
                           <Button 
                             type="button" 
                             variant="outline" 
                             size="sm"
                             disabled={isUploading}
+                            onClick={startCamera}
                             className="flex items-center gap-2"
                           >
                             <Camera className="h-4 w-4" />
-                            Tomar Foto
+                            Usar Cámara
                           </Button>
-                          <input
-                            type="file"
-                            accept="image/*"
-                            capture="user"
-                            onChange={handleCameraCapture}
-                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                            disabled={isUploading}
-                          />
                         </div>
-                      </div>
+                      )}
                       
                       <p className="text-xs sm:text-sm text-muted-foreground text-center">
                         Formatos soportados: JPG, PNG, GIF, WebP. Máximo 5MB.
