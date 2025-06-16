@@ -247,14 +247,14 @@ export const ReportesPublicos = () => {
                     {paginatedData.map((reporte) => (
                       <TableRow key={reporte.id}>
                         <TableCell>
-                          <button
-                            onClick={() => window.open(`/reporte/${reporte.id}`, '_blank')}
-                            className="font-medium text-blue-600 hover:text-blue-800 hover:underline transition-colors text-left"
+                          <Link
+                            to={`/reporte/${reporte.id}`}
+                            className="font-medium text-blue-600 hover:text-blue-800 hover:underline transition-colors"
                           >
                             <span className={isMobile ? "line-clamp-2 break-words text-xs" : ""}>
                               {reporte.nombre}
                             </span>
-                          </button>
+                          </Link>
                           {isMobile && (
                             <p className="text-xs text-muted-foreground line-clamp-1 mt-1">
                               {reporte.descripcion}
