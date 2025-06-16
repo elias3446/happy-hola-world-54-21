@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -16,6 +15,7 @@ import { Activity, History, Clock, User, Database, FileText, Search, Filter, Ref
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { CambioDetalleModal } from '../roles/dialogs/CambioDetalleModal';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface UsuarioAuditoriaProps {
   usuarioId: string;
@@ -92,6 +92,7 @@ export const UsuarioAuditoria: React.FC<UsuarioAuditoriaProps> = ({ usuarioId, u
   const [activeTab, setActiveTab] = useState('actividades');
   const [selectedCambio, setSelectedCambio] = useState<CambioEnUsuario | null>(null);
   const [detalleModalOpen, setDetalleModalOpen] = useState(false);
+  const isMobile = useIsMobile();
 
   // Hook para obtener actividades realizadas EN el usuario (actividades que afectan al usuario)
   const { data: actividadesEnUsuario = [], isLoading: isLoadingActividades } = useQuery({
@@ -326,30 +327,135 @@ export const UsuarioAuditoria: React.FC<UsuarioAuditoriaProps> = ({ usuarioId, u
     return actividad.descripcion;
   };
 
-  return (
-    <div className="container mx-auto px-4 py-6">
-      <div className="mb-6">
-        <div className="flex items-center gap-2 mb-4">
-          <Shield className="h-6 w-6 text-primary" />
-          <h1 className="text-2xl font-bold">Auditoría del Usuario</h1>
+  // Componente para renderizar actividades en mobile
+  const renderActividadMobile = (actividad: ActividadEnUsuario) => (
+    <div key={actividad.id} className="border rounded-lg p-3 space-y-3">
+      <div className="flex items-start justify-between gap-2">
+        <Badge 
+          variant="outline" 
+          className={`${getActivityColor(actividad.activity_type)} text-xs font-medium flex-shrink-0`}
+        >
+          <div className="flex items-center gap-1">
+            {getActivityIcon(actividad.activity_type)}
+            <span>{actividad.activity_type}</span>
+          </div>
+        </Badge>
+        <div className="text-right">
+          <div className="text-xs font-medium">
+            {format(new Date(actividad.created_at), 'dd/MM/yyyy', { locale: es })}
+          </div>
+          <div className="text-xs text-muted-foreground">
+            {format(new Date(actividad.created_at), 'HH:mm:ss', { locale: es })}
+          </div>
         </div>
-        <p className="text-muted-foreground">
-          Monitoreo completo de actividades y cambios realizados en la cuenta de {usuarioEmail}
+      </div>
+      
+      <div>
+        <p className="text-sm font-medium text-gray-900 line-clamp-2">
+          {getDescripcionActividad(actividad)}
+        </p>
+      </div>
+      
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2 min-w-0 flex-1">
+          <User className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+          <span className="text-sm font-medium truncate" title={actividad.user_email}>
+            {actividad.user_email.split('@')[0]}
+          </span>
+        </div>
+        <Badge variant="secondary" className="text-xs flex-shrink-0">
+          {actividad.tabla_afectada || 'N/A'}
+        </Badge>
+      </div>
+    </div>
+  );
+
+  // Componente para renderizar cambios en mobile
+  const renderCambioMobile = (cambio: CambioEnUsuario) => (
+    <div key={cambio.id} className="border rounded-lg p-3 space-y-3">
+      <div className="flex items-start justify-between gap-2">
+        <Badge 
+          variant="outline"
+          className={`text-xs font-medium flex-shrink-0 ${getOperationColor(cambio.operation_type)}`}
+        >
+          {cambio.operation_type}
+        </Badge>
+        <div className="text-right">
+          <div className="text-xs font-medium">
+            {format(new Date(cambio.created_at), 'dd/MM/yyyy', { locale: es })}
+          </div>
+          <div className="text-xs text-muted-foreground">
+            {format(new Date(cambio.created_at), 'HH:mm:ss', { locale: es })}
+          </div>
+        </div>
+      </div>
+      
+      <div>
+        <p className="text-sm font-medium text-gray-900 line-clamp-2">
+          {getDescripcionCambio(cambio)}
+        </p>
+      </div>
+      
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2 min-w-0 flex-1">
+          <User className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+          <span className="text-sm font-medium truncate" title={cambio.user_email}>
+            {cambio.user_email.split('@')[0]}
+          </span>
+        </div>
+        <Button 
+          variant="outline" 
+          size="sm"
+          onClick={() => handleVerDetalles(cambio)}
+          className="flex-shrink-0"
+        >
+          <Eye className="h-3 w-3 mr-1" />
+          Ver
+        </Button>
+      </div>
+      
+      {cambio.campos_modificados && cambio.campos_modificados.length > 0 && (
+        <div className="flex flex-wrap gap-1">
+          {cambio.campos_modificados.slice(0, 3).map((campo, index) => (
+            <Badge key={index} variant="secondary" className="text-xs">
+              {campo}
+            </Badge>
+          ))}
+          {cambio.campos_modificados.length > 3 && (
+            <Badge variant="secondary" className="text-xs">
+              +{cambio.campos_modificados.length - 3}
+            </Badge>
+          )}
+        </div>
+      )}
+    </div>
+  );
+
+  return (
+    <div className="space-y-4 sm:space-y-6">
+      {/* Header responsive */}
+      <div className="space-y-2 sm:space-y-4">
+        <div className="flex items-center gap-2">
+          <Shield className="h-5 w-5 sm:h-6 sm:w-6 text-primary flex-shrink-0" />
+          <h1 className="text-xl sm:text-2xl font-bold truncate">Auditoría del Usuario</h1>
+        </div>
+        <p className="text-sm sm:text-base text-muted-foreground">
+          Monitoreo completo de actividades y cambios realizados en la cuenta de {isMobile ? usuarioEmail.split('@')[0] : usuarioEmail}
         </p>
       </div>
 
-      {/* Filtros */}
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Filter className="h-5 w-5" />
+      {/* Filtros responsive */}
+      <Card>
+        <CardHeader className="pb-4">
+          <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+            <Filter className="h-4 w-4 sm:h-5 sm:w-5" />
             Filtros de Búsqueda
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <Label htmlFor="busqueda">Buscar</Label>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="busqueda" className="text-sm">Buscar</Label>
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -357,18 +463,18 @@ export const UsuarioAuditoria: React.FC<UsuarioAuditoriaProps> = ({ usuarioId, u
                   placeholder="Buscar en descripción..."
                   value={busqueda}
                   onChange={(e) => setBusqueda(e.target.value)}
-                  className="pl-10"
+                  className="pl-10 text-sm"
                 />
               </div>
             </div>
 
-            <div>
-              <Label htmlFor="filtro_tipo">Tipo de Actividad/Operación</Label>
+            <div className="space-y-2">
+              <Label htmlFor="filtro_tipo" className="text-sm">Tipo de Actividad/Operación</Label>
               <Select
                 value={filtroTipo}
                 onValueChange={setFiltroTipo}
               >
-                <SelectTrigger>
+                <SelectTrigger className="text-sm">
                   <SelectValue placeholder="Todos los tipos" />
                 </SelectTrigger>
                 <SelectContent>
@@ -384,12 +490,12 @@ export const UsuarioAuditoria: React.FC<UsuarioAuditoriaProps> = ({ usuarioId, u
               </Select>
             </div>
 
-            <div className="flex items-end gap-2">
-              <Button onClick={limpiarFiltros} className="flex-1">
+            <div className="flex items-end gap-2 sm:col-span-2 lg:col-span-1">
+              <Button onClick={limpiarFiltros} className="flex-1 text-sm" size={isMobile ? "sm" : "default"}>
                 <Filter className="h-4 w-4 mr-2" />
                 Aplicar
               </Button>
-              <Button variant="outline" onClick={limpiarFiltros}>
+              <Button variant="outline" onClick={limpiarFiltros} size={isMobile ? "sm" : "default"}>
                 <RefreshCw className="h-4 w-4" />
               </Button>
             </div>
@@ -397,24 +503,25 @@ export const UsuarioAuditoria: React.FC<UsuarioAuditoriaProps> = ({ usuarioId, u
         </CardContent>
       </Card>
 
-      {/* Tabs con contenido */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+      {/* Tabs responsive */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 sm:space-y-6">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <TabsList className="grid w-full sm:w-auto grid-cols-2">
-            <TabsTrigger value="actividades" className="flex items-center gap-2">
-              <Activity className="h-4 w-4" />
-              Actividades en el Usuario
+          <TabsList className="grid w-full sm:w-auto grid-cols-2 h-auto">
+            <TabsTrigger value="actividades" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm p-2 sm:p-3">
+              <Activity className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span>Actividades en el Usuario</span>
             </TabsTrigger>
-            <TabsTrigger value="cambios" className="flex items-center gap-2">
-              <History className="h-4 w-4" />
-              Historial de Cambios
+            <TabsTrigger value="cambios" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm p-2 sm:p-3">
+              <History className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span>Historial de Cambios</span>
             </TabsTrigger>
           </TabsList>
 
           <Button 
             onClick={exportarDatos}
             disabled={activeTab === 'actividades' ? actividadesEnUsuario.length === 0 : cambiosEnUsuario.length === 0}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 w-full sm:w-auto text-sm"
+            size={isMobile ? "sm" : "default"}
           >
             <Download className="h-4 w-4" />
             Exportar Resultados
@@ -423,94 +530,106 @@ export const UsuarioAuditoria: React.FC<UsuarioAuditoriaProps> = ({ usuarioId, u
 
         <TabsContent value="actividades">
           <Card>
-            <CardHeader>
+            <CardHeader className="pb-4">
               <CardTitle className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Activity className="h-5 w-5" />
-                  Actividades Realizadas en el Usuario
+                  <Activity className="h-4 w-4 sm:h-5 sm:w-5" />
+                  <span className="text-base sm:text-lg">Actividades Realizadas en el Usuario</span>
                 </div>
-                <div className="text-sm text-muted-foreground">
-                  {isLoadingActividades ? 'Cargando...' : `${actividadesEnUsuario.length} registros encontrados`}
+                <div className="text-xs sm:text-sm text-muted-foreground">
+                  {isLoadingActividades ? 'Cargando...' : `${actividadesEnUsuario.length} registros`}
                 </div>
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="border rounded-lg">
-                <ScrollArea className="h-[400px]">
-                  {isLoadingActividades ? (
-                    <div className="flex items-center justify-center p-8">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                    </div>
-                  ) : actividadesEnUsuario.length === 0 ? (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <Activity className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                      <p className="text-lg font-medium">No se encontraron actividades</p>
-                      <p className="text-sm">No hay actividades realizadas en este usuario con los filtros aplicados.</p>
-                    </div>
-                  ) : (
-                    <Table>
-                      <TableHeader className="sticky top-0 bg-background">
-                        <TableRow>
-                          <TableHead className="w-[120px]">Tipo</TableHead>
-                          <TableHead className="min-w-[300px]">Descripción</TableHead>
-                          <TableHead className="w-[180px]">Realizado por</TableHead>
-                          <TableHead className="w-[150px]">Fecha y Hora</TableHead>
-                          <TableHead className="w-[100px]">Tabla</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {actividadesEnUsuario.map((actividad) => (
-                          <TableRow key={actividad.id} className="hover:bg-muted/50">
-                            <TableCell>
-                              <Badge 
-                                variant="outline" 
-                                className={`${getActivityColor(actividad.activity_type)} text-xs font-medium`}
-                              >
-                                <div className="flex items-center gap-1">
-                                  {getActivityIcon(actividad.activity_type)}
-                                  <span>{actividad.activity_type}</span>
-                                </div>
-                              </Badge>
-                            </TableCell>
-                            <TableCell>
-                              <div className="max-w-[300px]">
-                                <p className="text-sm font-medium truncate" title={getDescripcionActividad(actividad)}>
-                                  {getDescripcionActividad(actividad)}
-                                </p>
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex items-center gap-2">
-                                <User className="h-4 w-4 text-muted-foreground" />
-                                <span className="text-sm font-medium truncate" title={actividad.user_email}>
-                                  {actividad.user_email}
-                                </span>
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                                <Clock className="h-3 w-3" />
-                                <div className="space-y-1">
-                                  <div className="font-medium">
-                                    {format(new Date(actividad.created_at), 'dd/MM/yyyy', { locale: es })}
+                {isLoadingActividades ? (
+                  <div className="flex items-center justify-center p-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                  </div>
+                ) : actividadesEnUsuario.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Activity className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                    <p className="text-lg font-medium">No se encontraron actividades</p>
+                    <p className="text-sm">No hay actividades realizadas en este usuario con los filtros aplicados.</p>
+                  </div>
+                ) : (
+                  <>
+                    {/* Vista desktop - tabla */}
+                    {!isMobile ? (
+                      <ScrollArea className="h-[400px]">
+                        <Table>
+                          <TableHeader className="sticky top-0 bg-background">
+                            <TableRow>
+                              <TableHead className="w-[120px]">Tipo</TableHead>
+                              <TableHead className="min-w-[300px]">Descripción</TableHead>
+                              <TableHead className="w-[180px]">Realizado por</TableHead>
+                              <TableHead className="w-[150px]">Fecha y Hora</TableHead>
+                              <TableHead className="w-[100px]">Tabla</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {actividadesEnUsuario.map((actividad) => (
+                              <TableRow key={actividad.id} className="hover:bg-muted/50">
+                                <TableCell>
+                                  <Badge 
+                                    variant="outline" 
+                                    className={`${getActivityColor(actividad.activity_type)} text-xs font-medium`}
+                                  >
+                                    <div className="flex items-center gap-1">
+                                      {getActivityIcon(actividad.activity_type)}
+                                      <span>{actividad.activity_type}</span>
+                                    </div>
+                                  </Badge>
+                                </TableCell>
+                                <TableCell>
+                                  <div className="max-w-[300px]">
+                                    <p className="text-sm font-medium truncate" title={getDescripcionActividad(actividad)}>
+                                      {getDescripcionActividad(actividad)}
+                                    </p>
                                   </div>
-                                  <div className="text-xs">
-                                    {format(new Date(actividad.created_at), 'HH:mm:ss', { locale: es })}
+                                </TableCell>
+                                <TableCell>
+                                  <div className="flex items-center gap-2">
+                                    <User className="h-4 w-4 text-muted-foreground" />
+                                    <span className="text-sm font-medium truncate" title={actividad.user_email}>
+                                      {actividad.user_email}
+                                    </span>
                                   </div>
-                                </div>
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <Badge variant="secondary" className="text-xs">
-                                {actividad.tabla_afectada || 'N/A'}
-                              </Badge>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  )}
-                </ScrollArea>
+                                </TableCell>
+                                <TableCell>
+                                  <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                                    <Clock className="h-3 w-3" />
+                                    <div className="space-y-1">
+                                      <div className="font-medium">
+                                        {format(new Date(actividad.created_at), 'dd/MM/yyyy', { locale: es })}
+                                      </div>
+                                      <div className="text-xs">
+                                        {format(new Date(actividad.created_at), 'HH:mm:ss', { locale: es })}
+                                      </div>
+                                    </div>
+                                  </div>
+                                </TableCell>
+                                <TableCell>
+                                  <Badge variant="secondary" className="text-xs">
+                                    {actividad.tabla_afectada || 'N/A'}
+                                  </Badge>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </ScrollArea>
+                    ) : (
+                      /* Vista mobile - cards */
+                      <ScrollArea className="h-[400px]">
+                        <div className="p-4 space-y-3">
+                          {actividadesEnUsuario.map((actividad) => renderActividadMobile(actividad))}
+                        </div>
+                      </ScrollArea>
+                    )}
+                  </>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -518,115 +637,127 @@ export const UsuarioAuditoria: React.FC<UsuarioAuditoriaProps> = ({ usuarioId, u
 
         <TabsContent value="cambios">
           <Card>
-            <CardHeader>
+            <CardHeader className="pb-4">
               <CardTitle className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <History className="h-5 w-5" />
-                  Historial de Cambios en el Usuario
+                  <History className="h-4 w-4 sm:h-5 sm:w-5" />
+                  <span className="text-base sm:text-lg">Historial de Cambios en el Usuario</span>
                 </div>
-                <div className="text-sm text-muted-foreground">
-                  {isLoadingCambios ? 'Cargando...' : `${cambiosEnUsuario.length} registros encontrados`}
+                <div className="text-xs sm:text-sm text-muted-foreground">
+                  {isLoadingCambios ? 'Cargando...' : `${cambiosEnUsuario.length} registros`}
                 </div>
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="border rounded-lg">
-                <ScrollArea className="h-[400px]">
-                  {isLoadingCambios ? (
-                    <div className="flex items-center justify-center p-8">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                    </div>
-                  ) : cambiosEnUsuario.length === 0 ? (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <History className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                      <p className="text-lg font-medium">No se encontraron cambios</p>
-                      <p className="text-sm">No hay cambios registrados en este usuario con los filtros aplicados.</p>
-                    </div>
-                  ) : (
-                    <Table>
-                      <TableHeader className="sticky top-0 bg-background">
-                        <TableRow>
-                          <TableHead className="w-[120px]">Operación</TableHead>
-                          <TableHead className="min-w-[300px]">Descripción del Cambio</TableHead>
-                          <TableHead className="w-[200px]">Campos Modificados</TableHead>
-                          <TableHead className="w-[180px]">Realizado por</TableHead>
-                          <TableHead className="w-[150px]">Fecha y Hora</TableHead>
-                          <TableHead className="w-[100px]">Acciones</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {cambiosEnUsuario.map((cambio) => (
-                          <TableRow key={cambio.id} className="hover:bg-muted/50">
-                            <TableCell>
-                              <Badge 
-                                variant="outline"
-                                className={`text-xs font-medium ${getOperationColor(cambio.operation_type)}`}
-                              >
-                                {cambio.operation_type}
-                              </Badge>
-                            </TableCell>
-                            <TableCell>
-                              <div className="max-w-[300px]">
-                                <p className="text-sm font-medium truncate" title={getDescripcionCambio(cambio)}>
-                                  {getDescripcionCambio(cambio)}
-                                </p>
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              {cambio.campos_modificados && cambio.campos_modificados.length > 0 ? (
-                                <div className="flex flex-wrap gap-1 max-w-[180px]">
-                                  {cambio.campos_modificados.slice(0, 3).map((campo, index) => (
-                                    <Badge key={index} variant="secondary" className="text-xs">
-                                      {campo}
-                                    </Badge>
-                                  ))}
-                                  {cambio.campos_modificados.length > 3 && (
-                                    <Badge variant="secondary" className="text-xs">
-                                      +{cambio.campos_modificados.length - 3}
-                                    </Badge>
+                {isLoadingCambios ? (
+                  <div className="flex items-center justify-center p-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                  </div>
+                ) : cambiosEnUsuario.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <History className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                    <p className="text-lg font-medium">No se encontraron cambios</p>
+                    <p className="text-sm">No hay cambios registrados en este usuario con los filtros aplicados.</p>
+                  </div>
+                ) : (
+                  <>
+                    {/* Vista desktop - tabla */}
+                    {!isMobile ? (
+                      <ScrollArea className="h-[400px]">
+                        <Table>
+                          <TableHeader className="sticky top-0 bg-background">
+                            <TableRow>
+                              <TableHead className="w-[120px]">Operación</TableHead>
+                              <TableHead className="min-w-[300px]">Descripción del Cambio</TableHead>
+                              <TableHead className="w-[200px]">Campos Modificados</TableHead>
+                              <TableHead className="w-[180px]">Realizado por</TableHead>
+                              <TableHead className="w-[150px]">Fecha y Hora</TableHead>
+                              <TableHead className="w-[100px]">Acciones</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {cambiosEnUsuario.map((cambio) => (
+                              <TableRow key={cambio.id} className="hover:bg-muted/50">
+                                <TableCell>
+                                  <Badge 
+                                    variant="outline"
+                                    className={`text-xs font-medium ${getOperationColor(cambio.operation_type)}`}
+                                  >
+                                    {cambio.operation_type}
+                                  </Badge>
+                                </TableCell>
+                                <TableCell>
+                                  <div className="max-w-[300px]">
+                                    <p className="text-sm font-medium truncate" title={getDescripcionCambio(cambio)}>
+                                      {getDescripcionCambio(cambio)}
+                                    </p>
+                                  </div>
+                                </TableCell>
+                                <TableCell>
+                                  {cambio.campos_modificados && cambio.campos_modificados.length > 0 ? (
+                                    <div className="flex flex-wrap gap-1 max-w-[180px]">
+                                      {cambio.campos_modificados.slice(0, 3).map((campo, index) => (
+                                        <Badge key={index} variant="secondary" className="text-xs">
+                                          {campo}
+                                        </Badge>
+                                      ))}
+                                      {cambio.campos_modificados.length > 3 && (
+                                        <Badge variant="secondary" className="text-xs">
+                                          +{cambio.campos_modificados.length - 3}
+                                        </Badge>
+                                      )}
+                                    </div>
+                                  ) : (
+                                    <span className="text-muted-foreground text-xs">Sin campos</span>
                                   )}
-                                </div>
-                              ) : (
-                                <span className="text-muted-foreground text-xs">Sin campos</span>
-                              )}
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex items-center gap-2">
-                                <User className="h-4 w-4 text-muted-foreground" />
-                                <span className="text-sm font-medium truncate" title={cambio.user_email}>
-                                  {cambio.user_email}
-                                </span>
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                                <Clock className="h-3 w-3" />
-                                <div className="space-y-1">
-                                  <div className="font-medium">
-                                    {format(new Date(cambio.created_at), 'dd/MM/yyyy', { locale: es })}
+                                </TableCell>
+                                <TableCell>
+                                  <div className="flex items-center gap-2">
+                                    <User className="h-4 w-4 text-muted-foreground" />
+                                    <span className="text-sm font-medium truncate" title={cambio.user_email}>
+                                      {cambio.user_email}
+                                    </span>
                                   </div>
-                                  <div className="text-xs">
-                                    {format(new Date(cambio.created_at), 'HH:mm:ss', { locale: es })}
+                                </TableCell>
+                                <TableCell>
+                                  <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                                    <Clock className="h-3 w-3" />
+                                    <div className="space-y-1">
+                                      <div className="font-medium">
+                                        {format(new Date(cambio.created_at), 'dd/MM/yyyy', { locale: es })}
+                                      </div>
+                                      <div className="text-xs">
+                                        {format(new Date(cambio.created_at), 'HH:mm:ss', { locale: es })}
+                                      </div>
+                                    </div>
                                   </div>
-                                </div>
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <Button 
-                                variant="outline" 
-                                size="sm"
-                                onClick={() => handleVerDetalles(cambio)}
-                              >
-                                <Eye className="h-3 w-3 mr-1" />
-                                Ver Detalles
-                              </Button>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  )}
-                </ScrollArea>
+                                </TableCell>
+                                <TableCell>
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm"
+                                    onClick={() => handleVerDetalles(cambio)}
+                                  >
+                                    <Eye className="h-3 w-3 mr-1" />
+                                    Ver Detalles
+                                  </Button>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </ScrollArea>
+                    ) : (
+                      /* Vista mobile - cards */
+                      <ScrollArea className="h-[400px]">
+                        <div className="p-4 space-y-3">
+                          {cambiosEnUsuario.map((cambio) => renderCambioMobile(cambio))}
+                        </div>
+                      </ScrollArea>
+                    )}
+                  </>
+                )}
               </div>
             </CardContent>
           </Card>
