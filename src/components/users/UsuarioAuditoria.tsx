@@ -554,74 +554,72 @@ export const UsuarioAuditoria: React.FC<UsuarioAuditoriaProps> = ({ usuarioId, u
                   </div>
                 ) : (
                   <>
-                    {/* Vista desktop - tabla sin ScrollArea */}
+                    {/* Vista desktop - tabla sin altura fija ni scrollbar interno */}
                     {!isMobile ? (
-                      <div className="max-h-[400px] overflow-y-auto">
-                        <Table>
-                          <TableHeader className="sticky top-0 bg-background">
-                            <TableRow>
-                              <TableHead className="w-[120px]">Tipo</TableHead>
-                              <TableHead className="min-w-[300px]">Descripción</TableHead>
-                              <TableHead className="w-[180px]">Realizado por</TableHead>
-                              <TableHead className="w-[150px]">Fecha y Hora</TableHead>
-                              <TableHead className="w-[100px]">Tabla</TableHead>
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="w-[120px]">Tipo</TableHead>
+                            <TableHead className="min-w-[300px]">Descripción</TableHead>
+                            <TableHead className="w-[180px]">Realizado por</TableHead>
+                            <TableHead className="w-[150px]">Fecha y Hora</TableHead>
+                            <TableHead className="w-[100px]">Tabla</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {actividadesEnUsuario.map((actividad) => (
+                            <TableRow key={actividad.id} className="hover:bg-muted/50">
+                              <TableCell>
+                                <Badge 
+                                  variant="outline" 
+                                  className={`${getActivityColor(actividad.activity_type)} text-xs font-medium`}
+                                >
+                                  <div className="flex items-center gap-1">
+                                    {getActivityIcon(actividad.activity_type)}
+                                    <span>{actividad.activity_type}</span>
+                                  </div>
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                <div className="max-w-[300px]">
+                                  <p className="text-sm font-medium truncate" title={getDescripcionActividad(actividad)}>
+                                    {getDescripcionActividad(actividad)}
+                                  </p>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex items-center gap-2">
+                                  <User className="h-4 w-4 text-muted-foreground" />
+                                  <span className="text-sm font-medium truncate" title={actividad.user_email}>
+                                    {actividad.user_email}
+                                  </span>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                                  <Clock className="h-3 w-3" />
+                                  <div className="space-y-1">
+                                    <div className="font-medium">
+                                      {format(new Date(actividad.created_at), 'dd/MM/yyyy', { locale: es })}
+                                    </div>
+                                    <div className="text-xs">
+                                      {format(new Date(actividad.created_at), 'HH:mm:ss', { locale: es })}
+                                    </div>
+                                  </div>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant="secondary" className="text-xs">
+                                  {actividad.tabla_afectada || 'N/A'}
+                                </Badge>
+                              </TableCell>
                             </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {actividadesEnUsuario.map((actividad) => (
-                              <TableRow key={actividad.id} className="hover:bg-muted/50">
-                                <TableCell>
-                                  <Badge 
-                                    variant="outline" 
-                                    className={`${getActivityColor(actividad.activity_type)} text-xs font-medium`}
-                                  >
-                                    <div className="flex items-center gap-1">
-                                      {getActivityIcon(actividad.activity_type)}
-                                      <span>{actividad.activity_type}</span>
-                                    </div>
-                                  </Badge>
-                                </TableCell>
-                                <TableCell>
-                                  <div className="max-w-[300px]">
-                                    <p className="text-sm font-medium truncate" title={getDescripcionActividad(actividad)}>
-                                      {getDescripcionActividad(actividad)}
-                                    </p>
-                                  </div>
-                                </TableCell>
-                                <TableCell>
-                                  <div className="flex items-center gap-2">
-                                    <User className="h-4 w-4 text-muted-foreground" />
-                                    <span className="text-sm font-medium truncate" title={actividad.user_email}>
-                                      {actividad.user_email}
-                                    </span>
-                                  </div>
-                                </TableCell>
-                                <TableCell>
-                                  <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                                    <Clock className="h-3 w-3" />
-                                    <div className="space-y-1">
-                                      <div className="font-medium">
-                                        {format(new Date(actividad.created_at), 'dd/MM/yyyy', { locale: es })}
-                                      </div>
-                                      <div className="text-xs">
-                                        {format(new Date(actividad.created_at), 'HH:mm:ss', { locale: es })}
-                                      </div>
-                                    </div>
-                                  </div>
-                                </TableCell>
-                                <TableCell>
-                                  <Badge variant="secondary" className="text-xs">
-                                    {actividad.tabla_afectada || 'N/A'}
-                                  </Badge>
-                                </TableCell>
-                              </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
-                      </div>
+                          ))}
+                        </TableBody>
+                      </Table>
                     ) : (
-                      /* Vista mobile - cards sin ScrollArea */
-                      <div className="max-h-[400px] overflow-y-auto p-4 space-y-3">
+                      /* Vista mobile - cards sin altura fija ni scrollbar interno */
+                      <div className="p-4 space-y-3">
                         {actividadesEnUsuario.map((actividad) => renderActividadMobile(actividad))}
                       </div>
                     )}
@@ -659,95 +657,93 @@ export const UsuarioAuditoria: React.FC<UsuarioAuditoriaProps> = ({ usuarioId, u
                   </div>
                 ) : (
                   <>
-                    {/* Vista desktop - tabla sin ScrollArea */}
+                    {/* Vista desktop - tabla sin altura fija ni scrollbar interno */}
                     {!isMobile ? (
-                      <div className="max-h-[400px] overflow-y-auto">
-                        <Table>
-                          <TableHeader className="sticky top-0 bg-background">
-                            <TableRow>
-                              <TableHead className="w-[120px]">Operación</TableHead>
-                              <TableHead className="min-w-[300px]">Descripción del Cambio</TableHead>
-                              <TableHead className="w-[200px]">Campos Modificados</TableHead>
-                              <TableHead className="w-[180px]">Realizado por</TableHead>
-                              <TableHead className="w-[150px]">Fecha y Hora</TableHead>
-                              <TableHead className="w-[100px]">Acciones</TableHead>
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="w-[120px]">Operación</TableHead>
+                            <TableHead className="min-w-[300px]">Descripción del Cambio</TableHead>
+                            <TableHead className="w-[200px]">Campos Modificados</TableHead>
+                            <TableHead className="w-[180px]">Realizado por</TableHead>
+                            <TableHead className="w-[150px]">Fecha y Hora</TableHead>
+                            <TableHead className="w-[100px]">Acciones</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {cambiosEnUsuario.map((cambio) => (
+                            <TableRow key={cambio.id} className="hover:bg-muted/50">
+                              <TableCell>
+                                <Badge 
+                                  variant="outline"
+                                  className={`text-xs font-medium ${getOperationColor(cambio.operation_type)}`}
+                                >
+                                  {cambio.operation_type}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                <div className="max-w-[300px]">
+                                  <p className="text-sm font-medium truncate" title={getDescripcionCambio(cambio)}>
+                                    {getDescripcionCambio(cambio)}
+                                  </p>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                {cambio.campos_modificados && cambio.campos_modificados.length > 0 ? (
+                                  <div className="flex flex-wrap gap-1 max-w-[180px]">
+                                    {cambio.campos_modificados.slice(0, 3).map((campo, index) => (
+                                      <Badge key={index} variant="secondary" className="text-xs">
+                                        {campo}
+                                      </Badge>
+                                    ))}
+                                    {cambio.campos_modificados.length > 3 && (
+                                      <Badge variant="secondary" className="text-xs">
+                                        +{cambio.campos_modificados.length - 3}
+                                      </Badge>
+                                    )}
+                                  </div>
+                                ) : (
+                                  <span className="text-muted-foreground text-xs">Sin campos</span>
+                                )}
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex items-center gap-2">
+                                  <User className="h-4 w-4 text-muted-foreground" />
+                                  <span className="text-sm font-medium truncate" title={cambio.user_email}>
+                                    {cambio.user_email}
+                                  </span>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                                  <Clock className="h-3 w-3" />
+                                  <div className="space-y-1">
+                                    <div className="font-medium">
+                                      {format(new Date(cambio.created_at), 'dd/MM/yyyy', { locale: es })}
+                                    </div>
+                                    <div className="text-xs">
+                                      {format(new Date(cambio.created_at), 'HH:mm:ss', { locale: es })}
+                                    </div>
+                                  </div>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <Button 
+                                  variant="outline" 
+                                  size="sm"
+                                  onClick={() => handleVerDetalles(cambio)}
+                                >
+                                  <Eye className="h-3 w-3 mr-1" />
+                                  Ver Detalles
+                                </Button>
+                              </TableCell>
                             </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {cambiosEnUsuario.map((cambio) => (
-                              <TableRow key={cambio.id} className="hover:bg-muted/50">
-                                <TableCell>
-                                  <Badge 
-                                    variant="outline"
-                                    className={`text-xs font-medium ${getOperationColor(cambio.operation_type)}`}
-                                  >
-                                    {cambio.operation_type}
-                                  </Badge>
-                                </TableCell>
-                                <TableCell>
-                                  <div className="max-w-[300px]">
-                                    <p className="text-sm font-medium truncate" title={getDescripcionCambio(cambio)}>
-                                      {getDescripcionCambio(cambio)}
-                                    </p>
-                                  </div>
-                                </TableCell>
-                                <TableCell>
-                                  {cambio.campos_modificados && cambio.campos_modificados.length > 0 ? (
-                                    <div className="flex flex-wrap gap-1 max-w-[180px]">
-                                      {cambio.campos_modificados.slice(0, 3).map((campo, index) => (
-                                        <Badge key={index} variant="secondary" className="text-xs">
-                                          {campo}
-                                        </Badge>
-                                      ))}
-                                      {cambio.campos_modificados.length > 3 && (
-                                        <Badge variant="secondary" className="text-xs">
-                                          +{cambio.campos_modificados.length - 3}
-                                        </Badge>
-                                      )}
-                                    </div>
-                                  ) : (
-                                    <span className="text-muted-foreground text-xs">Sin campos</span>
-                                  )}
-                                </TableCell>
-                                <TableCell>
-                                  <div className="flex items-center gap-2">
-                                    <User className="h-4 w-4 text-muted-foreground" />
-                                    <span className="text-sm font-medium truncate" title={cambio.user_email}>
-                                      {cambio.user_email}
-                                    </span>
-                                  </div>
-                                </TableCell>
-                                <TableCell>
-                                  <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                                    <Clock className="h-3 w-3" />
-                                    <div className="space-y-1">
-                                      <div className="font-medium">
-                                        {format(new Date(cambio.created_at), 'dd/MM/yyyy', { locale: es })}
-                                      </div>
-                                      <div className="text-xs">
-                                        {format(new Date(cambio.created_at), 'HH:mm:ss', { locale: es })}
-                                      </div>
-                                    </div>
-                                  </div>
-                                </TableCell>
-                                <TableCell>
-                                  <Button 
-                                    variant="outline" 
-                                    size="sm"
-                                    onClick={() => handleVerDetalles(cambio)}
-                                  >
-                                    <Eye className="h-3 w-3 mr-1" />
-                                    Ver Detalles
-                                  </Button>
-                                </TableCell>
-                              </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
-                      </div>
+                          ))}
+                        </TableBody>
+                      </Table>
                     ) : (
-                      /* Vista mobile - cards sin ScrollArea */
-                      <div className="max-h-[400px] overflow-y-auto p-4 space-y-3">
+                      /* Vista mobile - cards sin altura fija ni scrollbar interno */
+                      <div className="p-4 space-y-3">
                         {cambiosEnUsuario.map((cambio) => renderCambioMobile(cambio))}
                       </div>
                     )}
