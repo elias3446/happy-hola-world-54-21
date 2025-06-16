@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -9,9 +8,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Activity, History, Clock, User, Database, FileText, Search, Filter, Download, Calendar, RefreshCw, Shield } from 'lucide-react';
+import { Activity, History, Clock, User, Database, FileText, Search, Filter, Download, Calendar, RefreshCw, Shield, Eye } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
@@ -71,6 +71,81 @@ const getActivityColor = (type: ActividadReporte['activity_type']) => {
     case 'IMPORT': return 'bg-cyan-100 text-cyan-800 border-cyan-200';
     default: return 'bg-gray-100 text-gray-800 border-gray-200';
   }
+};
+
+const getOperationColor = (operation: CambioReporte['operation_type']) => {
+  switch (operation) {
+    case 'INSERT': return 'bg-green-100 text-green-800 border-green-200';
+    case 'UPDATE': return 'bg-orange-100 text-orange-800 border-orange-200';
+    case 'DELETE': return 'bg-red-100 text-red-800 border-red-200';
+    case 'SELECT': return 'bg-blue-100 text-blue-800 border-blue-200';
+    default: return 'bg-gray-100 text-gray-800 border-gray-200';
+  }
+};
+
+const DetallesCambio: React.FC<{ cambio: CambioReporte }> = ({ cambio }) => {
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <h4 className="font-semibold mb-2">Información General</h4>
+          <div className="space-y-2 text-sm">
+            <div>
+              <span className="font-medium">Tabla:</span> {cambio.tabla_nombre}
+            </div>
+            <div>
+              <span className="font-medium">Registro ID:</span> {cambio.registro_id}
+            </div>
+            <div>
+              <span className="font-medium">Operación:</span>
+              <Badge className={`ml-2 ${getOperationColor(cambio.operation_type)}`}>
+                {cambio.operation_type}
+              </Badge>
+            </div>
+            <div>
+              <span className="font-medium">Usuario:</span> {cambio.user_email}
+            </div>
+            <div>
+              <span className="font-medium">Fecha:</span> 
+              {format(new Date(cambio.created_at), 'dd/MM/yyyy HH:mm:ss', { locale: es })}
+            </div>
+          </div>
+        </div>
+        
+        <div>
+          <h4 className="font-semibold mb-2">Campos Modificados</h4>
+          <div className="space-y-1">
+            {cambio.campos_modificados?.map((campo, index) => (
+              <Badge key={index} variant="outline" className="mr-1">
+                {campo}
+              </Badge>
+            ))}
+            {(!cambio.campos_modificados || cambio.campos_modificados.length === 0) && (
+              <span className="text-sm text-muted-foreground">Sin campos modificados</span>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {cambio.valores_anteriores && (
+        <div>
+          <h4 className="font-semibold mb-2">Valores Anteriores</h4>
+          <pre className="bg-gray-50 p-3 rounded-md text-xs overflow-auto max-h-40">
+            {JSON.stringify(cambio.valores_anteriores, null, 2)}
+          </pre>
+        </div>
+      )}
+
+      {cambio.valores_nuevos && (
+        <div>
+          <h4 className="font-semibold mb-2">Valores Nuevos</h4>
+          <pre className="bg-gray-50 p-3 rounded-md text-xs overflow-auto max-h-40">
+            {JSON.stringify(cambio.valores_nuevos, null, 2)}
+          </pre>
+        </div>
+      )}
+    </div>
+  );
 };
 
 export const ReporteAuditoria: React.FC<ReporteAuditoriaProps> = ({ reporteId }) => {
@@ -402,6 +477,7 @@ export const ReporteAuditoria: React.FC<ReporteAuditoriaProps> = ({ reporteId })
                           <TableHead className="w-[200px]">Campos Modificados</TableHead>
                           <TableHead className="w-[180px]">Usuario</TableHead>
                           <TableHead className="w-[150px]">Fecha y Hora</TableHead>
+                          <TableHead className="w-[100px]">Acciones</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -410,12 +486,7 @@ export const ReporteAuditoria: React.FC<ReporteAuditoriaProps> = ({ reporteId })
                             <TableCell>
                               <Badge 
                                 variant="outline"
-                                className={`text-xs font-medium ${
-                                  cambio.operation_type === 'INSERT' ? 'bg-green-100 text-green-800 border-green-200' :
-                                  cambio.operation_type === 'UPDATE' ? 'bg-orange-100 text-orange-800 border-orange-200' :
-                                  cambio.operation_type === 'DELETE' ? 'bg-red-100 text-red-800 border-red-200' :
-                                  'bg-blue-100 text-blue-800 border-blue-200'
-                                }`}
+                                className={`text-xs font-medium ${getOperationColor(cambio.operation_type)}`}
                               >
                                 {cambio.operation_type}
                               </Badge>
@@ -465,6 +536,22 @@ export const ReporteAuditoria: React.FC<ReporteAuditoriaProps> = ({ reporteId })
                                   </div>
                                 </div>
                               </div>
+                            </TableCell>
+                            <TableCell>
+                              <Dialog>
+                                <DialogTrigger asChild>
+                                  <Button variant="outline" size="sm">
+                                    <Eye className="h-3 w-3 mr-1" />
+                                    Ver Detalles
+                                  </Button>
+                                </DialogTrigger>
+                                <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+                                  <DialogHeader>
+                                    <DialogTitle>Detalles del Cambio</DialogTitle>
+                                  </DialogHeader>
+                                  <DetallesCambio cambio={cambio} />
+                                </DialogContent>
+                              </Dialog>
                             </TableCell>
                           </TableRow>
                         ))}
