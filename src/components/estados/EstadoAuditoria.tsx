@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -512,29 +511,29 @@ export const EstadoAuditoria: React.FC<EstadoAuditoriaProps> = ({ estadoId }) =>
 
       {/* Modal de Detalles del Cambio */}
       <Dialog open={showDetailsDialog} onOpenChange={setShowDetailsDialog}>
-        <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden p-0">
-          <DialogHeader className="px-6 py-4 border-b">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden">
+          <DialogHeader className="pb-4">
             <DialogTitle className="flex items-center gap-2 text-xl">
-              <History className="h-6 w-6 text-primary" />
+              <History className="h-5 w-5" />
               Detalles del Cambio
             </DialogTitle>
           </DialogHeader>
           
           {selectedCambio && (
-            <div className="overflow-y-auto max-h-[calc(90vh-80px)]">
-              <div className="p-6 space-y-6">
+            <ScrollArea className="max-h-[calc(90vh-120px)]">
+              <div className="space-y-6">
                 {/* Información General */}
-                <div className="bg-muted/30 rounded-lg p-6">
+                <div className="bg-muted/30 rounded-lg p-4">
                   <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
                     <FileText className="h-5 w-5" />
                     Información General
                   </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                     <div className="space-y-2">
                       <Label className="text-sm font-medium text-muted-foreground">Operación</Label>
                       <Badge 
                         variant="outline" 
-                        className={`${getOperationColor(selectedCambio.operation_type)} text-sm font-medium px-3 py-1`}
+                        className={`${getOperationColor(selectedCambio.operation_type)} text-sm font-medium`}
                       >
                         {selectedCambio.operation_type}
                       </Badge>
@@ -554,7 +553,7 @@ export const EstadoAuditoria: React.FC<EstadoAuditoriaProps> = ({ estadoId }) =>
                           <div className="font-medium">
                             {format(new Date(selectedCambio.created_at), 'dd/MM/yyyy', { locale: es })}
                           </div>
-                          <div className="text-muted-foreground">
+                          <div className="text-muted-foreground text-xs">
                             {format(new Date(selectedCambio.created_at), 'HH:mm:ss', { locale: es })}
                           </div>
                         </div>
@@ -578,7 +577,7 @@ export const EstadoAuditoria: React.FC<EstadoAuditoriaProps> = ({ estadoId }) =>
 
                 {/* Campos Modificados */}
                 {selectedCambio.campos_modificados && selectedCambio.campos_modificados.length > 0 && (
-                  <div className="bg-blue-50/50 dark:bg-blue-950/20 rounded-lg p-6 border border-blue-200/50">
+                  <div className="bg-blue-50/50 dark:bg-blue-950/20 rounded-lg p-4 border border-blue-200/50">
                     <h3 className="text-lg font-semibold mb-4 flex items-center gap-2 text-blue-700 dark:text-blue-300">
                       <Activity className="h-5 w-5" />
                       Campos Modificados ({selectedCambio.campos_modificados.length})
@@ -604,7 +603,7 @@ export const EstadoAuditoria: React.FC<EstadoAuditoriaProps> = ({ estadoId }) =>
                       <History className="h-5 w-5" />
                       Comparación de Valores
                     </h3>
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                       {/* Valores Anteriores */}
                       <div className="space-y-3">
                         <div className="flex items-center gap-2">
@@ -619,22 +618,11 @@ export const EstadoAuditoria: React.FC<EstadoAuditoriaProps> = ({ estadoId }) =>
                               Estado Anterior
                             </span>
                           </div>
-                          <div className="p-4 max-h-96 overflow-y-auto">
+                          <div className="p-4 max-h-80 overflow-y-auto">
                             {selectedCambio.valores_anteriores ? (
-                              <div className="space-y-3">
-                                {Object.entries(selectedCambio.valores_anteriores).map(([key, value]) => (
-                                  <div key={key} className="flex flex-col gap-1">
-                                    <span className="text-xs font-semibold text-red-700 dark:text-red-300 uppercase tracking-wide">
-                                      {key}
-                                    </span>
-                                    <div className="bg-white dark:bg-red-950/50 border border-red-200 dark:border-red-800 rounded p-2">
-                                      <code className="text-sm text-red-700 dark:text-red-200 break-all whitespace-pre-wrap">
-                                        {formatearValor(value)}
-                                      </code>
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
+                              <pre className="text-xs text-red-700 dark:text-red-200 whitespace-pre-wrap">
+                                {JSON.stringify(selectedCambio.valores_anteriores, null, 2)}
+                              </pre>
                             ) : (
                               <div className="text-center py-6">
                                 <p className="text-sm text-red-600 dark:text-red-400 italic">
@@ -660,22 +648,11 @@ export const EstadoAuditoria: React.FC<EstadoAuditoriaProps> = ({ estadoId }) =>
                               Estado Actual
                             </span>
                           </div>
-                          <div className="p-4 max-h-96 overflow-y-auto">
+                          <div className="p-4 max-h-80 overflow-y-auto">
                             {selectedCambio.valores_nuevos ? (
-                              <div className="space-y-3">
-                                {Object.entries(selectedCambio.valores_nuevos).map(([key, value]) => (
-                                  <div key={key} className="flex flex-col gap-1">
-                                    <span className="text-xs font-semibold text-green-700 dark:text-green-300 uppercase tracking-wide">
-                                      {key}
-                                    </span>
-                                    <div className="bg-white dark:bg-green-950/50 border border-green-200 dark:border-green-800 rounded p-2">
-                                      <code className="text-sm text-green-700 dark:text-green-200 break-all whitespace-pre-wrap">
-                                        {formatearValor(value)}
-                                      </code>
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
+                              <pre className="text-xs text-green-700 dark:text-green-200 whitespace-pre-wrap">
+                                {JSON.stringify(selectedCambio.valores_nuevos, null, 2)}
+                              </pre>
                             ) : (
                               <div className="text-center py-6">
                                 <p className="text-sm text-green-600 dark:text-green-400 italic">
@@ -690,8 +667,8 @@ export const EstadoAuditoria: React.FC<EstadoAuditoriaProps> = ({ estadoId }) =>
                   </div>
                 )}
 
-                {/* Metadatos Adicionales */}
-                <div className="bg-gray-50/50 dark:bg-gray-900/20 rounded-lg p-6 border border-gray-200/50">
+                {/* Información Técnica */}
+                <div className="bg-gray-50/50 dark:bg-gray-900/20 rounded-lg p-4 border border-gray-200/50">
                   <h3 className="text-lg font-semibold mb-4 flex items-center gap-2 text-gray-700 dark:text-gray-300">
                     <Database className="h-5 w-5" />
                     Información Técnica
@@ -716,7 +693,7 @@ export const EstadoAuditoria: React.FC<EstadoAuditoriaProps> = ({ estadoId }) =>
                   </div>
                 </div>
               </div>
-            </div>
+            </ScrollArea>
           )}
         </DialogContent>
       </Dialog>
