@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Activity, History, Clock, User, Database, FileText, Search, Filter, RefreshCw, Download, Circle, Eye } from 'lucide-react';
+import { Activity, History, Clock, User, Database, FileText, Search, Filter, Download, RefreshCw, Shield, Eye } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
@@ -94,14 +94,15 @@ const formatearValor = (valor: any): string => {
 export const EstadoAuditoria: React.FC<EstadoAuditoriaProps> = ({ estadoId }) => {
   const [filtroTipo, setFiltroTipo] = useState<string>('all');
   const [filtroUsuario, setFiltroUsuario] = useState<string>('');
+  const [filtroFecha, setFiltroFecha] = useState<string>('');
   const [busqueda, setBusqueda] = useState<string>('');
   const [activeTab, setActiveTab] = useState('actividades');
   const [selectedCambio, setSelectedCambio] = useState<CambioEstado | null>(null);
   const [showDetailsDialog, setShowDetailsDialog] = useState(false);
 
-  // Hook para obtener actividades relacionadas con el estado
+  // Hook para obtener actividades relacionadas al estado
   const { data: actividades = [], isLoading: isLoadingActividades } = useQuery({
-    queryKey: ['estado-actividades', estadoId, filtroTipo, busqueda],
+    queryKey: ['estado-actividades', estadoId, filtroTipo, filtroUsuario, filtroFecha, busqueda],
     queryFn: async () => {
       const { data, error } = await supabase.rpc('get_user_activities', {
         p_user_id: null,
@@ -114,28 +115,32 @@ export const EstadoAuditoria: React.FC<EstadoAuditoriaProps> = ({ estadoId }) =>
         throw error;
       }
 
-      // Filtrar actividades relacionadas con este estado específico
-      let actividadesFiltradas = (data as ActividadEstado[]).filter(actividad => 
-        actividad.tabla_afectada === 'estados' && actividad.registro_id === estadoId
+      // Filtrar actividades relacionadas al estado específico
+      let filteredData = (data as ActividadEstado[]).filter(actividad => 
+        actividad.tabla_afectada === 'estados' && 
+        actividad.registro_id === estadoId
       );
 
       // Aplicar filtros
       if (filtroTipo && filtroTipo !== 'all') {
-        actividadesFiltradas = actividadesFiltradas.filter(a => a.activity_type === filtroTipo);
+        filteredData = filteredData.filter(a => a.activity_type === filtroTipo);
+      }
+      if (filtroUsuario) {
+        filteredData = filteredData.filter(a => a.user_email.toLowerCase().includes(filtroUsuario.toLowerCase()));
       }
       if (busqueda) {
-        actividadesFiltradas = actividadesFiltradas.filter(a => 
+        filteredData = filteredData.filter(a => 
           a.descripcion.toLowerCase().includes(busqueda.toLowerCase())
         );
       }
 
-      return actividadesFiltradas;
+      return filteredData;
     }
   });
 
   // Hook para obtener historial de cambios del estado
   const { data: cambios = [], isLoading: isLoadingCambios } = useQuery({
-    queryKey: ['estado-cambios', estadoId, filtroTipo, busqueda],
+    queryKey: ['estado-cambios', estadoId, filtroTipo, filtroUsuario, filtroFecha, busqueda],
     queryFn: async () => {
       const { data, error } = await supabase.rpc('get_change_history', {
         p_tabla_nombre: 'estados',
@@ -150,11 +155,14 @@ export const EstadoAuditoria: React.FC<EstadoAuditoriaProps> = ({ estadoId }) =>
         throw error;
       }
 
-      let filteredData = (data || []) as CambioEstado[];
+      let filteredData = data as CambioEstado[];
 
       // Aplicar filtros
       if (filtroTipo && filtroTipo !== 'all') {
         filteredData = filteredData.filter(c => c.operation_type === filtroTipo);
+      }
+      if (filtroUsuario) {
+        filteredData = filteredData.filter(c => c.user_email.toLowerCase().includes(filtroUsuario.toLowerCase()));
       }
       if (busqueda) {
         filteredData = filteredData.filter(c => 
@@ -169,6 +177,7 @@ export const EstadoAuditoria: React.FC<EstadoAuditoriaProps> = ({ estadoId }) =>
   const limpiarFiltros = () => {
     setFiltroTipo('all');
     setFiltroUsuario('');
+    setFiltroFecha('');
     setBusqueda('');
   };
 
@@ -183,14 +192,13 @@ export const EstadoAuditoria: React.FC<EstadoAuditoriaProps> = ({ estadoId }) =>
 
   return (
     <div className="container mx-auto px-4 py-6">
-      {/* Header */}
       <div className="mb-6">
         <div className="flex items-center gap-2 mb-4">
-          <Circle className="h-6 w-6 text-primary" />
+          <Shield className="h-6 w-6 text-primary" />
           <h1 className="text-2xl font-bold">Auditoría del Estado</h1>
         </div>
         <p className="text-muted-foreground">
-          Monitoreo completo de actividades y cambios para este estado
+          Monitoreo completo de actividades y cambios en el sistema
         </p>
       </div>
 
