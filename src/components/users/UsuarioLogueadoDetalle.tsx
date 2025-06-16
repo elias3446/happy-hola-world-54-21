@@ -8,11 +8,12 @@ import { Separator } from '@/components/ui/separator';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { User, Mail, Calendar, Shield, Activity, History, Eye, X } from 'lucide-react';
+import { User, Mail, Calendar, Shield, Activity, History, Eye, X, Edit } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { UsuarioCambiosRecibidos } from './UsuarioCambiosRecibidos';
 import { UsuarioAuditoria } from './UsuarioAuditoria';
+import { UsuarioLogueadoEdit } from './UsuarioLogueadoEdit';
 
 interface UsuarioLogueadoDetalleProps {
   onClose: () => void;
@@ -32,6 +33,7 @@ interface PerfilUsuario {
 export const UsuarioLogueadoDetalle: React.FC<UsuarioLogueadoDetalleProps> = ({ onClose }) => {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('perfil');
+  const [isEditing, setIsEditing] = useState(false);
 
   // Obtener datos del perfil del usuario logueado
   const { data: perfilUsuario, isLoading } = useQuery({
@@ -54,6 +56,16 @@ export const UsuarioLogueadoDetalle: React.FC<UsuarioLogueadoDetalleProps> = ({ 
     },
     enabled: !!user?.id,
   });
+
+  // Si está en modo edición, mostrar el componente de edición
+  if (isEditing) {
+    return (
+      <UsuarioLogueadoEdit 
+        onClose={onClose}
+        onBack={() => setIsEditing(false)}
+      />
+    );
+  }
 
   if (isLoading) {
     return (
@@ -95,10 +107,16 @@ export const UsuarioLogueadoDetalle: React.FC<UsuarioLogueadoDetalleProps> = ({ 
                 </p>
               </div>
             </div>
-            <Button onClick={onClose} variant="outline" size="sm">
-              <X className="h-4 w-4 mr-2" />
-              Cerrar
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button onClick={() => setIsEditing(true)} variant="outline" size="sm">
+                <Edit className="h-4 w-4 mr-2" />
+                Editar
+              </Button>
+              <Button onClick={onClose} variant="outline" size="sm">
+                <X className="h-4 w-4 mr-2" />
+                Cerrar
+              </Button>
+            </div>
           </div>
 
           {/* Tabs de navegación */}
