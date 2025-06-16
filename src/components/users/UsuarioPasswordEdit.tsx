@@ -18,6 +18,7 @@ import { useMutation } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Lock, Save, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface UsuarioPasswordEditProps {
   onBack: () => void;
@@ -37,6 +38,7 @@ type PasswordFormData = z.infer<typeof passwordSchema>;
 
 export const UsuarioPasswordEdit: React.FC<UsuarioPasswordEditProps> = ({ onBack }) => {
   const { toast } = useToast();
+  const isMobile = useIsMobile();
 
   const form = useForm<PasswordFormData>({
     resolver: zodResolver(passwordSchema),
@@ -86,15 +88,15 @@ export const UsuarioPasswordEdit: React.FC<UsuarioPasswordEditProps> = ({ onBack
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Lock className="h-5 w-5" />
+      <CardHeader className="pb-4 sm:pb-6">
+        <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+          <Lock className="h-4 w-4 sm:h-5 sm:w-5" />
           Cambiar Contraseña
         </CardTitle>
       </CardHeader>
       <CardContent>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 sm:space-y-6">
             <FormField
               control={form.control}
               name="newPassword"
@@ -131,18 +133,18 @@ export const UsuarioPasswordEdit: React.FC<UsuarioPasswordEditProps> = ({ onBack
               )}
             />
 
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <p className="text-sm text-blue-800">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4">
+              <p className="text-xs sm:text-sm text-blue-800">
                 <strong>Nota:</strong> Tu contraseña debe tener al menos 6 caracteres. 
                 Una vez actualizada, se aplicará inmediatamente a tu cuenta.
               </p>
             </div>
 
-            <div className="flex gap-4">
+            <div className="flex flex-col sm:flex-row gap-4">
               <Button 
                 type="submit" 
                 disabled={updatePasswordMutation.isPending}
-                className="flex items-center gap-2"
+                className="flex items-center gap-2 w-full sm:w-auto"
               >
                 <Save className="h-4 w-4" />
                 {updatePasswordMutation.isPending ? 'Actualizando...' : 'Actualizar Contraseña'}
@@ -152,7 +154,7 @@ export const UsuarioPasswordEdit: React.FC<UsuarioPasswordEditProps> = ({ onBack
                 type="button" 
                 variant="outline" 
                 onClick={onBack}
-                className="flex items-center gap-2"
+                className="flex items-center gap-2 w-full sm:w-auto"
               >
                 <X className="h-4 w-4" />
                 Cancelar

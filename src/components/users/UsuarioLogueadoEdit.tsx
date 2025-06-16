@@ -21,6 +21,7 @@ import { User, Save, X, ArrowLeft, Lock } from 'lucide-react';
 import { isValidEmail } from '@/utils/validations';
 import { useToast } from '@/hooks/use-toast';
 import { UsuarioPasswordEdit } from './UsuarioPasswordEdit';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface UsuarioLogueadoEditProps {
   onClose: () => void;
@@ -44,6 +45,7 @@ export const UsuarioLogueadoEdit: React.FC<UsuarioLogueadoEditProps> = ({ onClos
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState('perfil');
+  const isMobile = useIsMobile();
 
   // Obtener datos del perfil del usuario logueado
   const { data: perfilUsuario, isLoading } = useQuery({
@@ -157,7 +159,7 @@ export const UsuarioLogueadoEdit: React.FC<UsuarioLogueadoEditProps> = ({ onClos
 
   if (!perfilUsuario) {
     return (
-      <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center">
+      <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
         <Card className="w-full max-w-md">
           <CardContent className="pt-6 text-center">
             <p className="text-muted-foreground">No se pudo cargar la información del usuario.</p>
@@ -172,58 +174,68 @@ export const UsuarioLogueadoEdit: React.FC<UsuarioLogueadoEditProps> = ({ onClos
 
   return (
     <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 overflow-auto">
-      <div className="container mx-auto px-4 py-6 min-h-screen">
+      <div className="container mx-auto px-4 py-4 sm:py-6 min-h-screen">
         <div className="max-w-2xl mx-auto">
           {/* Header */}
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-4">
-              <Button onClick={onBack} variant="outline" size="sm">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 sm:mb-6 gap-4">
+            <div className="flex items-start sm:items-center gap-3 sm:gap-4 w-full">
+              <Button 
+                onClick={onBack} 
+                variant="outline" 
+                size="sm"
+                className="flex-shrink-0 mt-1 sm:mt-0"
+              >
                 <ArrowLeft className="h-4 w-4 mr-2" />
-                Volver
+                {!isMobile && "Volver"}
               </Button>
-              <div className="flex items-center gap-3">
-                <div className="flex items-center justify-center w-12 h-12 rounded-full bg-primary/10">
-                  <User className="h-6 w-6 text-primary" />
+              <div className="flex items-center gap-3 min-w-0 flex-1">
+                <div className="flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-primary/10 flex-shrink-0">
+                  <User className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
                 </div>
-                <div>
-                  <h1 className="text-2xl font-bold">Editar Mi Perfil</h1>
-                  <p className="text-muted-foreground">
+                <div className="min-w-0">
+                  <h1 className="text-xl sm:text-2xl font-bold">Editar Mi Perfil</h1>
+                  <p className="text-sm sm:text-base text-muted-foreground">
                     Actualiza tu información personal
                   </p>
                 </div>
               </div>
             </div>
-            <Button onClick={onClose} variant="outline" size="sm">
+            <Button 
+              onClick={onClose} 
+              variant="outline" 
+              size="sm"
+              className="self-end sm:self-auto"
+            >
               <X className="h-4 w-4 mr-2" />
-              Cerrar
+              {!isMobile && "Cerrar"}
             </Button>
           </div>
 
           {/* Tabs de edición */}
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="perfil" className="flex items-center gap-2">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 sm:space-y-6">
+            <TabsList className="grid w-full grid-cols-2 h-auto">
+              <TabsTrigger value="perfil" className="flex items-center gap-2 p-3">
                 <User className="h-4 w-4" />
-                Información Personal
+                <span className="text-sm sm:text-base">Información Personal</span>
               </TabsTrigger>
-              <TabsTrigger value="password" className="flex items-center gap-2">
+              <TabsTrigger value="password" className="flex items-center gap-2 p-3">
                 <Lock className="h-4 w-4" />
-                Contraseña
+                <span className="text-sm sm:text-base">Contraseña</span>
               </TabsTrigger>
             </TabsList>
 
             <TabsContent value="perfil">
               <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <User className="h-5 w-5" />
+                <CardHeader className="pb-4 sm:pb-6">
+                  <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+                    <User className="h-4 w-4 sm:h-5 sm:w-5" />
                     Información Personal
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <Form {...form}>
-                    <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 sm:space-y-6">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <FormField
                           control={form.control}
                           name="first_name"
@@ -276,11 +288,11 @@ export const UsuarioLogueadoEdit: React.FC<UsuarioLogueadoEditProps> = ({ onClos
                         )}
                       />
 
-                      <div className="flex gap-4">
+                      <div className="flex flex-col sm:flex-row gap-4">
                         <Button 
                           type="submit" 
                           disabled={updateProfileMutation.isPending}
-                          className="flex items-center gap-2"
+                          className="flex items-center gap-2 w-full sm:w-auto"
                         >
                           <Save className="h-4 w-4" />
                           {updateProfileMutation.isPending ? 'Guardando...' : 'Guardar Cambios'}
@@ -290,7 +302,7 @@ export const UsuarioLogueadoEdit: React.FC<UsuarioLogueadoEditProps> = ({ onClos
                           type="button" 
                           variant="outline" 
                           onClick={onBack}
-                          className="flex items-center gap-2"
+                          className="flex items-center gap-2 w-full sm:w-auto"
                         >
                           <X className="h-4 w-4" />
                           Cancelar

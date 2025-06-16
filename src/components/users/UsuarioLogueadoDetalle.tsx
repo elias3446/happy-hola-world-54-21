@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -15,6 +14,7 @@ import { UsuarioCambiosRecibidos } from './UsuarioCambiosRecibidos';
 import { UsuarioAuditoria } from './UsuarioAuditoria';
 import { UsuarioLogueadoEdit } from './UsuarioLogueadoEdit';
 import { UsuarioEstadisticasActividad } from './UsuarioEstadisticasActividad';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface UsuarioLogueadoDetalleProps {
   onClose: () => void;
@@ -35,6 +35,7 @@ export const UsuarioLogueadoDetalle: React.FC<UsuarioLogueadoDetalleProps> = ({ 
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('perfil');
   const [isEditing, setIsEditing] = useState(false);
+  const isMobile = useIsMobile();
 
   // Obtener datos del perfil del usuario logueado
   const { data: perfilUsuario, isLoading } = useQuery({
@@ -78,7 +79,7 @@ export const UsuarioLogueadoDetalle: React.FC<UsuarioLogueadoDetalleProps> = ({ 
 
   if (!perfilUsuario) {
     return (
-      <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center">
+      <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
         <Card className="w-full max-w-md">
           <CardContent className="pt-6 text-center">
             <p className="text-muted-foreground">No se pudo cargar la información del usuario.</p>
@@ -93,27 +94,37 @@ export const UsuarioLogueadoDetalle: React.FC<UsuarioLogueadoDetalleProps> = ({ 
 
   return (
     <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 overflow-auto">
-      <div className="container mx-auto px-4 py-6 min-h-screen">
+      <div className="container mx-auto px-4 py-4 sm:py-6 min-h-screen">
         <div className="max-w-6xl mx-auto">
           {/* Header */}
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-4">
-              <div className="flex items-center justify-center w-12 h-12 rounded-full bg-primary/10">
-                <User className="h-6 w-6 text-primary" />
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 sm:mb-6 gap-4">
+            <div className="flex items-center gap-3 sm:gap-4 w-full sm:w-auto">
+              <div className="flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-primary/10 flex-shrink-0">
+                <User className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
               </div>
-              <div>
-                <h1 className="text-2xl font-bold">Mi Perfil</h1>
-                <p className="text-muted-foreground">
+              <div className="min-w-0 flex-1">
+                <h1 className="text-xl sm:text-2xl font-bold truncate">Mi Perfil</h1>
+                <p className="text-sm sm:text-base text-muted-foreground">
                   Información personal y actividad en el sistema
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <Button onClick={() => setIsEditing(true)} variant="outline" size="sm">
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <Button 
+                onClick={() => setIsEditing(true)} 
+                variant="outline" 
+                size={isMobile ? "sm" : "sm"}
+                className="flex-1 sm:flex-none"
+              >
                 <Edit className="h-4 w-4 mr-2" />
                 Editar
               </Button>
-              <Button onClick={onClose} variant="outline" size="sm">
+              <Button 
+                onClick={onClose} 
+                variant="outline" 
+                size={isMobile ? "sm" : "sm"}
+                className="flex-1 sm:flex-none"
+              >
                 <X className="h-4 w-4 mr-2" />
                 Cerrar
               </Button>
@@ -121,41 +132,41 @@ export const UsuarioLogueadoDetalle: React.FC<UsuarioLogueadoDetalleProps> = ({ 
           </div>
 
           {/* Tabs de navegación */}
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="perfil" className="flex items-center gap-2">
-                <User className="h-4 w-4" />
-                Perfil
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 sm:space-y-6">
+            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 h-auto gap-1">
+              <TabsTrigger value="perfil" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm p-2 sm:p-3">
+                <User className="h-3 w-3 sm:h-4 sm:w-4" />
+                <span className="hidden xs:inline">Perfil</span>
               </TabsTrigger>
-              <TabsTrigger value="actividad" className="flex items-center gap-2">
-                <Activity className="h-4 w-4" />
-                Mi Actividad
+              <TabsTrigger value="actividad" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm p-2 sm:p-3">
+                <Activity className="h-3 w-3 sm:h-4 sm:w-4" />
+                <span className="hidden xs:inline">Actividad</span>
               </TabsTrigger>
-              <TabsTrigger value="estadisticas" className="flex items-center gap-2">
-                <BarChart3 className="h-4 w-4" />
-                Estadísticas
+              <TabsTrigger value="estadisticas" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm p-2 sm:p-3">
+                <BarChart3 className="h-3 w-3 sm:h-4 sm:w-4" />
+                <span className="hidden xs:inline">Estadísticas</span>
               </TabsTrigger>
-              <TabsTrigger value="auditoria" className="flex items-center gap-2">
-                <History className="h-4 w-4" />
-                Cambios en mi Cuenta
+              <TabsTrigger value="auditoria" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm p-2 sm:p-3">
+                <History className="h-3 w-3 sm:h-4 sm:w-4" />
+                <span className="hidden xs:inline">Cambios</span>
               </TabsTrigger>
             </TabsList>
 
             {/* Contenido de las pestañas */}
             <TabsContent value="perfil">
               <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <User className="h-5 w-5" />
+                <CardHeader className="pb-4 sm:pb-6">
+                  <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+                    <User className="h-4 w-4 sm:h-5 sm:w-5" />
                     Información Personal
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <CardContent className="space-y-4 sm:space-y-6">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                     <div className="space-y-4">
                       <div>
                         <label className="text-sm font-medium text-muted-foreground">Nombre</label>
-                        <p className="text-lg font-medium">
+                        <p className="text-base sm:text-lg font-medium break-words">
                           {perfilUsuario.first_name} {perfilUsuario.last_name}
                         </p>
                       </div>
@@ -165,7 +176,7 @@ export const UsuarioLogueadoDetalle: React.FC<UsuarioLogueadoDetalleProps> = ({ 
                           <Mail className="h-4 w-4" />
                           Correo Electrónico
                         </label>
-                        <p className="text-lg">{perfilUsuario.email}</p>
+                        <p className="text-base sm:text-lg break-all">{perfilUsuario.email}</p>
                       </div>
 
                       <div>
@@ -175,10 +186,10 @@ export const UsuarioLogueadoDetalle: React.FC<UsuarioLogueadoDetalleProps> = ({ 
                         </label>
                         <div className="flex flex-wrap gap-2 mt-1">
                           {perfilUsuario.role?.map((rol, index) => (
-                            <Badge key={index} variant="secondary">
+                            <Badge key={index} variant="secondary" className="text-xs">
                               {rol}
                             </Badge>
-                          )) || <span className="text-muted-foreground">Sin roles asignados</span>}
+                          )) || <span className="text-muted-foreground text-sm">Sin roles asignados</span>}
                         </div>
                       </div>
                     </div>
@@ -189,7 +200,7 @@ export const UsuarioLogueadoDetalle: React.FC<UsuarioLogueadoDetalleProps> = ({ 
                           <Calendar className="h-4 w-4" />
                           Fecha de Registro
                         </label>
-                        <p className="text-lg">
+                        <p className="text-base sm:text-lg">
                           {format(new Date(perfilUsuario.created_at), 'dd/MM/yyyy HH:mm', { locale: es })}
                         </p>
                       </div>
@@ -198,7 +209,7 @@ export const UsuarioLogueadoDetalle: React.FC<UsuarioLogueadoDetalleProps> = ({ 
                         <label className="text-sm font-medium text-muted-foreground">
                           Última Actualización
                         </label>
-                        <p className="text-lg">
+                        <p className="text-base sm:text-lg">
                           {format(new Date(perfilUsuario.updated_at), 'dd/MM/yyyy HH:mm', { locale: es })}
                         </p>
                       </div>
@@ -207,7 +218,7 @@ export const UsuarioLogueadoDetalle: React.FC<UsuarioLogueadoDetalleProps> = ({ 
                         <label className="text-sm font-medium text-muted-foreground">
                           ID de Usuario
                         </label>
-                        <p className="text-sm font-mono bg-muted px-2 py-1 rounded">
+                        <p className="text-xs sm:text-sm font-mono bg-muted px-2 py-1 rounded break-all">
                           {perfilUsuario.id}
                         </p>
                       </div>
