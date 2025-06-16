@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -503,122 +504,210 @@ export const EstadoAuditoria: React.FC<EstadoAuditoriaProps> = ({ estadoId }) =>
 
       {/* Modal de Detalles del Cambio */}
       <Dialog open={showDetailsDialog} onOpenChange={setShowDetailsDialog}>
-        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <History className="h-5 w-5" />
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden p-0">
+          <DialogHeader className="px-6 py-4 border-b">
+            <DialogTitle className="flex items-center gap-2 text-xl">
+              <History className="h-6 w-6 text-primary" />
               Detalles del Cambio
             </DialogTitle>
           </DialogHeader>
           
           {selectedCambio && (
-            <div className="space-y-6">
-              {/* Información General */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Información General</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
+            <div className="overflow-y-auto max-h-[calc(90vh-80px)]">
+              <div className="p-6 space-y-6">
+                {/* Información General */}
+                <div className="bg-muted/30 rounded-lg p-6">
+                  <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                    <FileText className="h-5 w-5" />
+                    Información General
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div className="space-y-2">
                       <Label className="text-sm font-medium text-muted-foreground">Operación</Label>
-                      <Badge className={`mt-1 ${getOperationColor(selectedCambio.operation_type)}`}>
+                      <Badge 
+                        variant="outline" 
+                        className={`${getOperationColor(selectedCambio.operation_type)} text-sm font-medium px-3 py-1`}
+                      >
                         {selectedCambio.operation_type}
                       </Badge>
                     </div>
-                    <div>
+                    <div className="space-y-2">
                       <Label className="text-sm font-medium text-muted-foreground">Usuario</Label>
-                      <p className="mt-1 text-sm">{selectedCambio.user_email}</p>
+                      <div className="flex items-center gap-2 text-sm">
+                        <User className="h-4 w-4 text-muted-foreground" />
+                        <span className="font-medium">{selectedCambio.user_email}</span>
+                      </div>
                     </div>
-                    <div>
+                    <div className="space-y-2">
                       <Label className="text-sm font-medium text-muted-foreground">Fecha y Hora</Label>
-                      <p className="mt-1 text-sm">
-                        {format(new Date(selectedCambio.created_at), 'dd/MM/yyyy HH:mm:ss', { locale: es })}
-                      </p>
+                      <div className="flex items-center gap-2 text-sm">
+                        <Clock className="h-4 w-4 text-muted-foreground" />
+                        <div>
+                          <div className="font-medium">
+                            {format(new Date(selectedCambio.created_at), 'dd/MM/yyyy', { locale: es })}
+                          </div>
+                          <div className="text-muted-foreground">
+                            {format(new Date(selectedCambio.created_at), 'HH:mm:ss', { locale: es })}
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                    <div>
+                    <div className="space-y-2">
                       <Label className="text-sm font-medium text-muted-foreground">Tabla</Label>
-                      <p className="mt-1 text-sm">{selectedCambio.tabla_nombre}</p>
+                      <Badge variant="secondary" className="text-sm">
+                        <Database className="h-3 w-3 mr-1" />
+                        {selectedCambio.tabla_nombre}
+                      </Badge>
                     </div>
                   </div>
-                  <div>
-                    <Label className="text-sm font-medium text-muted-foreground">Descripción</Label>
-                    <p className="mt-1 text-sm">{selectedCambio.descripcion_cambio}</p>
+                  <div className="mt-4 space-y-2">
+                    <Label className="text-sm font-medium text-muted-foreground">Descripción del Cambio</Label>
+                    <div className="bg-background border rounded-lg p-3">
+                      <p className="text-sm">{selectedCambio.descripcion_cambio}</p>
+                    </div>
                   </div>
-                </CardContent>
-              </Card>
+                </div>
 
-              {/* Campos Modificados */}
-              {selectedCambio.campos_modificados && selectedCambio.campos_modificados.length > 0 && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">Campos Modificados</CardTitle>
-                  </CardHeader>
-                  <CardContent>
+                {/* Campos Modificados */}
+                {selectedCambio.campos_modificados && selectedCambio.campos_modificados.length > 0 && (
+                  <div className="bg-blue-50/50 dark:bg-blue-950/20 rounded-lg p-6 border border-blue-200/50">
+                    <h3 className="text-lg font-semibold mb-4 flex items-center gap-2 text-blue-700 dark:text-blue-300">
+                      <Activity className="h-5 w-5" />
+                      Campos Modificados ({selectedCambio.campos_modificados.length})
+                    </h3>
                     <div className="flex flex-wrap gap-2">
                       {selectedCambio.campos_modificados.map((campo, index) => (
-                        <Badge key={index} variant="secondary">
+                        <Badge 
+                          key={index} 
+                          variant="secondary" 
+                          className="bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-900 dark:text-blue-200 dark:border-blue-700"
+                        >
                           {campo}
                         </Badge>
                       ))}
                     </div>
-                  </CardContent>
-                </Card>
-              )}
+                  </div>
+                )}
 
-              {/* Comparación de Valores */}
-              {(selectedCambio.valores_anteriores || selectedCambio.valores_nuevos) && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">Comparación de Valores</CardTitle>
-                  </CardHeader>
-                  <CardContent>
+                {/* Comparación de Valores */}
+                {(selectedCambio.valores_anteriores || selectedCambio.valores_nuevos) && (
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold flex items-center gap-2">
+                      <History className="h-5 w-5" />
+                      Comparación de Valores
+                    </h3>
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                       {/* Valores Anteriores */}
-                      <div>
-                        <Label className="text-sm font-medium text-muted-foreground mb-2 block">
-                          Valores Anteriores
-                        </Label>
-                        <div className="bg-red-50 border border-red-200 rounded-lg p-4 space-y-2">
-                          {selectedCambio.valores_anteriores ? (
-                            Object.entries(selectedCambio.valores_anteriores).map(([key, value]) => (
-                              <div key={key} className="flex justify-between text-sm">
-                                <span className="font-medium text-red-700">{key}:</span>
-                                <span className="text-red-600 break-all max-w-xs">
-                                  {formatearValor(value)}
-                                </span>
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2">
+                          <div className="w-3 h-3 rounded-full bg-red-500"></div>
+                          <Label className="text-sm font-semibold text-red-700 dark:text-red-300">
+                            Valores Anteriores
+                          </Label>
+                        </div>
+                        <div className="bg-red-50/80 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-lg overflow-hidden">
+                          <div className="bg-red-100/80 dark:bg-red-900/50 px-4 py-2 border-b border-red-200 dark:border-red-800">
+                            <span className="text-xs font-medium text-red-800 dark:text-red-200 uppercase tracking-wide">
+                              Estado Anterior
+                            </span>
+                          </div>
+                          <div className="p-4 max-h-96 overflow-y-auto">
+                            {selectedCambio.valores_anteriores ? (
+                              <div className="space-y-3">
+                                {Object.entries(selectedCambio.valores_anteriores).map(([key, value]) => (
+                                  <div key={key} className="flex flex-col gap-1">
+                                    <span className="text-xs font-semibold text-red-700 dark:text-red-300 uppercase tracking-wide">
+                                      {key}
+                                    </span>
+                                    <div className="bg-white dark:bg-red-950/50 border border-red-200 dark:border-red-800 rounded p-2">
+                                      <code className="text-sm text-red-700 dark:text-red-200 break-all whitespace-pre-wrap">
+                                        {formatearValor(value)}
+                                      </code>
+                                    </div>
+                                  </div>
+                                ))}
                               </div>
-                            ))
-                          ) : (
-                            <p className="text-sm text-muted-foreground">Sin valores anteriores</p>
-                          )}
+                            ) : (
+                              <div className="text-center py-6">
+                                <p className="text-sm text-red-600 dark:text-red-400 italic">
+                                  Sin valores anteriores registrados
+                                </p>
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
 
                       {/* Valores Nuevos */}
-                      <div>
-                        <Label className="text-sm font-medium text-muted-foreground mb-2 block">
-                          Valores Nuevos
-                        </Label>
-                        <div className="bg-green-50 border border-green-200 rounded-lg p-4 space-y-2">
-                          {selectedCambio.valores_nuevos ? (
-                            Object.entries(selectedCambio.valores_nuevos).map(([key, value]) => (
-                              <div key={key} className="flex justify-between text-sm">
-                                <span className="font-medium text-green-700">{key}:</span>
-                                <span className="text-green-600 break-all max-w-xs">
-                                  {formatearValor(value)}
-                                </span>
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2">
+                          <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                          <Label className="text-sm font-semibold text-green-700 dark:text-green-300">
+                            Valores Nuevos
+                          </Label>
+                        </div>
+                        <div className="bg-green-50/80 dark:bg-green-950/30 border border-green-200 dark:border-green-800 rounded-lg overflow-hidden">
+                          <div className="bg-green-100/80 dark:bg-green-900/50 px-4 py-2 border-b border-green-200 dark:border-green-800">
+                            <span className="text-xs font-medium text-green-800 dark:text-green-200 uppercase tracking-wide">
+                              Estado Actual
+                            </span>
+                          </div>
+                          <div className="p-4 max-h-96 overflow-y-auto">
+                            {selectedCambio.valores_nuevos ? (
+                              <div className="space-y-3">
+                                {Object.entries(selectedCambio.valores_nuevos).map(([key, value]) => (
+                                  <div key={key} className="flex flex-col gap-1">
+                                    <span className="text-xs font-semibold text-green-700 dark:text-green-300 uppercase tracking-wide">
+                                      {key}
+                                    </span>
+                                    <div className="bg-white dark:bg-green-950/50 border border-green-200 dark:border-green-800 rounded p-2">
+                                      <code className="text-sm text-green-700 dark:text-green-200 break-all whitespace-pre-wrap">
+                                        {formatearValor(value)}
+                                      </code>
+                                    </div>
+                                  </div>
+                                ))}
                               </div>
-                            ))
-                          ) : (
-                            <p className="text-sm text-muted-foreground">Sin valores nuevos</p>
-                          )}
+                            ) : (
+                              <div className="text-center py-6">
+                                <p className="text-sm text-green-600 dark:text-green-400 italic">
+                                  Sin valores nuevos registrados
+                                </p>
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
-              )}
+                  </div>
+                )}
+
+                {/* Metadatos Adicionales */}
+                <div className="bg-gray-50/50 dark:bg-gray-900/20 rounded-lg p-6 border border-gray-200/50">
+                  <h3 className="text-lg font-semibold mb-4 flex items-center gap-2 text-gray-700 dark:text-gray-300">
+                    <Database className="h-5 w-5" />
+                    Información Técnica
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                    <div className="space-y-1">
+                      <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                        ID del Registro
+                      </Label>
+                      <code className="block bg-background border rounded px-2 py-1 text-xs">
+                        {selectedCambio.registro_id}
+                      </code>
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                        ID del Cambio
+                      </Label>
+                      <code className="block bg-background border rounded px-2 py-1 text-xs">
+                        {selectedCambio.id}
+                      </code>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
         </DialogContent>
