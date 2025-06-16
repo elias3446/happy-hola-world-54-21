@@ -9,9 +9,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Activity, History, Clock, User, Database, FileText, Search, Filter, RefreshCw, Download, FolderOpen } from 'lucide-react';
+import { Activity, History, Clock, User, Database, FileText, Search, Filter, Download, RefreshCw, Shield, Eye } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
@@ -86,12 +87,15 @@ const getOperationColor = (operation: CambioCategoria['operation_type']) => {
 export const CategoriaAuditoria: React.FC<CategoriaAuditoriaProps> = ({ categoriaId }) => {
   const [filtroTipo, setFiltroTipo] = useState<string>('all');
   const [filtroUsuario, setFiltroUsuario] = useState<string>('');
+  const [filtroFecha, setFiltroFecha] = useState<string>('');
   const [busqueda, setBusqueda] = useState<string>('');
   const [activeTab, setActiveTab] = useState('actividades');
+  const [selectedCambio, setSelectedCambio] = useState<CambioCategoria | null>(null);
+  const [showDetailsDialog, setShowDetailsDialog] = useState(false);
 
-  // Hook para obtener actividades relacionadas con la categoría
+  // Hook para obtener actividades relacionadas a la categoría
   const { data: actividades = [], isLoading: isLoadingActividades } = useQuery({
-    queryKey: ['categoria-actividades', categoriaId, filtroTipo, busqueda],
+    queryKey: ['categoria-actividades', categoriaId, filtroTipo, filtroUsuario, filtroFecha, busqueda],
     queryFn: async () => {
       const { data, error } = await supabase.rpc('get_user_activities', {
         p_user_id: null,
@@ -104,28 +108,32 @@ export const CategoriaAuditoria: React.FC<CategoriaAuditoriaProps> = ({ categori
         throw error;
       }
 
-      // Filtrar actividades relacionadas con esta categoría específica
-      let actividadesFiltradas = (data as ActividadCategoria[]).filter(actividad => 
-        actividad.tabla_afectada === 'categories' && actividad.registro_id === categoriaId
+      // Filtrar actividades relacionadas a la categoría específica
+      let filteredData = (data as ActividadCategoria[]).filter(actividad => 
+        actividad.tabla_afectada === 'categories' && 
+        actividad.registro_id === categoriaId
       );
 
       // Aplicar filtros
       if (filtroTipo && filtroTipo !== 'all') {
-        actividadesFiltradas = actividadesFiltradas.filter(a => a.activity_type === filtroTipo);
+        filteredData = filteredData.filter(a => a.activity_type === filtroTipo);
+      }
+      if (filtroUsuario) {
+        filteredData = filteredData.filter(a => a.user_email.toLowerCase().includes(filtroUsuario.toLowerCase()));
       }
       if (busqueda) {
-        actividadesFiltradas = actividadesFiltradas.filter(a => 
+        filteredData = filteredData.filter(a => 
           a.descripcion.toLowerCase().includes(busqueda.toLowerCase())
         );
       }
 
-      return actividadesFiltradas;
+      return filteredData;
     }
   });
 
   // Hook para obtener historial de cambios de la categoría
   const { data: cambios = [], isLoading: isLoadingCambios } = useQuery({
-    queryKey: ['categoria-cambios', categoriaId, filtroTipo, busqueda],
+    queryKey: ['categoria-cambios', categoriaId, filtroTipo, filtroUsuario, filtroFecha, busqueda],
     queryFn: async () => {
       const { data, error } = await supabase.rpc('get_change_history', {
         p_tabla_nombre: 'categories',
@@ -140,11 +148,14 @@ export const CategoriaAuditoria: React.FC<CategoriaAuditoriaProps> = ({ categori
         throw error;
       }
 
-      let filteredData = (data || []) as CambioCategoria[];
+      let filteredData = data as CambioCategoria[];
 
       // Aplicar filtros
       if (filtroTipo && filtroTipo !== 'all') {
         filteredData = filteredData.filter(c => c.operation_type === filtroTipo);
+      }
+      if (filtroUsuario) {
+        filteredData = filteredData.filter(c => c.user_email.toLowerCase().includes(filtroUsuario.toLowerCase()));
       }
       if (busqueda) {
         filteredData = filteredData.filter(c => 
@@ -159,6 +170,7 @@ export const CategoriaAuditoria: React.FC<CategoriaAuditoriaProps> = ({ categori
   const limpiarFiltros = () => {
     setFiltroTipo('all');
     setFiltroUsuario('');
+    setFiltroFecha('');
     setBusqueda('');
   };
 
@@ -166,15 +178,20 @@ export const CategoriaAuditoria: React.FC<CategoriaAuditoriaProps> = ({ categori
     console.log('Exportar datos de auditoría de la categoría');
   };
 
+  const verDetallesCambio = (cambio: CambioCategoria) => {
+    setSelectedCambio(cambio);
+    setShowDetailsDialog(true);
+  };
+
   return (
     <div className="container mx-auto px-4 py-6">
       <div className="mb-6">
         <div className="flex items-center gap-2 mb-4">
-          <FolderOpen className="h-6 w-6 text-primary" />
+          <Shield className="h-6 w-6 text-primary" />
           <h1 className="text-2xl font-bold">Auditoría de la Categoría</h1>
         </div>
         <p className="text-muted-foreground">
-          Monitoreo completo de actividades y cambios para esta categoría
+          Monitoreo completo de actividades y cambios en el sistema
         </p>
       </div>
 
@@ -399,10 +416,11 @@ export const CategoriaAuditoria: React.FC<CategoriaAuditoriaProps> = ({ categori
                       <TableHeader className="sticky top-0 bg-background">
                         <TableRow>
                           <TableHead className="w-[120px]">Operación</TableHead>
-                          <TableHead className="min-w-[300px]">Descripción del Cambio</TableHead>
-                          <TableHead className="w-[200px]">Campos Modificados</TableHead>
-                          <TableHead className="w-[180px]">Usuario</TableHead>
-                          <TableHead className="w-[150px]">Fecha y Hora</TableHead>
+                          <TableHead className="min-w-[250px]">Descripción del Cambio</TableHead>
+                          <TableHead className="w-[180px]">Campos Modificados</TableHead>
+                          <TableHead className="w-[160px]">Usuario</TableHead>
+                          <TableHead className="w-[140px]">Fecha y Hora</TableHead>
+                          <TableHead className="w-[120px]">Acciones</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -417,7 +435,7 @@ export const CategoriaAuditoria: React.FC<CategoriaAuditoriaProps> = ({ categori
                               </Badge>
                             </TableCell>
                             <TableCell>
-                              <div className="max-w-[300px]">
+                              <div className="max-w-[250px]">
                                 <p className="text-sm font-medium truncate" title={cambio.descripcion_cambio}>
                                   {cambio.descripcion_cambio}
                                 </p>
@@ -425,15 +443,15 @@ export const CategoriaAuditoria: React.FC<CategoriaAuditoriaProps> = ({ categori
                             </TableCell>
                             <TableCell>
                               {cambio.campos_modificados && cambio.campos_modificados.length > 0 ? (
-                                <div className="flex flex-wrap gap-1 max-w-[180px]">
-                                  {cambio.campos_modificados.slice(0, 3).map((campo, index) => (
+                                <div className="flex flex-wrap gap-1 max-w-[160px]">
+                                  {cambio.campos_modificados.slice(0, 2).map((campo, index) => (
                                     <Badge key={index} variant="secondary" className="text-xs">
                                       {campo}
                                     </Badge>
                                   ))}
-                                  {cambio.campos_modificados.length > 3 && (
+                                  {cambio.campos_modificados.length > 2 && (
                                     <Badge variant="secondary" className="text-xs">
-                                      +{cambio.campos_modificados.length - 3}
+                                      +{cambio.campos_modificados.length - 2}
                                     </Badge>
                                   )}
                                 </div>
@@ -462,6 +480,17 @@ export const CategoriaAuditoria: React.FC<CategoriaAuditoriaProps> = ({ categori
                                 </div>
                               </div>
                             </TableCell>
+                            <TableCell>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => verDetallesCambio(cambio)}
+                                className="flex items-center gap-2 text-xs"
+                              >
+                                <Eye className="h-3 w-3" />
+                                Ver detalles
+                              </Button>
+                            </TableCell>
                           </TableRow>
                         ))}
                       </TableBody>
@@ -473,6 +502,195 @@ export const CategoriaAuditoria: React.FC<CategoriaAuditoriaProps> = ({ categori
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Modal de Detalles del Cambio */}
+      <Dialog open={showDetailsDialog} onOpenChange={setShowDetailsDialog}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden">
+          <DialogHeader className="pb-4">
+            <DialogTitle className="flex items-center gap-2 text-xl">
+              <History className="h-5 w-5" />
+              Detalles del Cambio
+            </DialogTitle>
+          </DialogHeader>
+          
+          {selectedCambio && (
+            <ScrollArea className="max-h-[calc(90vh-120px)]">
+              <div className="space-y-6">
+                {/* Información General */}
+                <div className="bg-muted/30 rounded-lg p-4">
+                  <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                    <FileText className="h-5 w-5" />
+                    Información General
+                  </h3>
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium text-muted-foreground">Operación</Label>
+                      <Badge 
+                        variant="outline" 
+                        className={`${getOperationColor(selectedCambio.operation_type)} text-sm font-medium`}
+                      >
+                        {selectedCambio.operation_type}
+                      </Badge>
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium text-muted-foreground">Usuario</Label>
+                      <div className="flex items-center gap-2 text-sm">
+                        <User className="h-4 w-4 text-muted-foreground" />
+                        <span className="font-medium">{selectedCambio.user_email}</span>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium text-muted-foreground">Fecha y Hora</Label>
+                      <div className="flex items-center gap-2 text-sm">
+                        <Clock className="h-4 w-4 text-muted-foreground" />
+                        <div>
+                          <div className="font-medium">
+                            {format(new Date(selectedCambio.created_at), 'dd/MM/yyyy', { locale: es })}
+                          </div>
+                          <div className="text-muted-foreground text-xs">
+                            {format(new Date(selectedCambio.created_at), 'HH:mm:ss', { locale: es })}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium text-muted-foreground">Tabla</Label>
+                      <Badge variant="secondary" className="text-sm">
+                        <Database className="h-3 w-3 mr-1" />
+                        {selectedCambio.tabla_nombre}
+                      </Badge>
+                    </div>
+                  </div>
+                  <div className="mt-4 space-y-2">
+                    <Label className="text-sm font-medium text-muted-foreground">Descripción del Cambio</Label>
+                    <div className="bg-background border rounded-lg p-3">
+                      <p className="text-sm">{selectedCambio.descripcion_cambio}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Campos Modificados */}
+                {selectedCambio.campos_modificados && selectedCambio.campos_modificados.length > 0 && (
+                  <div className="bg-blue-50/50 dark:bg-blue-950/20 rounded-lg p-4 border border-blue-200/50">
+                    <h3 className="text-lg font-semibold mb-4 flex items-center gap-2 text-blue-700 dark:text-blue-300">
+                      <Activity className="h-5 w-5" />
+                      Campos Modificados ({selectedCambio.campos_modificados.length})
+                    </h3>
+                    <div className="flex flex-wrap gap-2">
+                      {selectedCambio.campos_modificados.map((campo, index) => (
+                        <Badge 
+                          key={index} 
+                          variant="secondary" 
+                          className="bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-900 dark:text-blue-200 dark:border-blue-700"
+                        >
+                          {campo}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Comparación de Valores */}
+                {(selectedCambio.valores_anteriores || selectedCambio.valores_nuevos) && (
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold flex items-center gap-2">
+                      <History className="h-5 w-5" />
+                      Comparación de Valores
+                    </h3>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                      {/* Valores Anteriores */}
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2">
+                          <div className="w-3 h-3 rounded-full bg-red-500"></div>
+                          <Label className="text-sm font-semibold text-red-700 dark:text-red-300">
+                            Valores Anteriores
+                          </Label>
+                        </div>
+                        <div className="bg-red-50/80 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-lg overflow-hidden">
+                          <div className="bg-red-100/80 dark:bg-red-900/50 px-4 py-2 border-b border-red-200 dark:border-red-800">
+                            <span className="text-xs font-medium text-red-800 dark:text-red-200 uppercase tracking-wide">
+                              Estado Anterior
+                            </span>
+                          </div>
+                          <div className="p-4 max-h-80 overflow-y-auto">
+                            {selectedCambio.valores_anteriores ? (
+                              <pre className="text-xs text-red-700 dark:text-red-200 whitespace-pre-wrap">
+                                {JSON.stringify(selectedCambio.valores_anteriores, null, 2)}
+                              </pre>
+                            ) : (
+                              <div className="text-center py-6">
+                                <p className="text-sm text-red-600 dark:text-red-400 italic">
+                                  Sin valores anteriores registrados
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Valores Nuevos */}
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2">
+                          <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                          <Label className="text-sm font-semibold text-green-700 dark:text-green-300">
+                            Valores Nuevos
+                          </Label>
+                        </div>
+                        <div className="bg-green-50/80 dark:bg-green-950/30 border border-green-200 dark:border-green-800 rounded-lg overflow-hidden">
+                          <div className="bg-green-100/80 dark:bg-green-900/50 px-4 py-2 border-b border-green-200 dark:border-green-800">
+                            <span className="text-xs font-medium text-green-800 dark:text-green-200 uppercase tracking-wide">
+                              Estado Actual
+                            </span>
+                          </div>
+                          <div className="p-4 max-h-80 overflow-y-auto">
+                            {selectedCambio.valores_nuevos ? (
+                              <pre className="text-xs text-green-700 dark:text-green-200 whitespace-pre-wrap">
+                                {JSON.stringify(selectedCambio.valores_nuevos, null, 2)}
+                              </pre>
+                            ) : (
+                              <div className="text-center py-6">
+                                <p className="text-sm text-green-600 dark:text-green-400 italic">
+                                  Sin valores nuevos registrados
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Información Técnica */}
+                <div className="bg-gray-50/50 dark:bg-gray-900/20 rounded-lg p-4 border border-gray-200/50">
+                  <h3 className="text-lg font-semibold mb-4 flex items-center gap-2 text-gray-700 dark:text-gray-300">
+                    <Database className="h-5 w-5" />
+                    Información Técnica
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                    <div className="space-y-1">
+                      <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                        ID del Registro
+                      </Label>
+                      <code className="block bg-background border rounded px-2 py-1 text-xs">
+                        {selectedCambio.registro_id}
+                      </code>
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                        ID del Cambio
+                      </Label>
+                      <code className="block bg-background border rounded px-2 py-1 text-xs">
+                        {selectedCambio.id}
+                      </code>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </ScrollArea>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
