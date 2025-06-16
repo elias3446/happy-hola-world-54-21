@@ -23,7 +23,7 @@ interface PerfilUsuario {
   email: string;
   first_name: string;
   last_name: string;
-  avatar_url: string | null;
+  avatar: string | null;
   role: string[];
   created_at: string;
   updated_at: string;
