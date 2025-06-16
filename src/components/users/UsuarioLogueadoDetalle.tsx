@@ -4,11 +4,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Separator } from '@/components/ui/separator';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { User, Mail, Calendar, Shield, Activity, History, Eye, X, Edit, BarChart3 } from 'lucide-react';
+import { User, Mail, Calendar, Shield, Activity, History, Edit, BarChart3, X } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { UsuarioCambiosRecibidos } from './UsuarioCambiosRecibidos';
@@ -59,6 +59,13 @@ export const UsuarioLogueadoDetalle: React.FC<UsuarioLogueadoDetalleProps> = ({ 
     },
     enabled: !!user?.id,
   });
+
+  // Función para obtener iniciales
+  const getInitials = (firstName?: string, lastName?: string) => {
+    const first = firstName?.charAt(0)?.toUpperCase() || '';
+    const last = lastName?.charAt(0)?.toUpperCase() || '';
+    return first + last || 'U';
+  };
 
   // Si está en modo edición, mostrar el componente de edición
   if (isEditing) {
@@ -162,6 +169,25 @@ export const UsuarioLogueadoDetalle: React.FC<UsuarioLogueadoDetalleProps> = ({ 
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4 sm:space-y-6">
+                {/* Sección de Avatar */}
+                <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 pb-4 border-b">
+                  <Avatar className="h-20 w-20 sm:h-24 sm:w-24">
+                    <AvatarImage 
+                      src={perfilUsuario.avatar || undefined} 
+                      alt="Foto de perfil" 
+                    />
+                    <AvatarFallback className="text-lg sm:text-xl">
+                      {getInitials(perfilUsuario.first_name, perfilUsuario.last_name)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="text-center sm:text-left">
+                    <h2 className="text-xl sm:text-2xl font-semibold">
+                      {perfilUsuario.first_name} {perfilUsuario.last_name}
+                    </h2>
+                    <p className="text-muted-foreground">{perfilUsuario.email}</p>
+                  </div>
+                </div>
+
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                   <div className="space-y-4">
                     <div>

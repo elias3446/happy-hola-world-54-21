@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -6,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import {
   Form,
   FormControl,
@@ -17,11 +19,12 @@ import {
 import { useAuth } from '@/hooks/useAuth';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { User, Save, X, ArrowLeft, Lock } from 'lucide-react';
+import { User, Save, X, ArrowLeft, Lock, Camera, Upload } from 'lucide-react';
 import { isValidEmail } from '@/utils/validations';
 import { useToast } from '@/hooks/use-toast';
 import { UsuarioPasswordEdit } from './UsuarioPasswordEdit';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useCloudinary } from '@/hooks/useCloudinary';
 
 interface UsuarioLogueadoEditProps {
   onClose: () => void;
@@ -45,7 +48,9 @@ export const UsuarioLogueadoEdit: React.FC<UsuarioLogueadoEditProps> = ({ onClos
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState('perfil');
+  const [newAvatarUrl, setNewAvatarUrl] = useState<string | null>(null);
   const isMobile = useIsMobile();
+  const { uploadImage, isUploading } = useCloudinary();
 
   // Obtener datos del perfil del usuario logueado
   const { data: perfilUsuario, isLoading } = useQuery({
@@ -89,6 +94,76 @@ export const UsuarioLogueadoEdit: React.FC<UsuarioLogueadoEditProps> = ({ onClos
     }
   }, [perfilUsuario, form]);
 
+  // Manejar selección de archivo de imagen
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validar tipo de archivo
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+    if (!validTypes.includes(file.type)) {
+      toast({
+        title: "Error",
+        description: "Solo se permiten archivos de imagen (JPG, PNG, GIF, WebP).",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validar tamaño de archivo (máximo 5MB)
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    if (file.size > maxSize) {
+      toast({
+        title: "Error", 
+        description: "La imagen no puede ser mayor a 5MB.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const imageUrl = await uploadImage(file);
+      if (imageUrl) {
+        setNewAvatarUrl(imageUrl);
+        toast({
+          title: "Imagen subida",
+          description: "Tu foto de perfil se ha subido correctamente.",
+        });
+      }
+    } catch (error) {
+      console.error('Error uploading avatar:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo subir la imagen. Inténtalo de nuevo.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Manejar captura desde cámara
+  const handleCameraCapture = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const imageUrl = await uploadImage(file);
+      if (imageUrl) {
+        setNewAvatarUrl(imageUrl);
+        toast({
+          title: "Foto capturada",
+          description: "Tu foto de perfil se ha capturado y subido correctamente.",
+        });
+      }
+    } catch (error) {
+      console.error('Error uploading camera capture:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo procesar la foto. Inténtalo de nuevo.",
+        variant: "destructive",
+      });
+    }
+  };
+
   // Mutación para actualizar el perfil
   const updateProfileMutation = useMutation({
     mutationFn: async (data: EditFormData) => {
@@ -100,6 +175,7 @@ export const UsuarioLogueadoEdit: React.FC<UsuarioLogueadoEditProps> = ({ onClos
         .update({
           first_name: data.first_name,
           last_name: data.last_name,
+          avatar: newAvatarUrl || perfilUsuario?.avatar,
           updated_at: new Date().toISOString(),
         })
         .eq('id', user.id);
@@ -149,9 +225,17 @@ export const UsuarioLogueadoEdit: React.FC<UsuarioLogueadoEditProps> = ({ onClos
     updateProfileMutation.mutate(data);
   };
 
+  const getInitials = (firstName?: string, lastName?: string) => {
+    const first = firstName?.charAt(0)?.toUpperCase() || '';
+    const last = lastName?.charAt(0)?.toUpperCase() || '';
+    return first + last || 'U';
+  };
+
+  const currentAvatarUrl = newAvatarUrl || perfilUsuario?.avatar;
+
   if (isLoading) {
     return (
-      <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
       </div>
     );
@@ -159,7 +243,7 @@ export const UsuarioLogueadoEdit: React.FC<UsuarioLogueadoEditProps> = ({ onClos
 
   if (!perfilUsuario) {
     return (
-      <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div className="min-h-screen flex items-center justify-center p-4 bg-background">
         <Card className="w-full max-w-md">
           <CardContent className="pt-6 text-center">
             <p className="text-muted-foreground">No se pudo cargar la información del usuario.</p>
@@ -173,152 +257,210 @@ export const UsuarioLogueadoEdit: React.FC<UsuarioLogueadoEditProps> = ({ onClos
   }
 
   return (
-    <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 overflow-auto">
-      <div className="container mx-auto px-4 py-4 sm:py-6 min-h-screen">
-        <div className="max-w-2xl mx-auto">
-          {/* Header */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 sm:mb-6 gap-4">
-            <div className="flex items-start sm:items-center gap-3 sm:gap-4 w-full">
-              <Button 
-                onClick={onBack} 
-                variant="outline" 
-                size="sm"
-                className="flex-shrink-0 mt-1 sm:mt-0"
-              >
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                {!isMobile && "Volver"}
-              </Button>
-              <div className="flex items-center gap-3 min-w-0 flex-1">
-                <div className="flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-primary/10 flex-shrink-0">
-                  <User className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
-                </div>
-                <div className="min-w-0">
-                  <h1 className="text-xl sm:text-2xl font-bold">Editar Mi Perfil</h1>
-                  <p className="text-sm sm:text-base text-muted-foreground">
-                    Actualiza tu información personal
-                  </p>
-                </div>
-              </div>
-            </div>
+    <div className="min-h-screen bg-background">
+      <div className="container mx-auto px-4 py-4 sm:py-6 max-w-2xl">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 sm:mb-6 gap-4">
+          <div className="flex items-start sm:items-center gap-3 sm:gap-4 w-full">
             <Button 
-              onClick={onClose} 
+              onClick={onBack} 
               variant="outline" 
               size="sm"
-              className="self-end sm:self-auto"
+              className="flex-shrink-0 mt-1 sm:mt-0"
             >
-              <X className="h-4 w-4 mr-2" />
-              {!isMobile && "Cerrar"}
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              {!isMobile && "Volver"}
             </Button>
+            <div className="flex items-center gap-3 min-w-0 flex-1">
+              <div className="flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-primary/10 flex-shrink-0">
+                <User className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
+              </div>
+              <div className="min-w-0">
+                <h1 className="text-xl sm:text-2xl font-bold">Editar Mi Perfil</h1>
+                <p className="text-sm sm:text-base text-muted-foreground">
+                  Actualiza tu información personal
+                </p>
+              </div>
+            </div>
           </div>
+          <Button 
+            onClick={onClose} 
+            variant="outline" 
+            size="sm"
+            className="self-end sm:self-auto"
+          >
+            <X className="h-4 w-4 mr-2" />
+            {!isMobile && "Cerrar"}
+          </Button>
+        </div>
 
-          {/* Tabs de edición */}
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 sm:space-y-6">
-            <TabsList className="grid w-full grid-cols-2 h-auto">
-              <TabsTrigger value="perfil" className="flex items-center gap-2 p-3">
-                <User className="h-4 w-4" />
-                <span className="text-sm sm:text-base">Información Personal</span>
-              </TabsTrigger>
-              <TabsTrigger value="password" className="flex items-center gap-2 p-3">
-                <Lock className="h-4 w-4" />
-                <span className="text-sm sm:text-base">Contraseña</span>
-              </TabsTrigger>
-            </TabsList>
+        {/* Tabs de edición */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 sm:space-y-6">
+          <TabsList className="grid w-full grid-cols-2 h-auto">
+            <TabsTrigger value="perfil" className="flex items-center gap-2 p-3">
+              <User className="h-4 w-4" />
+              <span className="text-sm sm:text-base">Información Personal</span>
+            </TabsTrigger>
+            <TabsTrigger value="password" className="flex items-center gap-2 p-3">
+              <Lock className="h-4 w-4" />
+              <span className="text-sm sm:text-base">Contraseña</span>
+            </TabsTrigger>
+          </TabsList>
 
-            <TabsContent value="perfil">
-              <Card>
-                <CardHeader className="pb-4 sm:pb-6">
-                  <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
-                    <User className="h-4 w-4 sm:h-5 sm:w-5" />
-                    Información Personal
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <Form {...form}>
-                    <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 sm:space-y-6">
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <FormField
-                          control={form.control}
-                          name="first_name"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Nombre *</FormLabel>
-                              <FormControl>
-                                <Input placeholder="Ingresa tu nombre" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
+          <TabsContent value="perfil">
+            <Card>
+              <CardHeader className="pb-4 sm:pb-6">
+                <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+                  <User className="h-4 w-4 sm:h-5 sm:w-5" />
+                  Información Personal
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Form {...form}>
+                  <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 sm:space-y-6">
+                    {/* Sección de Avatar */}
+                    <div className="flex flex-col items-center gap-4 pb-6 border-b">
+                      <Avatar className="h-24 w-24 sm:h-32 sm:w-32">
+                        <AvatarImage 
+                          src={currentAvatarUrl || undefined} 
+                          alt="Foto de perfil" 
                         />
-
-                        <FormField
-                          control={form.control}
-                          name="last_name"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Apellido *</FormLabel>
-                              <FormControl>
-                                <Input placeholder="Ingresa tu apellido" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
+                        <AvatarFallback className="text-lg sm:text-xl">
+                          {getInitials(perfilUsuario.first_name, perfilUsuario.last_name)}
+                        </AvatarFallback>
+                      </Avatar>
+                      
+                      <div className="flex flex-col sm:flex-row gap-2">
+                        <div className="relative">
+                          <Button 
+                            type="button" 
+                            variant="outline" 
+                            size="sm"
+                            disabled={isUploading}
+                            className="flex items-center gap-2"
+                          >
+                            <Upload className="h-4 w-4" />
+                            {isUploading ? 'Subiendo...' : 'Subir Imagen'}
+                          </Button>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleImageUpload}
+                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                            disabled={isUploading}
+                          />
+                        </div>
+                        
+                        <div className="relative">
+                          <Button 
+                            type="button" 
+                            variant="outline" 
+                            size="sm"
+                            disabled={isUploading}
+                            className="flex items-center gap-2"
+                          >
+                            <Camera className="h-4 w-4" />
+                            Tomar Foto
+                          </Button>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            capture="user"
+                            onChange={handleCameraCapture}
+                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                            disabled={isUploading}
+                          />
+                        </div>
                       </div>
+                      
+                      <p className="text-xs sm:text-sm text-muted-foreground text-center">
+                        Formatos soportados: JPG, PNG, GIF, WebP. Máximo 5MB.
+                      </p>
+                    </div>
 
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <FormField
                         control={form.control}
-                        name="email"
+                        name="first_name"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Correo Electrónico *</FormLabel>
+                            <FormLabel>Nombre *</FormLabel>
                             <FormControl>
-                              <Input 
-                                type="email" 
-                                placeholder="tu@email.com" 
-                                {...field} 
-                              />
+                              <Input placeholder="Ingresa tu nombre" {...field} />
                             </FormControl>
                             <FormMessage />
-                            {form.watch('email') !== perfilUsuario?.email && (
-                              <p className="text-sm text-muted-foreground">
-                                ⚠️ Al cambiar tu email, recibirás un correo de confirmación.
-                              </p>
-                            )}
                           </FormItem>
                         )}
                       />
 
-                      <div className="flex flex-col sm:flex-row gap-4">
-                        <Button 
-                          type="submit" 
-                          disabled={updateProfileMutation.isPending}
-                          className="flex items-center gap-2 w-full sm:w-auto"
-                        >
-                          <Save className="h-4 w-4" />
-                          {updateProfileMutation.isPending ? 'Guardando...' : 'Guardar Cambios'}
-                        </Button>
-                        
-                        <Button 
-                          type="button" 
-                          variant="outline" 
-                          onClick={onBack}
-                          className="flex items-center gap-2 w-full sm:w-auto"
-                        >
-                          <X className="h-4 w-4" />
-                          Cancelar
-                        </Button>
-                      </div>
-                    </form>
-                  </Form>
-                </CardContent>
-              </Card>
-            </TabsContent>
+                      <FormField
+                        control={form.control}
+                        name="last_name"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Apellido *</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Ingresa tu apellido" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
 
-            <TabsContent value="password">
-              <UsuarioPasswordEdit onBack={() => setActiveTab('perfil')} />
-            </TabsContent>
-          </Tabs>
-        </div>
+                    <FormField
+                      control={form.control}
+                      name="email"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Correo Electrónico *</FormLabel>
+                          <FormControl>
+                            <Input 
+                              type="email" 
+                              placeholder="tu@email.com" 
+                              {...field} 
+                            />
+                          </FormControl>
+                          <FormMessage />
+                          {form.watch('email') !== perfilUsuario?.email && (
+                            <p className="text-sm text-muted-foreground">
+                              ⚠️ Al cambiar tu email, recibirás un correo de confirmación.
+                            </p>
+                          )}
+                        </FormItem>
+                      )}
+                    />
+
+                    <div className="flex flex-col sm:flex-row gap-4">
+                      <Button 
+                        type="submit" 
+                        disabled={updateProfileMutation.isPending || isUploading}
+                        className="flex items-center gap-2 w-full sm:w-auto"
+                      >
+                        <Save className="h-4 w-4" />
+                        {updateProfileMutation.isPending ? 'Guardando...' : 'Guardar Cambios'}
+                      </Button>
+                      
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        onClick={onBack}
+                        className="flex items-center gap-2 w-full sm:w-auto"
+                      >
+                        <X className="h-4 w-4" />
+                        Cancelar
+                      </Button>
+                    </div>
+                  </form>
+                </Form>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="password">
+            <UsuarioPasswordEdit onBack={() => setActiveTab('perfil')} />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
