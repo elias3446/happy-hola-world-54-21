@@ -1,21 +1,24 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { UserCheck, Clock, User } from 'lucide-react';
+import { History, Activity, Clock, User, Eye } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { CambioDetalleModal } from '../roles/dialogs/CambioDetalleModal';
 
 interface UsuarioCambiosRecibidosProps {
   usuarioId: string;
   usuarioEmail: string;
 }
 
-interface CambioEnUsuario {
+interface CambioRealizado {
   id: string;
   tabla_nombre: string;
   registro_id: string;
@@ -28,173 +31,332 @@ interface CambioEnUsuario {
   user_email: string;
 }
 
+interface ActividadRealizada {
+  id: string;
+  activity_type: 'CREATE' | 'READ' | 'UPDATE' | 'DELETE' | 'LOGIN' | 'LOGOUT' | 'SEARCH' | 'EXPORT' | 'IMPORT';
+  descripcion: string;
+  tabla_afectada: string | null;
+  registro_id: string | null;
+  metadatos: any;
+  created_at: string;
+  user_email: string;
+}
+
+const getActivityIcon = (type: ActividadRealizada['activity_type']) => {
+  switch (type) {
+    case 'CREATE': return <Activity className="h-4 w-4 text-green-600" />;
+    case 'READ': return <Activity className="h-4 w-4 text-blue-600" />;
+    case 'UPDATE': return <Activity className="h-4 w-4 text-orange-600" />;
+    case 'DELETE': return <Activity className="h-4 w-4 text-red-600" />;
+    case 'LOGIN': return <User className="h-4 w-4 text-purple-600" />;
+    case 'LOGOUT': return <User className="h-4 w-4 text-gray-600" />;
+    case 'SEARCH': return <Activity className="h-4 w-4 text-indigo-600" />;
+    case 'EXPORT': return <Activity className="h-4 w-4 text-teal-600" />;
+    case 'IMPORT': return <Activity className="h-4 w-4 text-cyan-600" />;
+    default: return <Activity className="h-4 w-4 text-gray-600" />;
+  }
+};
+
+const getActivityColor = (type: ActividadRealizada['activity_type']) => {
+  switch (type) {
+    case 'CREATE': return 'bg-green-100 text-green-800 border-green-200';
+    case 'READ': return 'bg-blue-100 text-blue-800 border-blue-200';
+    case 'UPDATE': return 'bg-orange-100 text-orange-800 border-orange-200';
+    case 'DELETE': return 'bg-red-100 text-red-800 border-red-200';
+    case 'LOGIN': return 'bg-purple-100 text-purple-800 border-purple-200';
+    case 'LOGOUT': return 'bg-gray-100 text-gray-800 border-gray-200';
+    case 'SEARCH': return 'bg-indigo-100 text-indigo-800 border-indigo-200';
+    case 'EXPORT': return 'bg-teal-100 text-teal-800 border-teal-200';
+    case 'IMPORT': return 'bg-cyan-100 text-cyan-800 border-cyan-200';
+    default: return 'bg-gray-100 text-gray-800 border-gray-200';
+  }
+};
+
+const getOperationColor = (operation: CambioRealizado['operation_type']) => {
+  switch (operation) {
+    case 'INSERT': return 'bg-green-100 text-green-800 border-green-200';
+    case 'UPDATE': return 'bg-orange-100 text-orange-800 border-orange-200';
+    case 'DELETE': return 'bg-red-100 text-red-800 border-red-200';
+    case 'SELECT': return 'bg-blue-100 text-blue-800 border-blue-200';
+    default: return 'bg-gray-100 text-gray-800 border-gray-200';
+  }
+};
+
 export const UsuarioCambiosRecibidos: React.FC<UsuarioCambiosRecibidosProps> = ({ 
   usuarioId, 
   usuarioEmail 
 }) => {
-  // Hook para obtener cambios realizados EN el usuario (en su perfil, asignaciones, etc.)
-  const { data: cambiosEnUsuario = [], isLoading: isLoadingCambiosEnUsuario } = useQuery({
-    queryKey: ['usuario-cambios-recibidos', usuarioId],
+  const [selectedCambio, setSelectedCambio] = useState<CambioRealizado | null>(null);
+  const [detalleModalOpen, setDetalleModalOpen] = useState(false);
+
+  // Hook para obtener actividades realizadas POR el usuario
+  const { data: actividadesRealizadas = [], isLoading: isLoadingActividades } = useQuery({
+    queryKey: ['usuario-actividades-realizadas', usuarioId],
     queryFn: async () => {
-      console.log('Fetching changes made TO user:', usuarioId);
+      console.log('Fetching activities performed BY user:', usuarioId);
       
-      const { data, error } = await supabase.rpc('get_change_history', {
-        p_tabla_nombre: null,
-        p_registro_id: usuarioId,
-        p_user_id: null,
+      const { data, error } = await supabase.rpc('get_user_activities', {
+        p_user_id: usuarioId, // Filtrar por quien hizo la actividad
         p_limit: 100,
         p_offset: 0
       });
 
       if (error) {
-        console.error('Error fetching cambios en usuario:', error);
+        console.error('Error fetching actividades realizadas por usuario:', error);
         throw error;
       }
 
-      console.log('Fetched changes made TO user:', data);
+      console.log('Fetched activities performed BY user:', data);
       
-      // Filtrar solo cambios relevantes al usuario
-      const cambiosRelevantes = (data || []).filter((cambio: CambioEnUsuario) => {
-        return (
-          // Cambios en el perfil del usuario
-          (cambio.tabla_nombre === 'profiles' && cambio.registro_id === usuarioId) ||
-          // Cambios en asignaciones de roles del usuario
-          (cambio.tabla_nombre === 'user_roles' && 
-           (cambio.valores_anteriores?.user_id === usuarioId || cambio.valores_nuevos?.user_id === usuarioId)) ||
-          // Cambios en reportes asignados al usuario
-          (cambio.tabla_nombre === 'reportes' && 
-           (cambio.valores_anteriores?.assigned_to === usuarioId || cambio.valores_nuevos?.assigned_to === usuarioId))
-        );
-      });
+      // Ordenar por fecha descendente
+      const actividadesOrdenadas = (data || []).sort((a: ActividadRealizada, b: ActividadRealizada) => 
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
 
-      return cambiosRelevantes as CambioEnUsuario[];
+      return actividadesOrdenadas as ActividadRealizada[];
     },
     enabled: !!usuarioId,
   });
 
-  const getDescripcionCambio = (cambio: CambioEnUsuario) => {
-    if (cambio.tabla_nombre === 'profiles') {
-      return `Cambio en perfil de usuario`;
-    } else if (cambio.tabla_nombre === 'user_roles') {
-      if (cambio.operation_type === 'INSERT') {
-        return `Rol asignado al usuario`;
-      } else if (cambio.operation_type === 'DELETE') {
-        return `Rol removido del usuario`;
-      } else {
-        return `Cambio en rol del usuario`;
+  // Hook para obtener cambios realizados POR el usuario
+  const { data: cambiosRealizados = [], isLoading: isLoadingCambios } = useQuery({
+    queryKey: ['usuario-cambios-realizados', usuarioId],
+    queryFn: async () => {
+      console.log('Fetching changes made BY user:', usuarioId);
+      
+      const { data, error } = await supabase.rpc('get_change_history', {
+        p_tabla_nombre: null,
+        p_registro_id: null,
+        p_user_id: usuarioId, // Filtrar por quien hizo el cambio
+        p_limit: 100,
+        p_offset: 0
+      });
+
+      if (error) {
+        console.error('Error fetching cambios realizados por usuario:', error);
+        throw error;
       }
-    } else if (cambio.tabla_nombre === 'reportes') {
-      if (cambio.valores_anteriores?.assigned_to !== usuarioId && cambio.valores_nuevos?.assigned_to === usuarioId) {
-        return `Reporte asignado al usuario`;
-      } else if (cambio.valores_anteriores?.assigned_to === usuarioId && cambio.valores_nuevos?.assigned_to !== usuarioId) {
-        return `Reporte desasignado del usuario`;
-      } else {
-        return `Cambio en reporte asignado`;
-      }
-    }
-    return cambio.descripcion_cambio;
+
+      console.log('Fetched changes made BY user:', data);
+      
+      // Ordenar por fecha descendente
+      const cambiosOrdenados = (data || []).sort((a: CambioRealizado, b: CambioRealizado) => 
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
+
+      return cambiosOrdenados as CambioRealizado[];
+    },
+    enabled: !!usuarioId,
+  });
+
+  const handleVerDetalles = (cambio: CambioRealizado) => {
+    setSelectedCambio(cambio);
+    setDetalleModalOpen(true);
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <UserCheck className="h-5 w-5 flex-shrink-0" />
-          <span className="truncate">Cambios en {usuarioEmail}</span>
-        </CardTitle>
-        <p className="text-sm text-muted-foreground">
-          Cambios realizados en el perfil, roles y asignaciones de este usuario
-        </p>
-      </CardHeader>
-      <CardContent>
-        <ScrollArea className="h-[400px]">
-          {isLoadingCambiosEnUsuario ? (
-            <div className="flex items-center justify-center p-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-            </div>
-          ) : cambiosEnUsuario.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              No se encontraron cambios realizados en este usuario
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-[100px]">Operación</TableHead>
-                    <TableHead className="min-w-[200px]">Descripción</TableHead>
-                    <TableHead className="w-[120px]">Tabla</TableHead>
-                    <TableHead className="w-[150px]">Realizado por</TableHead>
-                    <TableHead className="w-[120px]">Campos</TableHead>
-                    <TableHead className="w-[120px]">Fecha</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {cambiosEnUsuario.map((cambio) => (
-                    <TableRow key={cambio.id}>
-                      <TableCell className="p-2">
-                        <Badge 
-                          variant="outline"
-                          className={`text-xs ${
-                            cambio.operation_type === 'INSERT' ? 'bg-green-100 text-green-800 border-green-200' :
-                            cambio.operation_type === 'UPDATE' ? 'bg-orange-100 text-orange-800 border-orange-200' :
-                            cambio.operation_type === 'DELETE' ? 'bg-red-100 text-red-800 border-red-200' :
-                            'bg-blue-100 text-blue-800 border-blue-200'
-                          }`}
-                        >
-                          {cambio.operation_type}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="p-2">
-                        <div className="max-w-[200px] truncate text-sm" title={getDescripcionCambio(cambio)}>
-                          {getDescripcionCambio(cambio)}
-                        </div>
-                      </TableCell>
-                      <TableCell className="p-2">
-                        <div className="text-xs text-muted-foreground truncate">
-                          {cambio.tabla_nombre}
-                        </div>
-                      </TableCell>
-                      <TableCell className="p-2">
-                        <div className="flex items-center gap-1 max-w-[120px]">
-                          <User className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-                          <span className="text-xs truncate">{cambio.user_email}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="p-2">
-                        {cambio.campos_modificados && cambio.campos_modificados.length > 0 ? (
-                          <div className="flex flex-wrap gap-1 max-w-[100px]">
-                            {cambio.campos_modificados.slice(0, 1).map((campo, index) => (
-                              <Badge key={index} variant="secondary" className="text-xs">
-                                {campo}
+    <div className="space-y-4">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <History className="h-5 w-5 flex-shrink-0" />
+            <span className="truncate">Historial de {usuarioEmail}</span>
+          </CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Actividades y cambios realizados por este usuario en el sistema
+          </p>
+        </CardHeader>
+        <CardContent>
+          <Tabs defaultValue="actividades" className="space-y-4">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="actividades" className="flex items-center gap-2">
+                <Activity className="h-4 w-4" />
+                Actividades
+              </TabsTrigger>
+              <TabsTrigger value="cambios" className="flex items-center gap-2">
+                <History className="h-4 w-4" />
+                Cambios Detallados
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="actividades">
+              <div className="border rounded-lg">
+                <ScrollArea className="h-[400px]">
+                  {isLoadingActividades ? (
+                    <div className="flex items-center justify-center p-8">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                    </div>
+                  ) : actividadesRealizadas.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <Activity className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                      <p className="text-lg font-medium">No se encontraron actividades</p>
+                      <p className="text-sm">Este usuario no ha realizado actividades registradas.</p>
+                    </div>
+                  ) : (
+                    <Table>
+                      <TableHeader className="sticky top-0 bg-background">
+                        <TableRow>
+                          <TableHead className="w-[120px]">Tipo</TableHead>
+                          <TableHead className="min-w-[300px]">Descripción</TableHead>
+                          <TableHead className="w-[150px]">Tabla Afectada</TableHead>
+                          <TableHead className="w-[150px]">Fecha y Hora</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {actividadesRealizadas.map((actividad) => (
+                          <TableRow key={actividad.id} className="hover:bg-muted/50">
+                            <TableCell>
+                              <Badge 
+                                variant="outline" 
+                                className={`${getActivityColor(actividad.activity_type)} text-xs font-medium`}
+                              >
+                                <div className="flex items-center gap-1">
+                                  {getActivityIcon(actividad.activity_type)}
+                                  <span>{actividad.activity_type}</span>
+                                </div>
                               </Badge>
-                            ))}
-                            {cambio.campos_modificados.length > 1 && (
+                            </TableCell>
+                            <TableCell>
+                              <div className="max-w-[300px]">
+                                <p className="text-sm font-medium truncate" title={actividad.descripcion}>
+                                  {actividad.descripcion}
+                                </p>
+                              </div>
+                            </TableCell>
+                            <TableCell>
                               <Badge variant="secondary" className="text-xs">
-                                +{cambio.campos_modificados.length - 1}
+                                {actividad.tabla_afectada || 'N/A'}
                               </Badge>
-                            )}
-                          </div>
-                        ) : (
-                          <span className="text-muted-foreground text-xs">-</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="p-2">
-                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                          <Clock className="h-3 w-3 flex-shrink-0" />
-                          <span className="truncate">
-                            {format(new Date(cambio.created_at), 'dd/MM/yy HH:mm', { locale: es })}
-                          </span>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </ScrollArea>
-      </CardContent>
-    </Card>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                                <Clock className="h-3 w-3" />
+                                <div className="space-y-1">
+                                  <div className="font-medium">
+                                    {format(new Date(actividad.created_at), 'dd/MM/yyyy', { locale: es })}
+                                  </div>
+                                  <div className="text-xs">
+                                    {format(new Date(actividad.created_at), 'HH:mm:ss', { locale: es })}
+                                  </div>
+                                </div>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  )}
+                </ScrollArea>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="cambios">
+              <div className="border rounded-lg">
+                <ScrollArea className="h-[400px]">
+                  {isLoadingCambios ? (
+                    <div className="flex items-center justify-center p-8">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                    </div>
+                  ) : cambiosRealizados.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <History className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                      <p className="text-lg font-medium">No se encontraron cambios</p>
+                      <p className="text-sm">Este usuario no ha realizado cambios registrados.</p>
+                    </div>
+                  ) : (
+                    <Table>
+                      <TableHeader className="sticky top-0 bg-background">
+                        <TableRow>
+                          <TableHead className="w-[120px]">Operación</TableHead>
+                          <TableHead className="min-w-[300px]">Descripción del Cambio</TableHead>
+                          <TableHead className="w-[120px]">Tabla</TableHead>
+                          <TableHead className="w-[200px]">Campos Modificados</TableHead>
+                          <TableHead className="w-[150px]">Fecha y Hora</TableHead>
+                          <TableHead className="w-[100px]">Acciones</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {cambiosRealizados.map((cambio) => (
+                          <TableRow key={cambio.id} className="hover:bg-muted/50">
+                            <TableCell>
+                              <Badge 
+                                variant="outline"
+                                className={`text-xs font-medium ${getOperationColor(cambio.operation_type)}`}
+                              >
+                                {cambio.operation_type}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <div className="max-w-[300px]">
+                                <p className="text-sm font-medium truncate" title={cambio.descripcion_cambio}>
+                                  {cambio.descripcion_cambio}
+                                </p>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant="secondary" className="text-xs">
+                                {cambio.tabla_nombre}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              {cambio.campos_modificados && cambio.campos_modificados.length > 0 ? (
+                                <div className="flex flex-wrap gap-1 max-w-[180px]">
+                                  {cambio.campos_modificados.slice(0, 3).map((campo, index) => (
+                                    <Badge key={index} variant="secondary" className="text-xs">
+                                      {campo}
+                                    </Badge>
+                                  ))}
+                                  {cambio.campos_modificados.length > 3 && (
+                                    <Badge variant="secondary" className="text-xs">
+                                      +{cambio.campos_modificados.length - 3}
+                                    </Badge>
+                                  )}
+                                </div>
+                              ) : (
+                                <span className="text-muted-foreground text-xs">Sin campos</span>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                                <Clock className="h-3 w-3" />
+                                <div className="space-y-1">
+                                  <div className="font-medium">
+                                    {format(new Date(cambio.created_at), 'dd/MM/yyyy', { locale: es })}
+                                  </div>
+                                  <div className="text-xs">
+                                    {format(new Date(cambio.created_at), 'HH:mm:ss', { locale: es })}
+                                  </div>
+                                </div>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => handleVerDetalles(cambio)}
+                              >
+                                <Eye className="h-3 w-3 mr-1" />
+                                Ver
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  )}
+                </ScrollArea>
+              </div>
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
+
+      {/* Modal de detalles del cambio */}
+      <CambioDetalleModal
+        cambio={selectedCambio}
+        open={detalleModalOpen}
+        onOpenChange={setDetalleModalOpen}
+      />
+    </div>
   );
 };
