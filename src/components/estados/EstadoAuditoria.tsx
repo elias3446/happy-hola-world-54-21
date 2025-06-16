@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Activity, History, Clock, User, Database, FileText, Search, Filter, RefreshCw, Download, Circle, Eye } from 'lucide-react';
@@ -82,11 +83,20 @@ const getOperationColor = (operation: CambioEstado['operation_type']) => {
   }
 };
 
+const formatearValor = (valor: any): string => {
+  if (valor === null || valor === undefined) return 'N/A';
+  if (typeof valor === 'boolean') return valor ? 'Sí' : 'No';
+  if (typeof valor === 'object') return JSON.stringify(valor, null, 2);
+  return String(valor);
+};
+
 export const EstadoAuditoria: React.FC<EstadoAuditoriaProps> = ({ estadoId }) => {
   const [filtroTipo, setFiltroTipo] = useState<string>('all');
   const [filtroUsuario, setFiltroUsuario] = useState<string>('');
   const [busqueda, setBusqueda] = useState<string>('');
   const [activeTab, setActiveTab] = useState('actividades');
+  const [selectedCambio, setSelectedCambio] = useState<CambioEstado | null>(null);
+  const [showDetailsDialog, setShowDetailsDialog] = useState(false);
 
   // Hook para obtener actividades relacionadas con el estado
   const { data: actividades = [], isLoading: isLoadingActividades } = useQuery({
@@ -166,8 +176,8 @@ export const EstadoAuditoria: React.FC<EstadoAuditoriaProps> = ({ estadoId }) =>
   };
 
   const verDetallesCambio = (cambio: CambioEstado) => {
-    console.log('Ver detalles del cambio:', cambio);
-    // Aquí se podría abrir un modal o navegar a una página de detalles
+    setSelectedCambio(cambio);
+    setShowDetailsDialog(true);
   };
 
   return (
@@ -490,6 +500,129 @@ export const EstadoAuditoria: React.FC<EstadoAuditoriaProps> = ({ estadoId }) =>
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Modal de Detalles del Cambio */}
+      <Dialog open={showDetailsDialog} onOpenChange={setShowDetailsDialog}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <History className="h-5 w-5" />
+              Detalles del Cambio
+            </DialogTitle>
+          </DialogHeader>
+          
+          {selectedCambio && (
+            <div className="space-y-6">
+              {/* Información General */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Información General</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-sm font-medium text-muted-foreground">Operación</Label>
+                      <Badge className={`mt-1 ${getOperationColor(selectedCambio.operation_type)}`}>
+                        {selectedCambio.operation_type}
+                      </Badge>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium text-muted-foreground">Usuario</Label>
+                      <p className="mt-1 text-sm">{selectedCambio.user_email}</p>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium text-muted-foreground">Fecha y Hora</Label>
+                      <p className="mt-1 text-sm">
+                        {format(new Date(selectedCambio.created_at), 'dd/MM/yyyy HH:mm:ss', { locale: es })}
+                      </p>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium text-muted-foreground">Tabla</Label>
+                      <p className="mt-1 text-sm">{selectedCambio.tabla_nombre}</p>
+                    </div>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">Descripción</Label>
+                    <p className="mt-1 text-sm">{selectedCambio.descripcion_cambio}</p>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Campos Modificados */}
+              {selectedCambio.campos_modificados && selectedCambio.campos_modificados.length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Campos Modificados</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex flex-wrap gap-2">
+                      {selectedCambio.campos_modificados.map((campo, index) => (
+                        <Badge key={index} variant="secondary">
+                          {campo}
+                        </Badge>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Comparación de Valores */}
+              {(selectedCambio.valores_anteriores || selectedCambio.valores_nuevos) && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Comparación de Valores</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      {/* Valores Anteriores */}
+                      <div>
+                        <Label className="text-sm font-medium text-muted-foreground mb-2 block">
+                          Valores Anteriores
+                        </Label>
+                        <div className="bg-red-50 border border-red-200 rounded-lg p-4 space-y-2">
+                          {selectedCambio.valores_anteriores ? (
+                            Object.entries(selectedCambio.valores_anteriores).map(([key, value]) => (
+                              <div key={key} className="flex justify-between text-sm">
+                                <span className="font-medium text-red-700">{key}:</span>
+                                <span className="text-red-600 break-all max-w-xs">
+                                  {formatearValor(value)}
+                                </span>
+                              </div>
+                            ))
+                          ) : (
+                            <p className="text-sm text-muted-foreground">Sin valores anteriores</p>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Valores Nuevos */}
+                      <div>
+                        <Label className="text-sm font-medium text-muted-foreground mb-2 block">
+                          Valores Nuevos
+                        </Label>
+                        <div className="bg-green-50 border border-green-200 rounded-lg p-4 space-y-2">
+                          {selectedCambio.valores_nuevos ? (
+                            Object.entries(selectedCambio.valores_nuevos).map(([key, value]) => (
+                              <div key={key} className="flex justify-between text-sm">
+                                <span className="font-medium text-green-700">{key}:</span>
+                                <span className="text-green-600 break-all max-w-xs">
+                                  {formatearValor(value)}
+                                </span>
+                              </div>
+                            ))
+                          ) : (
+                            <p className="text-sm text-muted-foreground">Sin valores nuevos</p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
