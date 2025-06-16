@@ -20,6 +20,7 @@ import AdminRoles from "./pages/admin/AdminRoles";
 import AdminCategorias from "./pages/admin/AdminCategorias";
 import AdminEstados from "./pages/admin/AdminEstados";
 import Dashboard from "./pages/Dashboard";
+import MiPerfil from "./pages/MiPerfil";
 import { Dashboard as AdminDashboard } from "./components/Dashboard";
 
 const queryClient = new QueryClient();
@@ -75,6 +76,12 @@ const AppContent = () => {
           <Route path="/dashboard" element={
             <ProtectedRoute>
               <Dashboard />
+            </ProtectedRoute>
+          } />
+
+          <Route path="/mi-perfil" element={
+            <ProtectedRoute>
+              <MiPerfil />
             </ProtectedRoute>
           } />
 

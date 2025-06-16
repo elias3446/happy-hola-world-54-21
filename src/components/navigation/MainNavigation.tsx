@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -38,24 +37,17 @@ import {
 } from 'lucide-react';
 import { QuickReporteButton } from '@/components/reportes/QuickReporteButton';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
-import { UsuarioLogueadoDetalle } from '@/components/users/UsuarioLogueadoDetalle';
 
 export const MainNavigation = () => {
   const { user, signOut, isAdmin } = useAuth();
   const location = useLocation();
   const [isOpen, setIsOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
-  const [showUserDetail, setShowUserDetail] = useState(false);
 
   const isActive = (path: string) => location.pathname === path;
 
   const handleSignOut = async () => {
     await signOut();
-  };
-
-  const handleShowUserDetail = () => {
-    setShowUserDetail(true);
-    setUserDropdownOpen(false);
   };
 
   // Hook to detect screen size changes and close dropdowns
@@ -155,17 +147,14 @@ export const MainNavigation = () => {
                 <div className="px-3 text-xs text-muted-foreground truncate">
                   {user.email}
                 </div>
-                <Button
-                  variant="ghost"
-                  onClick={() => {
-                    setShowUserDetail(true);
-                    setIsOpen(false);
-                  }}
-                  className="w-full justify-start text-muted-foreground hover:text-foreground"
+                <Link
+                  to="/mi-perfil"
+                  onClick={() => setIsOpen(false)}
+                  className="flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors text-muted-foreground hover:text-foreground hover:bg-accent"
                 >
-                  <UserCircle className="h-4 w-4 mr-2" />
-                  Mi Perfil
-                </Button>
+                  <UserCircle className="h-4 w-4" />
+                  <span>Mi Perfil</span>
+                </Link>
                 <Button
                   variant="ghost"
                   onClick={handleSignOut}
@@ -194,114 +183,109 @@ export const MainNavigation = () => {
   );
 
   return (
-    <>
-      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container flex h-14 items-center max-w-full px-4">
-          {/* Logo */}
-          <div className="mr-4 hidden lg:flex shrink-0">
-            <Link to="/home" className="flex items-center space-x-2">
-              <Map className="h-6 w-6" />
-              <span className="font-bold">GeoReport</span>
-            </Link>
-          </div>
+    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="container flex h-14 items-center max-w-full px-4">
+        {/* Logo */}
+        <div className="mr-4 hidden lg:flex shrink-0">
+          <Link to="/home" className="flex items-center space-x-2">
+            <Map className="h-6 w-6" />
+            <span className="font-bold">GeoReport</span>
+          </Link>
+        </div>
 
-          {/* Mobile Logo */}
-          <div className="mr-4 lg:hidden shrink-0">
-            <Link to="/home" className="flex items-center space-x-2">
-              <Map className="h-6 w-6" />
-              <span className="font-bold">GeoReport</span>
-            </Link>
-          </div>
+        {/* Mobile Logo */}
+        <div className="mr-4 lg:hidden shrink-0">
+          <Link to="/home" className="flex items-center space-x-2">
+            <Map className="h-6 w-6" />
+            <span className="font-bold">GeoReport</span>
+          </Link>
+        </div>
 
-          {/* Mobile Navigation */}
-          <MobileNavigation />
+        {/* Mobile Navigation */}
+        <MobileNavigation />
 
-          {/* Desktop Navigation */}
-          <div className="hidden lg:flex flex-1 items-center justify-between min-w-0">
-            <NavigationMenu className="max-w-none">
-              <NavigationMenuList className="flex-wrap">
-                {publicNavItems.map((item) => {
-                  const Icon = item.icon;
-                  return (
-                    <NavigationMenuItem key={item.href}>
-                      <NavigationMenuLink asChild>
-                        <Link
-                          to={item.href}
-                          className={cn(
-                            navigationMenuTriggerStyle(),
-                            "flex items-center space-x-2 text-sm",
-                            isActive(item.href) && "bg-accent"
-                          )}
-                        >
-                          <Icon className="h-4 w-4" />
-                          <span className="hidden xl:inline">{item.label}</span>
-                        </Link>
-                      </NavigationMenuLink>
-                    </NavigationMenuItem>
-                  );
-                })}
-                
-                {/* Administración Link - Solo mostrar si es admin */}
-                {user && isAdmin() && (
-                  <NavigationMenuItem>
+        {/* Desktop Navigation */}
+        <div className="hidden lg:flex flex-1 items-center justify-between min-w-0">
+          <NavigationMenu className="max-w-none">
+            <NavigationMenuList className="flex-wrap">
+              {publicNavItems.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <NavigationMenuItem key={item.href}>
                     <NavigationMenuLink asChild>
                       <Link
-                        to="/admin"
+                        to={item.href}
                         className={cn(
                           navigationMenuTriggerStyle(),
                           "flex items-center space-x-2 text-sm",
-                          location.pathname === '/admin' && "bg-accent"
+                          isActive(item.href) && "bg-accent"
                         )}
                       >
-                        <Settings className="h-4 w-4" />
-                        <span className="hidden xl:inline">Administración</span>
+                        <Icon className="h-4 w-4" />
+                        <span className="hidden xl:inline">{item.label}</span>
                       </Link>
                     </NavigationMenuLink>
                   </NavigationMenuItem>
-                )}
-              </NavigationMenuList>
-            </NavigationMenu>
-
-            {/* Right side actions */}
-            <div className="flex items-center space-x-2 shrink-0 ml-4">
-              {/* Nuevo Reporte - Solo mostrar si no es admin */}
-              {user && !isAdmin() && <QuickReporteButton />}
-              <ThemeToggle />
+                );
+              })}
               
-              {user ? (
-                <DropdownMenu open={userDropdownOpen} onOpenChange={setUserDropdownOpen}>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm" className="flex items-center space-x-2 max-w-[200px]">
-                      <User className="h-4 w-4 shrink-0" />
-                      <span className="text-sm truncate hidden md:inline">{user.email}</span>
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-56">
-                    <DropdownMenuItem onClick={handleShowUserDetail}>
+              {/* Administración Link - Solo mostrar si es admin */}
+              {user && isAdmin() && (
+                <NavigationMenuItem>
+                  <NavigationMenuLink asChild>
+                    <Link
+                      to="/admin"
+                      className={cn(
+                        navigationMenuTriggerStyle(),
+                        "flex items-center space-x-2 text-sm",
+                        location.pathname === '/admin' && "bg-accent"
+                      )}
+                    >
+                      <Settings className="h-4 w-4" />
+                      <span className="hidden xl:inline">Administración</span>
+                    </Link>
+                  </NavigationMenuLink>
+                </NavigationMenuItem>
+              )}
+            </NavigationMenuList>
+          </NavigationMenu>
+
+          {/* Right side actions */}
+          <div className="flex items-center space-x-2 shrink-0 ml-4">
+            {/* Nuevo Reporte - Solo mostrar si no es admin */}
+            {user && !isAdmin() && <QuickReporteButton />}
+            <ThemeToggle />
+            
+            {user ? (
+              <DropdownMenu open={userDropdownOpen} onOpenChange={setUserDropdownOpen}>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm" className="flex items-center space-x-2 max-w-[200px]">
+                    <User className="h-4 w-4 shrink-0" />
+                    <span className="text-sm truncate hidden md:inline">{user.email}</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuItem asChild>
+                    <Link to="/mi-perfil">
                       <UserCircle className="h-4 w-4 mr-2" />
                       Mi Perfil
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={handleSignOut}>
-                      <LogOut className="h-4 w-4 mr-2" />
-                      Cerrar Sesión
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              ) : (
-                <Button asChild size="sm">
-                  <Link to="/login">Iniciar Sesión</Link>
-                </Button>
-              )}
-            </div>
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleSignOut}>
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Cerrar Sesión
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <Button asChild size="sm">
+                <Link to="/login">Iniciar Sesión</Link>
+              </Button>
+            )}
           </div>
         </div>
-      </header>
-
-      {/* Modal de detalle del usuario */}
-      {showUserDetail && (
-        <UsuarioLogueadoDetalle onClose={() => setShowUserDetail(false)} />
-      )}
-    </>
+      </div>
+    </header>
   );
 };

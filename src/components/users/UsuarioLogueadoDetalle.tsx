@@ -72,7 +72,7 @@ export const UsuarioLogueadoDetalle: React.FC<UsuarioLogueadoDetalleProps> = ({ 
 
   if (isLoading) {
     return (
-      <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
       </div>
     );
@@ -80,12 +80,12 @@ export const UsuarioLogueadoDetalle: React.FC<UsuarioLogueadoDetalleProps> = ({ 
 
   if (!perfilUsuario) {
     return (
-      <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div className="min-h-screen flex items-center justify-center p-4 bg-background">
         <Card className="w-full max-w-md">
           <CardContent className="pt-6 text-center">
             <p className="text-muted-foreground">No se pudo cargar la información del usuario.</p>
             <Button onClick={onClose} className="mt-4">
-              Cerrar
+              Volver
             </Button>
           </CardContent>
         </Card>
@@ -94,8 +94,8 @@ export const UsuarioLogueadoDetalle: React.FC<UsuarioLogueadoDetalleProps> = ({ 
   }
 
   return (
-    <div className="fixed inset-0 bg-background z-50 overflow-y-auto">
-      <div className="container mx-auto px-4 py-4 sm:py-6 max-w-6xl min-h-screen">
+    <div className="min-h-screen bg-background">
+      <div className="container mx-auto px-4 py-4 sm:py-6 max-w-6xl">
         {/* Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 sm:mb-6 gap-4">
           <div className="flex items-center gap-3 sm:gap-4 w-full sm:w-auto">
@@ -126,7 +126,7 @@ export const UsuarioLogueadoDetalle: React.FC<UsuarioLogueadoDetalleProps> = ({ 
               className="flex-1 sm:flex-none"
             >
               <X className="h-4 w-4 mr-2" />
-              Cerrar
+              Volver
             </Button>
           </div>
         </div>
