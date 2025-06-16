@@ -4,13 +4,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Activity, History, Clock, User, Database, FileText, Search, Filter, Download, Calendar } from 'lucide-react';
+import { Activity, History, Clock, User, Database, FileText, Search, Filter, Download, Calendar, RefreshCw, Shield } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
@@ -77,6 +78,7 @@ export const ReporteAuditoria: React.FC<ReporteAuditoriaProps> = ({ reporteId })
   const [filtroUsuario, setFiltroUsuario] = useState<string>('');
   const [filtroFecha, setFiltroFecha] = useState<string>('');
   const [busqueda, setBusqueda] = useState<string>('');
+  const [activeTab, setActiveTab] = useState('actividades');
 
   // Hook para obtener actividades relacionadas al reporte
   const { data: actividades = [], isLoading: isLoadingActividades } = useQuery({
@@ -164,41 +166,33 @@ export const ReporteAuditoria: React.FC<ReporteAuditoriaProps> = ({ reporteId })
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header con título y acciones */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-bold flex items-center gap-2">
-            <History className="h-6 w-6 text-primary" />
-            Auditoría del Reporte
-          </h2>
-          <p className="text-muted-foreground mt-1">
-            Historial completo de actividades y cambios registrados
-          </p>
+    <div className="container mx-auto px-4 py-6">
+      <div className="mb-6">
+        <div className="flex items-center gap-2 mb-4">
+          <Shield className="h-6 w-6 text-primary" />
+          <h1 className="text-2xl font-bold">Auditoría del Reporte</h1>
         </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={exportarDatos}>
-            <Download className="h-4 w-4 mr-2" />
-            Exportar
-          </Button>
-        </div>
+        <p className="text-muted-foreground">
+          Monitoreo completo de actividades y cambios en el sistema
+        </p>
       </div>
 
-      {/* Filtros y búsqueda */}
-      <Card>
+      {/* Filtros */}
+      <Card className="mb-6">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg">
+          <CardTitle className="flex items-center gap-2">
             <Filter className="h-5 w-5" />
             Filtros de Búsqueda
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Buscar</label>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+              <Label htmlFor="busqueda">Buscar</Label>
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
+                  id="busqueda"
                   placeholder="Buscar en descripción..."
                   value={busqueda}
                   onChange={(e) => setBusqueda(e.target.value)}
@@ -207,9 +201,12 @@ export const ReporteAuditoria: React.FC<ReporteAuditoriaProps> = ({ reporteId })
               </div>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Tipo de Actividad</label>
-              <Select value={filtroTipo} onValueChange={setFiltroTipo}>
+            <div>
+              <Label htmlFor="filtro_tipo">Tipo de Actividad</Label>
+              <Select
+                value={filtroTipo}
+                onValueChange={setFiltroTipo}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Todos los tipos" />
                 </SelectTrigger>
@@ -228,66 +225,67 @@ export const ReporteAuditoria: React.FC<ReporteAuditoriaProps> = ({ reporteId })
               </Select>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Usuario</label>
+            <div>
+              <Label htmlFor="filtro_usuario">Usuario</Label>
               <Input
+                id="filtro_usuario"
                 placeholder="Filtrar por email..."
                 value={filtroUsuario}
                 onChange={(e) => setFiltroUsuario(e.target.value)}
               />
             </div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Fecha</label>
-              <div className="relative">
-                <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  type="date"
-                  value={filtroFecha}
-                  onChange={(e) => setFiltroFecha(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
+            <div className="flex items-end gap-2">
+              <Button onClick={limpiarFiltros} className="flex-1">
+                <Filter className="h-4 w-4 mr-2" />
+                Aplicar
+              </Button>
+              <Button variant="outline" onClick={limpiarFiltros}>
+                <RefreshCw className="h-4 w-4" />
+              </Button>
             </div>
-          </div>
-
-          <div className="flex justify-end mt-4">
-            <Button variant="outline" size="sm" onClick={limpiarFiltros}>
-              Limpiar Filtros
-            </Button>
           </div>
         </CardContent>
       </Card>
 
-      {/* Contenido principal con tabs */}
-      <Card>
-        <CardContent className="p-6">
-          <Tabs defaultValue="actividades" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-6">
-              <TabsTrigger value="actividades" className="flex items-center gap-2">
-                <Activity className="h-4 w-4" />
-                <span>Actividades</span>
-                <Badge variant="secondary" className="ml-2">
-                  {actividades.length}
-                </Badge>
-              </TabsTrigger>
-              <TabsTrigger value="cambios" className="flex items-center gap-2">
-                <History className="h-4 w-4" />
-                <span>Cambios</span>
-                <Badge variant="secondary" className="ml-2">
-                  {cambios.length}
-                </Badge>
-              </TabsTrigger>
-            </TabsList>
+      {/* Tabs con contenido */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <TabsList className="grid w-full sm:w-auto grid-cols-2">
+            <TabsTrigger value="actividades" className="flex items-center gap-2">
+              <Activity className="h-4 w-4" />
+              Actividades
+            </TabsTrigger>
+            <TabsTrigger value="cambios" className="flex items-center gap-2">
+              <History className="h-4 w-4" />
+              Historial de Cambios
+            </TabsTrigger>
+          </TabsList>
 
-            <TabsContent value="actividades" className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold">Registro de Actividades</h3>
+          <Button 
+            onClick={exportarDatos}
+            disabled={activeTab === 'actividades' ? actividades.length === 0 : cambios.length === 0}
+            className="flex items-center gap-2"
+          >
+            <Download className="h-4 w-4" />
+            Exportar Resultados
+          </Button>
+        </div>
+
+        <TabsContent value="actividades">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Activity className="h-5 w-5" />
+                  Registro de Actividades
+                </div>
                 <div className="text-sm text-muted-foreground">
                   {isLoadingActividades ? 'Cargando...' : `${actividades.length} registros encontrados`}
                 </div>
-              </div>
-              
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
               <div className="border rounded-lg">
                 <ScrollArea className="h-[400px]">
                   {isLoadingActividades ? (
@@ -365,16 +363,24 @@ export const ReporteAuditoria: React.FC<ReporteAuditoriaProps> = ({ reporteId })
                   )}
                 </ScrollArea>
               </div>
-            </TabsContent>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-            <TabsContent value="cambios" className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold">Historial de Cambios</h3>
+        <TabsContent value="cambios">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <History className="h-5 w-5" />
+                  Historial de Cambios
+                </div>
                 <div className="text-sm text-muted-foreground">
                   {isLoadingCambios ? 'Cargando...' : `${cambios.length} registros encontrados`}
                 </div>
-              </div>
-
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
               <div className="border rounded-lg">
                 <ScrollArea className="h-[400px]">
                   {isLoadingCambios ? (
@@ -467,10 +473,10 @@ export const ReporteAuditoria: React.FC<ReporteAuditoriaProps> = ({ reporteId })
                   )}
                 </ScrollArea>
               </div>
-            </TabsContent>
-          </Tabs>
-        </CardContent>
-      </Card>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
