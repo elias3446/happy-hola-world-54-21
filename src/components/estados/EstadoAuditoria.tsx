@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -173,6 +172,7 @@ export const EstadoAuditoria: React.FC<EstadoAuditoriaProps> = ({ estadoId }) =>
 
   return (
     <div className="container mx-auto px-4 py-6">
+      {/* Header */}
       <div className="mb-6">
         <div className="flex items-center gap-2 mb-4">
           <Circle className="h-6 w-6 text-primary" />
@@ -408,7 +408,7 @@ export const EstadoAuditoria: React.FC<EstadoAuditoriaProps> = ({ estadoId }) =>
                           <TableHead className="w-[180px]">Campos Modificados</TableHead>
                           <TableHead className="w-[160px]">Usuario</TableHead>
                           <TableHead className="w-[140px]">Fecha y Hora</TableHead>
-                          <TableHead className="w-[100px]">Acciones</TableHead>
+                          <TableHead className="w-[120px]">Acciones</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -470,13 +470,13 @@ export const EstadoAuditoria: React.FC<EstadoAuditoriaProps> = ({ estadoId }) =>
                             </TableCell>
                             <TableCell>
                               <Button
-                                variant="ghost"
+                                variant="outline"
                                 size="sm"
                                 onClick={() => verDetallesCambio(cambio)}
-                                className="h-8 w-8 p-0"
-                                title="Ver detalles del cambio"
+                                className="flex items-center gap-2 text-xs"
                               >
-                                <Eye className="h-4 w-4" />
+                                <Eye className="h-3 w-3" />
+                                Ver detalles
                               </Button>
                             </TableCell>
                           </TableRow>
