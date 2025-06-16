@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -8,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Activity, History, Clock, User, Database, FileText, Search, Filter, Download, Calendar, RefreshCw, Shield, Eye } from 'lucide-react';
@@ -83,69 +84,11 @@ const getOperationColor = (operation: CambioReporte['operation_type']) => {
   }
 };
 
-const DetallesCambio: React.FC<{ cambio: CambioReporte }> = ({ cambio }) => {
-  return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <h4 className="font-semibold mb-2">Información General</h4>
-          <div className="space-y-2 text-sm">
-            <div>
-              <span className="font-medium">Tabla:</span> {cambio.tabla_nombre}
-            </div>
-            <div>
-              <span className="font-medium">Registro ID:</span> {cambio.registro_id}
-            </div>
-            <div>
-              <span className="font-medium">Operación:</span>
-              <Badge className={`ml-2 ${getOperationColor(cambio.operation_type)}`}>
-                {cambio.operation_type}
-              </Badge>
-            </div>
-            <div>
-              <span className="font-medium">Usuario:</span> {cambio.user_email}
-            </div>
-            <div>
-              <span className="font-medium">Fecha:</span> 
-              {format(new Date(cambio.created_at), 'dd/MM/yyyy HH:mm:ss', { locale: es })}
-            </div>
-          </div>
-        </div>
-        
-        <div>
-          <h4 className="font-semibold mb-2">Campos Modificados</h4>
-          <div className="space-y-1">
-            {cambio.campos_modificados?.map((campo, index) => (
-              <Badge key={index} variant="outline" className="mr-1">
-                {campo}
-              </Badge>
-            ))}
-            {(!cambio.campos_modificados || cambio.campos_modificados.length === 0) && (
-              <span className="text-sm text-muted-foreground">Sin campos modificados</span>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {cambio.valores_anteriores && (
-        <div>
-          <h4 className="font-semibold mb-2">Valores Anteriores</h4>
-          <pre className="bg-gray-50 p-3 rounded-md text-xs overflow-auto max-h-40">
-            {JSON.stringify(cambio.valores_anteriores, null, 2)}
-          </pre>
-        </div>
-      )}
-
-      {cambio.valores_nuevos && (
-        <div>
-          <h4 className="font-semibold mb-2">Valores Nuevos</h4>
-          <pre className="bg-gray-50 p-3 rounded-md text-xs overflow-auto max-h-40">
-            {JSON.stringify(cambio.valores_nuevos, null, 2)}
-          </pre>
-        </div>
-      )}
-    </div>
-  );
+const formatearValor = (valor: any): string => {
+  if (valor === null || valor === undefined) return 'N/A';
+  if (typeof valor === 'boolean') return valor ? 'Sí' : 'No';
+  if (typeof valor === 'object') return JSON.stringify(valor, null, 2);
+  return String(valor);
 };
 
 export const ReporteAuditoria: React.FC<ReporteAuditoriaProps> = ({ reporteId }) => {
@@ -154,6 +97,8 @@ export const ReporteAuditoria: React.FC<ReporteAuditoriaProps> = ({ reporteId })
   const [filtroFecha, setFiltroFecha] = useState<string>('');
   const [busqueda, setBusqueda] = useState<string>('');
   const [activeTab, setActiveTab] = useState('actividades');
+  const [selectedCambio, setSelectedCambio] = useState<CambioReporte | null>(null);
+  const [showDetailsDialog, setShowDetailsDialog] = useState(false);
 
   // Hook para obtener actividades relacionadas al reporte
   const { data: actividades = [], isLoading: isLoadingActividades } = useQuery({
@@ -238,6 +183,11 @@ export const ReporteAuditoria: React.FC<ReporteAuditoriaProps> = ({ reporteId })
 
   const exportarDatos = () => {
     console.log('Exportar datos de auditoría del reporte');
+  };
+
+  const verDetallesCambio = (cambio: CambioReporte) => {
+    setSelectedCambio(cambio);
+    setShowDetailsDialog(true);
   };
 
   return (
@@ -473,11 +423,11 @@ export const ReporteAuditoria: React.FC<ReporteAuditoriaProps> = ({ reporteId })
                       <TableHeader className="sticky top-0 bg-background">
                         <TableRow>
                           <TableHead className="w-[120px]">Operación</TableHead>
-                          <TableHead className="min-w-[300px]">Descripción del Cambio</TableHead>
-                          <TableHead className="w-[200px]">Campos Modificados</TableHead>
-                          <TableHead className="w-[180px]">Usuario</TableHead>
-                          <TableHead className="w-[150px]">Fecha y Hora</TableHead>
-                          <TableHead className="w-[100px]">Acciones</TableHead>
+                          <TableHead className="min-w-[250px]">Descripción del Cambio</TableHead>
+                          <TableHead className="w-[180px]">Campos Modificados</TableHead>
+                          <TableHead className="w-[160px]">Usuario</TableHead>
+                          <TableHead className="w-[140px]">Fecha y Hora</TableHead>
+                          <TableHead className="w-[120px]">Acciones</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -492,7 +442,7 @@ export const ReporteAuditoria: React.FC<ReporteAuditoriaProps> = ({ reporteId })
                               </Badge>
                             </TableCell>
                             <TableCell>
-                              <div className="max-w-[300px]">
+                              <div className="max-w-[250px]">
                                 <p className="text-sm font-medium truncate" title={cambio.descripcion_cambio}>
                                   {cambio.descripcion_cambio}
                                 </p>
@@ -500,15 +450,15 @@ export const ReporteAuditoria: React.FC<ReporteAuditoriaProps> = ({ reporteId })
                             </TableCell>
                             <TableCell>
                               {cambio.campos_modificados && cambio.campos_modificados.length > 0 ? (
-                                <div className="flex flex-wrap gap-1 max-w-[180px]">
-                                  {cambio.campos_modificados.slice(0, 3).map((campo, index) => (
+                                <div className="flex flex-wrap gap-1 max-w-[160px]">
+                                  {cambio.campos_modificados.slice(0, 2).map((campo, index) => (
                                     <Badge key={index} variant="secondary" className="text-xs">
                                       {campo}
                                     </Badge>
                                   ))}
-                                  {cambio.campos_modificados.length > 3 && (
+                                  {cambio.campos_modificados.length > 2 && (
                                     <Badge variant="secondary" className="text-xs">
-                                      +{cambio.campos_modificados.length - 3}
+                                      +{cambio.campos_modificados.length - 2}
                                     </Badge>
                                   )}
                                 </div>
@@ -538,20 +488,15 @@ export const ReporteAuditoria: React.FC<ReporteAuditoriaProps> = ({ reporteId })
                               </div>
                             </TableCell>
                             <TableCell>
-                              <Dialog>
-                                <DialogTrigger asChild>
-                                  <Button variant="outline" size="sm">
-                                    <Eye className="h-3 w-3 mr-1" />
-                                    Ver Detalles
-                                  </Button>
-                                </DialogTrigger>
-                                <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-                                  <DialogHeader>
-                                    <DialogTitle>Detalles del Cambio</DialogTitle>
-                                  </DialogHeader>
-                                  <DetallesCambio cambio={cambio} />
-                                </DialogContent>
-                              </Dialog>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => verDetallesCambio(cambio)}
+                                className="flex items-center gap-2 text-xs"
+                              >
+                                <Eye className="h-3 w-3" />
+                                Ver detalles
+                              </Button>
                             </TableCell>
                           </TableRow>
                         ))}
@@ -564,6 +509,217 @@ export const ReporteAuditoria: React.FC<ReporteAuditoriaProps> = ({ reporteId })
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Modal de Detalles del Cambio */}
+      <Dialog open={showDetailsDialog} onOpenChange={setShowDetailsDialog}>
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden p-0">
+          <DialogHeader className="px-6 py-4 border-b">
+            <DialogTitle className="flex items-center gap-2 text-xl">
+              <History className="h-6 w-6 text-primary" />
+              Detalles del Cambio
+            </DialogTitle>
+          </DialogHeader>
+          
+          {selectedCambio && (
+            <div className="overflow-y-auto max-h-[calc(90vh-80px)]">
+              <div className="p-6 space-y-6">
+                {/* Información General */}
+                <div className="bg-muted/30 rounded-lg p-6">
+                  <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                    <FileText className="h-5 w-5" />
+                    Información General
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium text-muted-foreground">Operación</Label>
+                      <Badge 
+                        variant="outline" 
+                        className={`${getOperationColor(selectedCambio.operation_type)} text-sm font-medium px-3 py-1`}
+                      >
+                        {selectedCambio.operation_type}
+                      </Badge>
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium text-muted-foreground">Usuario</Label>
+                      <div className="flex items-center gap-2 text-sm">
+                        <User className="h-4 w-4 text-muted-foreground" />
+                        <span className="font-medium">{selectedCambio.user_email}</span>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium text-muted-foreground">Fecha y Hora</Label>
+                      <div className="flex items-center gap-2 text-sm">
+                        <Clock className="h-4 w-4 text-muted-foreground" />
+                        <div>
+                          <div className="font-medium">
+                            {format(new Date(selectedCambio.created_at), 'dd/MM/yyyy', { locale: es })}
+                          </div>
+                          <div className="text-muted-foreground">
+                            {format(new Date(selectedCambio.created_at), 'HH:mm:ss', { locale: es })}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium text-muted-foreground">Tabla</Label>
+                      <Badge variant="secondary" className="text-sm">
+                        <Database className="h-3 w-3 mr-1" />
+                        {selectedCambio.tabla_nombre}
+                      </Badge>
+                    </div>
+                  </div>
+                  <div className="mt-4 space-y-2">
+                    <Label className="text-sm font-medium text-muted-foreground">Descripción del Cambio</Label>
+                    <div className="bg-background border rounded-lg p-3">
+                      <p className="text-sm">{selectedCambio.descripcion_cambio}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Campos Modificados */}
+                {selectedCambio.campos_modificados && selectedCambio.campos_modificados.length > 0 && (
+                  <div className="bg-blue-50/50 dark:bg-blue-950/20 rounded-lg p-6 border border-blue-200/50">
+                    <h3 className="text-lg font-semibold mb-4 flex items-center gap-2 text-blue-700 dark:text-blue-300">
+                      <Activity className="h-5 w-5" />
+                      Campos Modificados ({selectedCambio.campos_modificados.length})
+                    </h3>
+                    <div className="flex flex-wrap gap-2">
+                      {selectedCambio.campos_modificados.map((campo, index) => (
+                        <Badge 
+                          key={index} 
+                          variant="secondary" 
+                          className="bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-900 dark:text-blue-200 dark:border-blue-700"
+                        >
+                          {campo}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Comparación de Valores */}
+                {(selectedCambio.valores_anteriores || selectedCambio.valores_nuevos) && (
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold flex items-center gap-2">
+                      <History className="h-5 w-5" />
+                      Comparación de Valores
+                    </h3>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      {/* Valores Anteriores */}
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2">
+                          <div className="w-3 h-3 rounded-full bg-red-500"></div>
+                          <Label className="text-sm font-semibold text-red-700 dark:text-red-300">
+                            Valores Anteriores
+                          </Label>
+                        </div>
+                        <div className="bg-red-50/80 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-lg overflow-hidden">
+                          <div className="bg-red-100/80 dark:bg-red-900/50 px-4 py-2 border-b border-red-200 dark:border-red-800">
+                            <span className="text-xs font-medium text-red-800 dark:text-red-200 uppercase tracking-wide">
+                              Estado Anterior
+                            </span>
+                          </div>
+                          <div className="p-4 max-h-96 overflow-y-auto">
+                            {selectedCambio.valores_anteriores ? (
+                              <div className="space-y-3">
+                                {Object.entries(selectedCambio.valores_anteriores).map(([key, value]) => (
+                                  <div key={key} className="flex flex-col gap-1">
+                                    <span className="text-xs font-semibold text-red-700 dark:text-red-300 uppercase tracking-wide">
+                                      {key}
+                                    </span>
+                                    <div className="bg-white dark:bg-red-950/50 border border-red-200 dark:border-red-800 rounded p-2">
+                                      <code className="text-sm text-red-700 dark:text-red-200 break-all whitespace-pre-wrap">
+                                        {formatearValor(value)}
+                                      </code>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <div className="text-center py-6">
+                                <p className="text-sm text-red-600 dark:text-red-400 italic">
+                                  Sin valores anteriores registrados
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Valores Nuevos */}
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2">
+                          <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                          <Label className="text-sm font-semibold text-green-700 dark:text-green-300">
+                            Valores Nuevos
+                          </Label>
+                        </div>
+                        <div className="bg-green-50/80 dark:bg-green-950/30 border border-green-200 dark:border-green-800 rounded-lg overflow-hidden">
+                          <div className="bg-green-100/80 dark:bg-green-900/50 px-4 py-2 border-b border-green-200 dark:border-green-800">
+                            <span className="text-xs font-medium text-green-800 dark:text-green-200 uppercase tracking-wide">
+                              Estado Actual
+                            </span>
+                          </div>
+                          <div className="p-4 max-h-96 overflow-y-auto">
+                            {selectedCambio.valores_nuevos ? (
+                              <div className="space-y-3">
+                                {Object.entries(selectedCambio.valores_nuevos).map(([key, value]) => (
+                                  <div key={key} className="flex flex-col gap-1">
+                                    <span className="text-xs font-semibold text-green-700 dark:text-green-300 uppercase tracking-wide">
+                                      {key}
+                                    </span>
+                                    <div className="bg-white dark:bg-green-950/50 border border-green-200 dark:border-green-800 rounded p-2">
+                                      <code className="text-sm text-green-700 dark:text-green-200 break-all whitespace-pre-wrap">
+                                        {formatearValor(value)}
+                                      </code>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <div className="text-center py-6">
+                                <p className="text-sm text-green-600 dark:text-green-400 italic">
+                                  Sin valores nuevos registrados
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Metadatos Adicionales */}
+                <div className="bg-gray-50/50 dark:bg-gray-900/20 rounded-lg p-6 border border-gray-200/50">
+                  <h3 className="text-lg font-semibold mb-4 flex items-center gap-2 text-gray-700 dark:text-gray-300">
+                    <Database className="h-5 w-5" />
+                    Información Técnica
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                    <div className="space-y-1">
+                      <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                        ID del Registro
+                      </Label>
+                      <code className="block bg-background border rounded px-2 py-1 text-xs">
+                        {selectedCambio.registro_id}
+                      </code>
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                        ID del Cambio
+                      </Label>
+                      <code className="block bg-background border rounded px-2 py-1 text-xs">
+                        {selectedCambio.id}
+                      </code>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
