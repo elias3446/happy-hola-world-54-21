@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -191,11 +190,6 @@ export const MainNavigation = () => {
                       {getInitials(perfilUsuario?.first_name, perfilUsuario?.last_name, user.email)}
                     </AvatarFallback>
                   </Avatar>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-xs text-muted-foreground truncate">
-                      {user.email}
-                    </div>
-                  </div>
                 </div>
                 <Link
                   to="/mi-perfil"
@@ -309,7 +303,7 @@ export const MainNavigation = () => {
             {user ? (
               <DropdownMenu open={userDropdownOpen} onOpenChange={setUserDropdownOpen}>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" className="flex items-center space-x-2 max-w-[200px] h-auto p-1">
+                  <Button variant="ghost" size="sm" className="h-auto p-1">
                     <Avatar className="h-8 w-8">
                       <AvatarImage 
                         src={perfilUsuario?.avatar || undefined} 
@@ -319,7 +313,6 @@ export const MainNavigation = () => {
                         {getInitials(perfilUsuario?.first_name, perfilUsuario?.last_name, user.email)}
                       </AvatarFallback>
                     </Avatar>
-                    <span className="text-sm truncate hidden md:inline ml-2">{user.email}</span>
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
