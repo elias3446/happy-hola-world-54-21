@@ -6,7 +6,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { useQuery } from '@tanstack/react-query';
@@ -555,9 +554,9 @@ export const UsuarioAuditoria: React.FC<UsuarioAuditoriaProps> = ({ usuarioId, u
                   </div>
                 ) : (
                   <>
-                    {/* Vista desktop - tabla */}
+                    {/* Vista desktop - tabla sin ScrollArea */}
                     {!isMobile ? (
-                      <ScrollArea className="h-[400px]">
+                      <div className="max-h-[400px] overflow-y-auto">
                         <Table>
                           <TableHeader className="sticky top-0 bg-background">
                             <TableRow>
@@ -619,14 +618,12 @@ export const UsuarioAuditoria: React.FC<UsuarioAuditoriaProps> = ({ usuarioId, u
                             ))}
                           </TableBody>
                         </Table>
-                      </ScrollArea>
+                      </div>
                     ) : (
-                      /* Vista mobile - cards */
-                      <ScrollArea className="h-[400px]">
-                        <div className="p-4 space-y-3">
-                          {actividadesEnUsuario.map((actividad) => renderActividadMobile(actividad))}
-                        </div>
-                      </ScrollArea>
+                      /* Vista mobile - cards sin ScrollArea */
+                      <div className="max-h-[400px] overflow-y-auto p-4 space-y-3">
+                        {actividadesEnUsuario.map((actividad) => renderActividadMobile(actividad))}
+                      </div>
                     )}
                   </>
                 )}
@@ -662,9 +659,9 @@ export const UsuarioAuditoria: React.FC<UsuarioAuditoriaProps> = ({ usuarioId, u
                   </div>
                 ) : (
                   <>
-                    {/* Vista desktop - tabla */}
+                    {/* Vista desktop - tabla sin ScrollArea */}
                     {!isMobile ? (
-                      <ScrollArea className="h-[400px]">
+                      <div className="max-h-[400px] overflow-y-auto">
                         <Table>
                           <TableHeader className="sticky top-0 bg-background">
                             <TableRow>
@@ -747,14 +744,12 @@ export const UsuarioAuditoria: React.FC<UsuarioAuditoriaProps> = ({ usuarioId, u
                             ))}
                           </TableBody>
                         </Table>
-                      </ScrollArea>
+                      </div>
                     ) : (
-                      /* Vista mobile - cards */
-                      <ScrollArea className="h-[400px]">
-                        <div className="p-4 space-y-3">
-                          {cambiosEnUsuario.map((cambio) => renderCambioMobile(cambio))}
-                        </div>
-                      </ScrollArea>
+                      /* Vista mobile - cards sin ScrollArea */
+                      <div className="max-h-[400px] overflow-y-auto p-4 space-y-3">
+                        {cambiosEnUsuario.map((cambio) => renderCambioMobile(cambio))}
+                      </div>
                     )}
                   </>
                 )}
