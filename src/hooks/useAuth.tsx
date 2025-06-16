@@ -1,3 +1,4 @@
+
 import { useState, useEffect, createContext, useContext } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -104,86 +105,96 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     let mounted = true;
 
+    // Inicializar autenticación de forma secuencial
+    const initializeAuth = async () => {
+      try {
+        console.log('Initializing auth - checking for existing session...');
+        
+        // Primero verificar si hay una sesión existente
+        const { data: { session: existingSession }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('Error getting session:', error);
+        } else if (existingSession) {
+          console.log('Found existing session:', existingSession);
+          if (mounted) {
+            setSession(existingSession);
+            setUser(existingSession.user);
+            
+            // Verificar perfil del usuario si hay sesión
+            setTimeout(() => {
+              if (mounted && existingSession.user) {
+                checkUserProfile();
+              }
+            }, 0);
+          }
+        } else {
+          console.log('No existing session found');
+        }
+
+        // Siempre verificar si hay usuarios en el sistema
+        await checkHasUsers();
+
+        if (mounted) {
+          setLoading(false);
+        }
+      } catch (error) {
+        console.error('Error initializing auth:', error);
+        if (mounted) {
+          setLoading(false);
+        }
+      }
+    };
+
     // Configurar listener de cambios de autenticación
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         if (!mounted) return;
         
         console.log('Auth state changed:', event, session);
+        
+        // Actualizar estado de sesión y usuario
         setSession(session);
         setUser(session?.user ?? null);
         
-        // Si se cierra sesión, limpiar estados inmediatamente
+        // Manejar eventos específicos
         if (event === 'SIGNED_OUT' || !session) {
+          console.log('User signed out, clearing profile data');
           setHasProfile(null);
           setUserProfile(null);
-          setLoading(false);
           
+          // Verificar usuarios después de cerrar sesión
           setTimeout(() => {
             if (mounted) checkHasUsers();
           }, 0);
-          return;
-        }
-        
-        // Si se registra o inicia sesión exitosamente, verificar usuarios y perfil
-        if (event === 'SIGNED_IN' && session) {
+        } else if (event === 'SIGNED_IN' && session) {
+          console.log('User signed in successfully');
+          
+          // Verificar perfil después de iniciar sesión
           setTimeout(() => {
             if (mounted) {
               checkHasUsers();
               checkUserProfile();
             }
           }, 0);
-        }
-        
-        // Si hay token refresh, también verificar perfil
-        if (event === 'TOKEN_REFRESHED' && session) {
+        } else if (event === 'TOKEN_REFRESHED' && session) {
+          console.log('Token refreshed, updating user data');
+          
+          // Verificar perfil después de refrescar token
           setTimeout(() => {
             if (mounted) checkUserProfile();
           }, 0);
         }
         
-        setLoading(false);
+        // Solo marcar como no cargando después de procesar el evento
+        if (event !== 'INITIAL_SESSION') {
+          setLoading(false);
+        }
       }
     );
 
-    // Verificar sesión existente al iniciar la aplicación
-    const initializeAuth = async () => {
-      try {
-        console.log('Initializing auth - checking for existing session...');
-        const { data: { session }, error } = await supabase.auth.getSession();
-        
-        if (error) {
-          console.error('Error getting session:', error);
-          setLoading(false);
-          return;
-        }
-
-        console.log('Initial session check:', session);
-        
-        if (mounted) {
-          setSession(session);
-          setUser(session?.user ?? null);
-          
-          // Si hay sesión, verificar perfil
-          if (session?.user) {
-            setTimeout(() => {
-              if (mounted) checkUserProfile();
-            }, 0);
-          }
-          
-          setLoading(false);
-        }
-      } catch (error) {
-        console.error('Error initializing auth:', error);
-        if (mounted) setLoading(false);
-      }
-    };
-
     // Inicializar autenticación
     initializeAuth();
-
-    // Verificar si existen usuarios al cargar
-    checkHasUsers();
 
     return () => {
       mounted = false;
@@ -193,10 +204,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   // Verificar perfil cuando cambie el usuario
   useEffect(() => {
-    if (user) {
+    if (user && !userProfile) {
       checkUserProfile();
     }
-  }, [user]);
+  }, [user, userProfile]);
 
   const signIn = async (email: string, password: string) => {
     try {
@@ -242,14 +253,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const signOut = async () => {
     try {
       console.log('Signing out user...');
-      await supabase.auth.signOut({ scope: 'global' });
-      console.log('User signed out successfully');
       
       // Limpiar estados locales inmediatamente
       setSession(null);
       setUser(null);
       setHasProfile(null);
       setUserProfile(null);
+      
+      // Realizar sign out con scope global para limpiar todas las sesiones
+      await supabase.auth.signOut({ scope: 'global' });
+      console.log('User signed out successfully');
     } catch (error) {
       console.error('Error signing out:', error);
     }
