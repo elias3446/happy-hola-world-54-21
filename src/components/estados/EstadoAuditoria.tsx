@@ -11,7 +11,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Activity, History, Clock, User, Database, FileText, Search, Filter, RefreshCw, Download, Circle } from 'lucide-react';
+import { Activity, History, Clock, User, Database, FileText, Search, Filter, RefreshCw, Download, Circle, Eye } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
@@ -164,6 +164,11 @@ export const EstadoAuditoria: React.FC<EstadoAuditoriaProps> = ({ estadoId }) =>
 
   const exportarDatos = () => {
     console.log('Exportar datos de auditoría del estado');
+  };
+
+  const verDetallesCambio = (cambio: CambioEstado) => {
+    console.log('Ver detalles del cambio:', cambio);
+    // Aquí se podría abrir un modal o navegar a una página de detalles
   };
 
   return (
@@ -399,10 +404,11 @@ export const EstadoAuditoria: React.FC<EstadoAuditoriaProps> = ({ estadoId }) =>
                       <TableHeader className="sticky top-0 bg-background">
                         <TableRow>
                           <TableHead className="w-[120px]">Operación</TableHead>
-                          <TableHead className="min-w-[300px]">Descripción del Cambio</TableHead>
-                          <TableHead className="w-[200px]">Campos Modificados</TableHead>
-                          <TableHead className="w-[180px]">Usuario</TableHead>
-                          <TableHead className="w-[150px]">Fecha y Hora</TableHead>
+                          <TableHead className="min-w-[250px]">Descripción del Cambio</TableHead>
+                          <TableHead className="w-[180px]">Campos Modificados</TableHead>
+                          <TableHead className="w-[160px]">Usuario</TableHead>
+                          <TableHead className="w-[140px]">Fecha y Hora</TableHead>
+                          <TableHead className="w-[100px]">Acciones</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -417,7 +423,7 @@ export const EstadoAuditoria: React.FC<EstadoAuditoriaProps> = ({ estadoId }) =>
                               </Badge>
                             </TableCell>
                             <TableCell>
-                              <div className="max-w-[300px]">
+                              <div className="max-w-[250px]">
                                 <p className="text-sm font-medium truncate" title={cambio.descripcion_cambio}>
                                   {cambio.descripcion_cambio}
                                 </p>
@@ -425,15 +431,15 @@ export const EstadoAuditoria: React.FC<EstadoAuditoriaProps> = ({ estadoId }) =>
                             </TableCell>
                             <TableCell>
                               {cambio.campos_modificados && cambio.campos_modificados.length > 0 ? (
-                                <div className="flex flex-wrap gap-1 max-w-[180px]">
-                                  {cambio.campos_modificados.slice(0, 3).map((campo, index) => (
+                                <div className="flex flex-wrap gap-1 max-w-[160px]">
+                                  {cambio.campos_modificados.slice(0, 2).map((campo, index) => (
                                     <Badge key={index} variant="secondary" className="text-xs">
                                       {campo}
                                     </Badge>
                                   ))}
-                                  {cambio.campos_modificados.length > 3 && (
+                                  {cambio.campos_modificados.length > 2 && (
                                     <Badge variant="secondary" className="text-xs">
-                                      +{cambio.campos_modificados.length - 3}
+                                      +{cambio.campos_modificados.length - 2}
                                     </Badge>
                                   )}
                                 </div>
@@ -461,6 +467,17 @@ export const EstadoAuditoria: React.FC<EstadoAuditoriaProps> = ({ estadoId }) =>
                                   </div>
                                 </div>
                               </div>
+                            </TableCell>
+                            <TableCell>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => verDetallesCambio(cambio)}
+                                className="h-8 w-8 p-0"
+                                title="Ver detalles del cambio"
+                              >
+                                <Eye className="h-4 w-4" />
+                              </Button>
                             </TableCell>
                           </TableRow>
                         ))}
