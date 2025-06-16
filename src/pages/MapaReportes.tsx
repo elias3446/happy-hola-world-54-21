@@ -7,7 +7,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import { useReportes } from '@/hooks/useReportes';
 import MapaReportesMultiples from '@/components/MapaBase/MapaReportesMultiples';
-import { MapPin, Calendar, User, AlertTriangle, X, Eye, Images } from 'lucide-react';
+import { MapPin, Calendar, User, AlertTriangle, X, Eye, Images, ExternalLink } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const priorityConfig = {
   urgente: { color: '#DC2626', label: 'Urgente' },
@@ -281,6 +282,20 @@ export const MapaReportes = () => {
                       )}
                     </div>
                   )}
+
+                  {/* Botón Ver Detalle Completo */}
+                  <div className="pt-2 border-t border-border">
+                    <Button
+                      asChild
+                      className="w-full flex items-center gap-2"
+                      variant="default"
+                    >
+                      <Link to={`/reporte/${selectedReporte.id}`}>
+                        <ExternalLink className="h-4 w-4" />
+                        Ver Detalle Completo
+                      </Link>
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
             </div>
