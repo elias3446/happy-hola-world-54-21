@@ -8,12 +8,13 @@ import { Separator } from '@/components/ui/separator';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { User, Mail, Calendar, Shield, Activity, History, Eye, X, Edit } from 'lucide-react';
+import { User, Mail, Calendar, Shield, Activity, History, Eye, X, Edit, BarChart3 } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { UsuarioCambiosRecibidos } from './UsuarioCambiosRecibidos';
 import { UsuarioAuditoria } from './UsuarioAuditoria';
 import { UsuarioLogueadoEdit } from './UsuarioLogueadoEdit';
+import { UsuarioEstadisticasActividad } from './UsuarioEstadisticasActividad';
 
 interface UsuarioLogueadoDetalleProps {
   onClose: () => void;
@@ -121,7 +122,7 @@ export const UsuarioLogueadoDetalle: React.FC<UsuarioLogueadoDetalleProps> = ({ 
 
           {/* Tabs de navegación */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="perfil" className="flex items-center gap-2">
                 <User className="h-4 w-4" />
                 Perfil
@@ -129,6 +130,10 @@ export const UsuarioLogueadoDetalle: React.FC<UsuarioLogueadoDetalleProps> = ({ 
               <TabsTrigger value="actividad" className="flex items-center gap-2">
                 <Activity className="h-4 w-4" />
                 Mi Actividad
+              </TabsTrigger>
+              <TabsTrigger value="estadisticas" className="flex items-center gap-2">
+                <BarChart3 className="h-4 w-4" />
+                Estadísticas
               </TabsTrigger>
               <TabsTrigger value="auditoria" className="flex items-center gap-2">
                 <History className="h-4 w-4" />
@@ -216,6 +221,13 @@ export const UsuarioLogueadoDetalle: React.FC<UsuarioLogueadoDetalleProps> = ({ 
               <UsuarioCambiosRecibidos 
                 usuarioId={perfilUsuario.id} 
                 usuarioEmail={perfilUsuario.email} 
+              />
+            </TabsContent>
+
+            <TabsContent value="estadisticas">
+              <UsuarioEstadisticasActividad 
+                usuarioId={perfilUsuario.id} 
+                usuarioEmail={perfilUsuario.email}
               />
             </TabsContent>
 
