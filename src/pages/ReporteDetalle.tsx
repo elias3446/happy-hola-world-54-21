@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -22,7 +21,8 @@ import {
   MapPin,
   Clock,
   History,
-  X
+  X,
+  ExternalLink
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -53,6 +53,13 @@ export const ReporteDetalle = () => {
 
   const closeImageCarousel = () => {
     setSelectedImageIndex(null);
+  };
+
+  const openInGoogleMaps = () => {
+    if (reporte?.latitud && reporte?.longitud) {
+      const url = `https://www.google.com/maps?q=${reporte.latitud},${reporte.longitud}`;
+      window.open(url, '_blank');
+    }
   };
 
   if (isLoading) {
@@ -210,6 +217,15 @@ export const ReporteDetalle = () => {
                     <div className="text-sm text-muted-foreground break-all">
                       Lat: {reporte.latitud}, Lng: {reporte.longitud}
                     </div>
+                    <Button
+                      onClick={openInGoogleMaps}
+                      variant="outline"
+                      size="sm"
+                      className="w-full flex items-center gap-2 mt-2"
+                    >
+                      <ExternalLink className="h-4 w-4" />
+                      Ver en Google Maps
+                    </Button>
                   </div>
                 </>
               )}
@@ -300,10 +316,21 @@ export const ReporteDetalle = () => {
               <TabsContent value="ubicacion">
                 <Card>
                   <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <MapPin className="h-5 w-5 text-red-600 dark:text-red-400 flex-shrink-0" />
-                      <span>Ubicación del Reporte</span>
-                    </CardTitle>
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="flex items-center gap-2">
+                        <MapPin className="h-5 w-5 text-red-600 dark:text-red-400 flex-shrink-0" />
+                        <span>Ubicación del Reporte</span>
+                      </CardTitle>
+                      <Button
+                        onClick={openInGoogleMaps}
+                        variant="outline"
+                        size="sm"
+                        className="flex items-center gap-2"
+                      >
+                        <ExternalLink className="h-4 w-4" />
+                        Ver en Google Maps
+                      </Button>
+                    </div>
                   </CardHeader>
                   <CardContent>
                     <div className="rounded-lg overflow-hidden border-border border">
