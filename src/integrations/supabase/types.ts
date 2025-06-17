@@ -207,6 +207,44 @@ export type Database = {
           },
         ]
       }
+      notification_settings: {
+        Row: {
+          auto_delete_read: boolean
+          created_at: string
+          enabled: boolean
+          id: string
+          retention_days: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          auto_delete_read?: boolean
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          retention_days?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          auto_delete_read?: boolean
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          retention_days?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_settings_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
           created_at: string
@@ -545,6 +583,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      cleanup_old_notifications: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       create_notification: {
         Args: {
           p_user_id: string

@@ -1,289 +1,237 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { Separator } from '@/components/ui/separator';
+import {
+  User,
+  Mail,
+  Shield,
+  Calendar,
+  Edit,
+  X,
+  Settings,
+  Bell,
+  FileText,
+  BarChart3,
+  Activity,
+  History,
+  Eye
+} from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import { User, Mail, Calendar, Shield, Activity, History, Edit, BarChart3, X, Settings } from 'lucide-react';
-import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
-import { UsuarioCambiosRecibidos } from './UsuarioCambiosRecibidos';
-import { UsuarioAuditoria } from './UsuarioAuditoria';
 import { UsuarioLogueadoEdit } from './UsuarioLogueadoEdit';
+import { UsuarioPasswordEdit } from './UsuarioPasswordEdit';
+import { UserReportesAsignados } from './UserReportesAsignados';
 import { UsuarioEstadisticasActividad } from './UsuarioEstadisticasActividad';
+import { UsuarioAuditoria } from './UsuarioAuditoria';
+import { UsuarioCambiosRecibidos } from './UsuarioCambiosRecibidos';
 import { NotificationSettings } from '@/components/notifications/NotificationSettings';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { formatDistanceToNow } from 'date-fns';
+import { es } from 'date-fns/locale';
 
 interface UsuarioLogueadoDetalleProps {
-  onClose: () => void;
-}
-
-interface PerfilUsuario {
-  id: string;
-  email: string;
-  first_name: string;
-  last_name: string;
-  avatar: string | null;
-  role: string[];
-  created_at: string;
-  updated_at: string;
+  onClose?: () => void;
 }
 
 export const UsuarioLogueadoDetalle: React.FC<UsuarioLogueadoDetalleProps> = ({ onClose }) => {
-  const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState('perfil');
-  const [isEditing, setIsEditing] = useState(false);
-  const isMobile = useIsMobile();
+  const { user, profile } = useAuth();
+  const [editMode, setEditMode] = useState<'none' | 'profile' | 'password'>('none');
 
-  // Obtener datos del perfil del usuario logueado
-  const { data: perfilUsuario, isLoading } = useQuery({
-    queryKey: ['perfil-usuario-logueado', user?.id],
-    queryFn: async () => {
-      if (!user?.id) return null;
-
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single();
-
-      if (error) {
-        console.error('Error fetching user profile:', error);
-        throw error;
-      }
-
-      return data as PerfilUsuario;
-    },
-    enabled: !!user?.id,
-  });
-
-  // Función para obtener iniciales
-  const getInitials = (firstName?: string, lastName?: string) => {
-    const first = firstName?.charAt(0)?.toUpperCase() || '';
-    const last = lastName?.charAt(0)?.toUpperCase() || '';
-    return first + last || 'U';
-  };
-
-  // Si está en modo edición, mostrar el componente de edición
-  if (isEditing) {
+  if (!user || !profile) {
     return (
-      <UsuarioLogueadoEdit 
-        onClose={onClose}
-        onBack={() => setIsEditing(false)}
-      />
+      <Card>
+        <CardContent className="pt-6">
+          <p className="text-center text-muted-foreground">No hay información del usuario disponible</p>
+        </CardContent>
+      </Card>
     );
   }
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    );
+  const userCreatedAt = new Date(profile.created_at);
+  const timeAgo = formatDistanceToNow(userCreatedAt, { addSuffix: true, locale: es });
+
+  if (editMode === 'profile') {
+    return <UsuarioLogueadoEdit user={profile} onBack={() => setEditMode('none')} />;
   }
 
-  if (!perfilUsuario) {
-    return (
-      <div className="min-h-screen flex items-center justify-center p-4 bg-background">
-        <Card className="w-full max-w-md">
-          <CardContent className="pt-6 text-center">
-            <p className="text-muted-foreground">No se pudo cargar la información del usuario.</p>
-            <Button onClick={onClose} className="mt-4">
-              Volver
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
+  if (editMode === 'password') {
+    return <UsuarioPasswordEdit onBack={() => setEditMode('none')} />;
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-4 sm:py-6 max-w-6xl">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 sm:mb-6 gap-4">
-          <div className="flex items-center gap-3 sm:gap-4 w-full sm:w-auto">
-            <div className="flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-primary/10 flex-shrink-0">
-              <User className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <h1 className="text-xl sm:text-2xl font-bold truncate">Mi Perfil</h1>
-              <p className="text-sm sm:text-base text-muted-foreground">
-                Información personal y actividad en el sistema
-              </p>
+    <div className="space-y-6">
+      {/* Header */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <User className="h-5 w-5" />
+              Mi Perfil
+            </CardTitle>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setEditMode('profile')}
+                className="flex items-center gap-2"
+              >
+                <Edit className="h-4 w-4" />
+                Editar Perfil
+              </Button>
+              {onClose && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={onClose}
+                  className="flex items-center gap-2"
+                >
+                  <X className="h-4 w-4" />
+                  Cerrar
+                </Button>
+              )}
             </div>
           </div>
-          <div className="flex items-center gap-2 w-full sm:w-auto">
-            <Button 
-              onClick={() => setIsEditing(true)} 
-              variant="outline" 
-              size={isMobile ? "sm" : "sm"}
-              className="flex-1 sm:flex-none"
-            >
-              <Edit className="h-4 w-4 mr-2" />
-              Editar
-            </Button>
-            <Button 
-              onClick={onClose} 
-              variant="outline" 
-              size={isMobile ? "sm" : "sm"}
-              className="flex-1 sm:flex-none"
-            >
-              <X className="h-4 w-4 mr-2" />
-              Volver
-            </Button>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {/* Información básica */}
+            <div className="flex items-start gap-4">
+              {profile.avatar && (
+                <img
+                  src={profile.avatar}
+                  alt="Avatar"
+                  className="w-16 h-16 rounded-full object-cover"
+                />
+              )}
+              <div className="space-y-2 flex-1">
+                <div>
+                  <h2 className="text-xl font-semibold">
+                    {profile.first_name} {profile.last_name}
+                  </h2>
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Mail className="h-4 w-4" />
+                    <span>{profile.email}</span>
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-2">
+                  <Shield className="h-4 w-4 text-muted-foreground" />
+                  <div className="flex gap-1">
+                    {profile.role.map((role: string) => (
+                      <Badge key={role} variant="secondary">
+                        {role}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Calendar className="h-4 w-4" />
+                  <span>Miembro desde {timeAgo}</span>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <Badge variant={profile.asset ? "default" : "secondary"}>
+                    {profile.asset ? "Activo" : "Inactivo"}
+                  </Badge>
+                  {profile.confirmed && (
+                    <Badge variant="outline" className="text-green-600 border-green-600">
+                      Email confirmado
+                    </Badge>
+                  )}
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
+        </CardContent>
+      </Card>
 
-        {/* Tabs de navegación */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 sm:space-y-6">
-          <TabsList className="grid w-full grid-cols-3 sm:grid-cols-5 h-auto gap-1">
-            <TabsTrigger value="perfil" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm p-2 sm:p-3">
-              <User className="h-3 w-3 sm:h-4 sm:w-4" />
-              <span className="hidden xs:inline">Perfil</span>
-            </TabsTrigger>
-            <TabsTrigger value="notificaciones" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm p-2 sm:p-3">
-              <Settings className="h-3 w-3 sm:h-4 sm:w-4" />
-              <span className="hidden xs:inline">Notificaciones</span>
-            </TabsTrigger>
-            <TabsTrigger value="actividad" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm p-2 sm:p-3">
-              <Activity className="h-3 w-3 sm:h-4 sm:w-4" />
-              <span className="hidden xs:inline">Actividad</span>
-            </TabsTrigger>
-            <TabsTrigger value="estadisticas" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm p-2 sm:p-3">
-              <BarChart3 className="h-3 w-3 sm:h-4 sm:w-4" />
-              <span className="hidden xs:inline">Estadísticas</span>
-            </TabsTrigger>
-            <TabsTrigger value="auditoria" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm p-2 sm:p-3">
-              <History className="h-3 w-3 sm:h-4 sm:w-4" />
-              <span className="hidden xs:inline">Cambios</span>
-            </TabsTrigger>
-          </TabsList>
+      {/* Tabs con contenido */}
+      <Tabs defaultValue="reportes" className="w-full">
+        <TabsList className="grid w-full grid-cols-6">
+          <TabsTrigger value="reportes" className="flex items-center gap-2">
+            <FileText className="h-4 w-4" />
+            <span className="hidden sm:inline">Reportes</span>
+          </TabsTrigger>
+          <TabsTrigger value="estadisticas" className="flex items-center gap-2">
+            <BarChart3 className="h-4 w-4" />
+            <span className="hidden sm:inline">Estadísticas</span>
+          </TabsTrigger>
+          <TabsTrigger value="actividad" className="flex items-center gap-2">
+            <Activity className="h-4 w-4" />
+            <span className="hidden sm:inline">Actividad</span>
+          </TabsTrigger>
+          <TabsTrigger value="cambios" className="flex items-center gap-2">
+            <History className="h-4 w-4" />
+            <span className="hidden sm:inline">Cambios</span>
+          </TabsTrigger>
+          <TabsTrigger value="notificaciones" className="flex items-center gap-2">
+            <Bell className="h-4 w-4" />
+            <span className="hidden sm:inline">Notificaciones</span>
+          </TabsTrigger>
+          <TabsTrigger value="configuracion" className="flex items-center gap-2">
+            <Settings className="h-4 w-4" />
+            <span className="hidden sm:inline">Configuración</span>
+          </TabsTrigger>
+        </TabsList>
 
-          {/* Contenido de las pestañas */}
-          <TabsContent value="perfil">
+        <TabsContent value="reportes" className="mt-6">
+          <UserReportesAsignados userId={profile.id} />
+        </TabsContent>
+
+        <TabsContent value="estadisticas" className="mt-6">
+          <UsuarioEstadisticasActividad userId={profile.id} />
+        </TabsContent>
+
+        <TabsContent value="actividad" className="mt-6">
+          <UsuarioAuditoria userId={profile.id} />
+        </TabsContent>
+
+        <TabsContent value="cambios" className="mt-6">
+          <UsuarioCambiosRecibidos userId={profile.id} />
+        </TabsContent>
+
+        <TabsContent value="notificaciones" className="mt-6">
+          <NotificationSettings />
+        </TabsContent>
+
+        <TabsContent value="configuracion" className="mt-6">
+          <div className="space-y-6">
+            {/* Configuración de perfil */}
             <Card>
-              <CardHeader className="pb-4 sm:pb-6">
-                <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
-                  <User className="h-4 w-4 sm:h-5 sm:w-5" />
-                  Información Personal
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <User className="h-5 w-5" />
+                  Configuración de Perfil
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4 sm:space-y-6">
-                {/* Sección de Avatar */}
-                <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 pb-4 border-b">
-                  <Avatar className="h-20 w-20 sm:h-24 sm:w-24">
-                    <AvatarImage 
-                      src={perfilUsuario.avatar || undefined} 
-                      alt="Foto de perfil" 
-                    />
-                    <AvatarFallback className="text-lg sm:text-xl">
-                      {getInitials(perfilUsuario.first_name, perfilUsuario.last_name)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="text-center sm:text-left">
-                    <h2 className="text-xl sm:text-2xl font-semibold">
-                      {perfilUsuario.first_name} {perfilUsuario.last_name}
-                    </h2>
-                    <p className="text-muted-foreground">{perfilUsuario.email}</p>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-                  <div className="space-y-4">
-                    <div>
-                      <label className="text-sm font-medium text-muted-foreground">Nombre</label>
-                      <p className="text-base sm:text-lg font-medium break-words">
-                        {perfilUsuario.first_name} {perfilUsuario.last_name}
-                      </p>
-                    </div>
-                    
-                    <div>
-                      <label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                        <Mail className="h-4 w-4" />
-                        Correo Electrónico
-                      </label>
-                      <p className="text-base sm:text-lg break-all">{perfilUsuario.email}</p>
-                    </div>
-
-                    <div>
-                      <label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                        <Shield className="h-4 w-4" />
-                        Roles
-                      </label>
-                      <div className="flex flex-wrap gap-2 mt-1">
-                        {perfilUsuario.role?.map((rol, index) => (
-                          <Badge key={index} variant="secondary" className="text-xs">
-                            {rol}
-                          </Badge>
-                        )) || <span className="text-muted-foreground text-sm">Sin roles asignados</span>}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="space-y-4">
-                    <div>
-                      <label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                        <Calendar className="h-4 w-4" />
-                        Fecha de Registro
-                      </label>
-                      <p className="text-base sm:text-lg">
-                        {format(new Date(perfilUsuario.created_at), 'dd/MM/yyyy HH:mm', { locale: es })}
-                      </p>
-                    </div>
-
-                    <div>
-                      <label className="text-sm font-medium text-muted-foreground">
-                        Última Actualización
-                      </label>
-                      <p className="text-base sm:text-lg">
-                        {format(new Date(perfilUsuario.updated_at), 'dd/MM/yyyy HH:mm', { locale: es })}
-                      </p>
-                    </div>
-
-                    <div>
-                      <label className="text-sm font-medium text-muted-foreground">
-                        ID de Usuario
-                      </label>
-                      <p className="text-xs sm:text-sm font-mono bg-muted px-2 py-1 rounded break-all">
-                        {perfilUsuario.id}
-                      </p>
-                    </div>
-                  </div>
-                </div>
+              <CardContent className="space-y-4">
+                <Button
+                  variant="outline"
+                  onClick={() => setEditMode('profile')}
+                  className="flex items-center gap-2"
+                >
+                  <Edit className="h-4 w-4" />
+                  Editar información personal
+                </Button>
+                
+                <Separator />
+                
+                <Button
+                  variant="outline"
+                  onClick={() => setEditMode('password')}
+                  className="flex items-center gap-2"
+                >
+                  <Shield className="h-4 w-4" />
+                  Cambiar contraseña
+                </Button>
               </CardContent>
             </Card>
-          </TabsContent>
-
-          <TabsContent value="notificaciones">
-            <NotificationSettings />
-          </TabsContent>
-
-          <TabsContent value="actividad">
-            <UsuarioCambiosRecibidos 
-              usuarioId={perfilUsuario.id} 
-              usuarioEmail={perfilUsuario.email} 
-            />
-          </TabsContent>
-
-          <TabsContent value="estadisticas">
-            <UsuarioEstadisticasActividad 
-              usuarioId={perfilUsuario.id} 
-              usuarioEmail={perfilUsuario.email}
-            />
-          </TabsContent>
-
-          <TabsContent value="auditoria">
-            <UsuarioAuditoria 
-              usuarioId={perfilUsuario.id} 
-              usuarioEmail={perfilUsuario.email} 
-            />
-          </TabsContent>
-        </Tabs>
-      </div>
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };

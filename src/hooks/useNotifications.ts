@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -124,7 +125,7 @@ export const useNotifications = () => {
       if (!user) return null;
 
       const { data, error } = await supabase
-        .from('notification_settings')
+        .from('notification_settings' as any)
         .select('*')
         .eq('user_id', user.id)
         .single();

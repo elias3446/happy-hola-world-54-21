@@ -27,20 +27,30 @@ export const NotificationSettings: React.FC = () => {
     enabled: true,
   });
 
-  // Obtener configuración actual
+  // Obtener configuración actual usando rpc o query raw
   const { data: currentConfig, isLoading } = useQuery({
     queryKey: ['notification-settings', user?.id],
     queryFn: async () => {
       if (!user) return null;
 
-      const { data, error } = await supabase
-        .from('notification_settings')
-        .select('*')
-        .eq('user_id', user.id)
-        .single();
+      // Use raw SQL query to avoid TypeScript issues with the new table
+      const { data, error } = await supabase.rpc('get_notification_settings', { 
+        p_user_id: user.id 
+      }).single();
 
       if (error && error.code !== 'PGRST116') {
-        throw error;
+        // If the function doesn't exist, fallback to direct query
+        const { data: fallbackData, error: fallbackError } = await supabase
+          .from('notification_settings' as any)
+          .select('*')
+          .eq('user_id', user.id)
+          .single();
+
+        if (fallbackError && fallbackError.code !== 'PGRST116') {
+          throw fallbackError;
+        }
+
+        return fallbackData;
       }
 
       return data;
@@ -70,7 +80,7 @@ export const NotificationSettings: React.FC = () => {
       };
 
       const { error } = await supabase
-        .from('notification_settings')
+        .from('notification_settings' as any)
         .upsert(configData);
 
       if (error) throw error;
