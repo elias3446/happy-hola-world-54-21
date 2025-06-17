@@ -60,21 +60,27 @@ export const useSecurity = () => {
     return permissions.some(permission => hasPermission(permission));
   };
 
-  // Security logging function
+  // Security logging function using direct RPC call
   const logSecurityEvent = async (eventType: string, description: string, metadata?: any) => {
     try {
-      await supabase.rpc('log_security_event', {
+      const { data, error } = await supabase.rpc('log_security_event', {
         p_event_type: eventType,
         p_description: description,
         p_user_id: user?.id || null,
         p_metadata: metadata || {}
       });
+
+      if (error) {
+        console.error('Failed to log security event:', error);
+      }
+
+      return data;
     } catch (error) {
       console.error('Failed to log security event:', error);
     }
   };
 
-  // File upload validation
+  // File upload validation using direct RPC call
   const validateFileUpload = async (file: File): Promise<boolean> => {
     try {
       const { data, error } = await supabase.rpc('validate_file_upload', {

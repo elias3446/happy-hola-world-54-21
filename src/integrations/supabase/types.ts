@@ -539,6 +539,15 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
+      log_security_event: {
+        Args: {
+          p_event_type: string
+          p_description: string
+          p_user_id?: string
+          p_metadata?: Json
+        }
+        Returns: string
+      }
       registrar_actividad: {
         Args: {
           p_activity_type: Database["public"]["Enums"]["activity_type"]
@@ -552,6 +561,14 @@ export type Database = {
       user_has_role_permission: {
         Args: {
           permission_name: Database["public"]["Enums"]["permission_enum"]
+        }
+        Returns: boolean
+      }
+      validate_file_upload: {
+        Args: {
+          p_filename: string
+          p_file_size: number
+          p_content_type: string
         }
         Returns: boolean
       }
