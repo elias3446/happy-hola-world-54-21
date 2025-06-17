@@ -112,7 +112,7 @@ export class IntelligentQueryParser {
         const result = await assistantActionService.createReport({
           nombre: reportName,
           descripcion: `Reporte creado mediante asistente: ${reportName}`,
-          priority: 'media'
+          priority: 'medio'
         }, userId);
         
         return {

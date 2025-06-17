@@ -9,15 +9,6 @@ export interface ActionResult {
   error?: string;
 }
 
-export interface SystemAction {
-  id: string;
-  name: string;
-  description: string;
-  category: string;
-  requiredPermission?: string;
-  adminOnly?: boolean;
-}
-
 export class AssistantActionService {
   private static instance: AssistantActionService;
   
@@ -130,7 +121,7 @@ export class AssistantActionService {
     search?: string;
     categoria?: string;
     estado?: string;
-    priority?: string;
+    priority?: 'urgente' | 'alto' | 'medio' | 'bajo';
     limit?: number;
   }): Promise<ActionResult> {
     try {
