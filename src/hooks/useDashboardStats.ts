@@ -60,7 +60,7 @@ export const useDashboardStats = () => {
     queryFn: async (): Promise<DashboardStats> => {
       console.log('Fetching dashboard statistics...');
 
-      // Obtener estadísticas de reportes con datos completos
+      // Obtener estadísticas de reportes con datos completos - FIXED QUERY
       const { data: reportes, error: reportesError } = await supabase
         .from('reportes')
         .select(`
@@ -68,8 +68,8 @@ export const useDashboardStats = () => {
           activo,
           created_at,
           priority,
-          categoria:categories(nombre, color),
-          estado:estados(nombre, color)
+          categoria:categories!inner(nombre, color),
+          estado:estados!inner(nombre, color)
         `)
         .is('deleted_at', null);
 
@@ -151,20 +151,21 @@ export const useDashboardStats = () => {
         new Date(r.created_at) >= sevenDaysAgo
       ) || [];
 
-      // Guardar datos completos para filtrado posterior
+      // Guardar datos completos para filtrado posterior - FIXED TYPE MAPPING
       const datosCompletos: ReporteWithDates[] = reportes?.map(r => ({
         id: r.id,
         activo: r.activo,
         created_at: r.created_at,
         priority: r.priority || 'medio',
-        categoria: r.categoria,
-        estado: r.estado
+        categoria: Array.isArray(r.categoria) ? r.categoria[0] || null : r.categoria,
+        estado: Array.isArray(r.estado) ? r.estado[0] || null : r.estado
       })) || [];
 
-      // Agrupar por estado
+      // Agrupar por estado - FIXED ACCESS TO NESTED PROPERTIES
       const porEstado = reportes?.reduce((acc, reporte) => {
-        const estadoNombre = reporte.estado?.nombre || 'Sin estado';
-        const estadoColor = reporte.estado?.color || '#6B7280';
+        const estadoData = Array.isArray(reporte.estado) ? reporte.estado[0] : reporte.estado;
+        const estadoNombre = estadoData?.nombre || 'Sin estado';
+        const estadoColor = estadoData?.color || '#6B7280';
         const existing = acc.find(item => item.estado === estadoNombre);
         if (existing) {
           existing.count++;
@@ -174,10 +175,11 @@ export const useDashboardStats = () => {
         return acc;
       }, [] as { estado: string; count: number; color: string }[]) || [];
 
-      // Agrupar por categoría
+      // Agrupar por categoría - FIXED ACCESS TO NESTED PROPERTIES
       const porCategoria = reportes?.reduce((acc, reporte) => {
-        const categoriaNombre = reporte.categoria?.nombre || 'Sin categoría';
-        const categoriaColor = reporte.categoria?.color || '#6B7280';
+        const categoriaData = Array.isArray(reporte.categoria) ? reporte.categoria[0] : reporte.categoria;
+        const categoriaNombre = categoriaData?.nombre || 'Sin categoría';
+        const categoriaColor = categoriaData?.color || '#6B7280';
         const existing = acc.find(item => item.categoria === categoriaNombre);
         if (existing) {
           existing.count++;
@@ -237,9 +239,10 @@ export const useDashboardStats = () => {
       // Calcular distribución por COMBINACIONES ESPECÍFICAS DE ROLES REALES
       const userRoleAssignments: { [userId: string]: string[] } = {};
       
-      // Obtener todos los roles asignados por usuario desde user_roles
+      // Obtener todos los roles asignados por usuario desde user_roles - FIXED ACCESS TO NESTED PROPERTIES
       userRoles?.forEach(userRole => {
-        const roleName = userRole.roles?.nombre;
+        const roleData = Array.isArray(userRole.roles) ? userRole.roles[0] : userRole.roles;
+        const roleName = roleData?.nombre;
         if (roleName) {
           if (!userRoleAssignments[userRole.user_id]) {
             userRoleAssignments[userRole.user_id] = [];
