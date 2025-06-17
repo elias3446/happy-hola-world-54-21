@@ -17,11 +17,12 @@ import {
 } from '@/components/ui/form';
 import { useMutation } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Lock, Save, X, Shield, AlertTriangle } from 'lucide-react';
+import { Lock, Save, X, Shield, AlertTriangle, Eye, EyeOff } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useSecurity } from '@/hooks/useSecurity';
 import { validateSecurePassword } from '@/utils/securityValidations';
+import { sanitizeUserInput } from '@/utils/securityEnhancements';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface UsuarioPasswordEditProps {
@@ -49,7 +50,7 @@ type PasswordFormData = z.infer<typeof passwordSchema>;
 export const UsuarioPasswordEdit: React.FC<UsuarioPasswordEditProps> = ({ onBack }) => {
   const { toast } = useToast();
   const isMobile = useIsMobile();
-  const { logSecurityEvent, sanitizeInput } = useSecurity();
+  const { logSecurityEvent } = useSecurity();
   const [passwordStrength, setPasswordStrength] = useState(0);
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
@@ -69,7 +70,7 @@ export const UsuarioPasswordEdit: React.FC<UsuarioPasswordEditProps> = ({ onBack
   React.useEffect(() => {
     if (newPassword) {
       const validation = validateSecurePassword(newPassword);
-      setPasswordStrength(validation.strength * 20); // Convert to percentage
+      setPasswordStrength(validation.strength * 20);
     } else {
       setPasswordStrength(0);
     }
@@ -129,7 +130,6 @@ export const UsuarioPasswordEdit: React.FC<UsuarioPasswordEditProps> = ({ onBack
         description: "Tu contraseña ha sido actualizada correctamente por seguridad.",
       });
       
-      // Clear form and return
       form.reset();
       onBack();
     },
@@ -146,9 +146,9 @@ export const UsuarioPasswordEdit: React.FC<UsuarioPasswordEditProps> = ({ onBack
   const handleSubmit = (data: PasswordFormData) => {
     // Sanitize inputs
     const sanitizedData = {
-      currentPassword: sanitizeInput(data.currentPassword),
-      newPassword: sanitizeInput(data.newPassword),
-      confirmPassword: sanitizeInput(data.confirmPassword)
+      currentPassword: sanitizeUserInput(data.currentPassword),
+      newPassword: sanitizeUserInput(data.newPassword),
+      confirmPassword: sanitizeUserInput(data.confirmPassword)
     };
     
     updatePasswordMutation.mutate(sanitizedData);
@@ -206,7 +206,7 @@ export const UsuarioPasswordEdit: React.FC<UsuarioPasswordEditProps> = ({ onBack
                         className="absolute right-2 top-1/2 transform -translate-y-1/2 h-auto p-1"
                         onClick={() => setShowCurrentPassword(!showCurrentPassword)}
                       >
-                        {showCurrentPassword ? 'Ocultar' : 'Mostrar'}
+                        {showCurrentPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                       </Button>
                     </div>
                   </FormControl>
@@ -236,7 +236,7 @@ export const UsuarioPasswordEdit: React.FC<UsuarioPasswordEditProps> = ({ onBack
                           className="absolute right-2 top-1/2 transform -translate-y-1/2 h-auto p-1"
                           onClick={() => setShowNewPassword(!showNewPassword)}
                         >
-                          {showNewPassword ? 'Ocultar' : 'Mostrar'}
+                          {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                         </Button>
                       </div>
                       {newPassword && (

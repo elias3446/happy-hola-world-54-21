@@ -3,17 +3,25 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useAuth } from '@/hooks/useAuth';
+import { useSecureAuth } from '@/hooks/useSecureAuth';
 import { toast } from '@/hooks/use-toast';
-import { Loader2, LogIn } from 'lucide-react';
+import { Loader2, LogIn, Shield } from 'lucide-react';
 import { PasswordRecovery } from './PasswordRecovery';
+import { validateSecureEmail } from '@/utils/securityValidations';
+import { generateCSRFToken } from '@/utils/securityEnhancements';
 
 export const LoginForm = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPasswordRecovery, setShowPasswordRecovery] = useState(false);
-  const { signIn } = useAuth();
+  const [csrfToken, setCsrfToken] = useState('');
+  const { secureSignIn, loginAttempts } = useSecureAuth();
+
+  // Generate CSRF token on component mount
+  useEffect(() => {
+    setCsrfToken(generateCSRFToken());
+  }, []);
 
   // Aplicar tema del sistema al cargar el componente y escuchar cambios
   useEffect(() => {
@@ -86,7 +94,7 @@ export const LoginForm = () => {
       return "No existe una cuenta con este email. ¿Necesitas registrarte?";
     }
     
-    if (errorMessage.includes('too many requests')) {
+    if (errorMessage.includes('rate limited')) {
       return "Demasiados intentos de acceso. Por favor, espera unos minutos antes de intentar nuevamente.";
     }
     
@@ -103,7 +111,27 @@ export const LoginForm = () => {
     setLoading(true);
     
     try {
-      const { error } = await signIn(email, password);
+      // Client-side validation
+      const emailValidation = validateSecureEmail(email);
+      if (!emailValidation.isValid) {
+        toast({
+          title: "Error de validación",
+          description: emailValidation.error,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (!password.trim()) {
+        toast({
+          title: "Error de validación",
+          description: "La contraseña es requerida",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const { error } = await secureSignIn(email, password);
       
       if (error) {
         toast({
@@ -128,6 +156,11 @@ export const LoginForm = () => {
     }
   };
 
+  // Show security warning if too many failed attempts
+  const recentFailedAttempts = loginAttempts.filter(
+    attempt => !attempt.success && Date.now() - attempt.timestamp < 15 * 60 * 1000
+  ).length;
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md">
@@ -139,9 +172,21 @@ export const LoginForm = () => {
           <CardDescription>
             Ingresa tus credenciales para acceder a la aplicación
           </CardDescription>
+          {recentFailedAttempts > 2 && (
+            <div className="mt-2 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+              <div className="flex items-center gap-2 text-yellow-800">
+                <Shield className="h-4 w-4" />
+                <span className="text-sm">
+                  Múltiples intentos fallidos detectados. Verifica tus credenciales.
+                </span>
+              </div>
+            </div>
+          )}
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
+            <input type="hidden" name="csrf_token" value={csrfToken} />
+            
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
@@ -151,6 +196,7 @@ export const LoginForm = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                autoComplete="email"
               />
             </div>
             
@@ -163,6 +209,7 @@ export const LoginForm = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
+                autoComplete="current-password"
               />
             </div>
             

@@ -4,8 +4,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/hooks/useAuth';
+import { useSecureAuth } from '@/hooks/useSecureAuth';
 import { toast } from '@/hooks/use-toast';
-import { Loader2, UserCog } from 'lucide-react';
+import { Loader2, UserCog, Shield, AlertTriangle } from 'lucide-react';
+import { validateSecureEmail, validateSecurePassword } from '@/utils/securityValidations';
+import { generateCSRFToken } from '@/utils/securityEnhancements';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Progress } from '@/components/ui/progress';
 
 export const InitialSetup = () => {
   const [email, setEmail] = useState('');
@@ -15,7 +20,25 @@ export const InitialSetup = () => {
   const [lastName, setLastName] = useState('');
   const [loading, setLoading] = useState(false);
   const [redirecting, setRedirecting] = useState(false);
-  const { signUp, signOut, checkHasUsers } = useAuth();
+  const [csrfToken, setCsrfToken] = useState('');
+  const [passwordStrength, setPasswordStrength] = useState(0);
+  const { signOut, checkHasUsers } = useAuth();
+  const { secureSignUp } = useSecureAuth();
+
+  // Generate CSRF token on component mount
+  useEffect(() => {
+    setCsrfToken(generateCSRFToken());
+  }, []);
+
+  // Monitor password strength
+  useEffect(() => {
+    if (password) {
+      const validation = validateSecurePassword(password);
+      setPasswordStrength(validation.strength * 20);
+    } else {
+      setPasswordStrength(0);
+    }
+  }, [password]);
 
   // Aplicar tema del sistema al cargar el componente y escuchar cambios
   useEffect(() => {
@@ -81,7 +104,7 @@ export const InitialSetup = () => {
     }
     
     if (errorMessage.includes('password should be at least')) {
-      return "La contraseña debe tener al menos 6 caracteres.";
+      return "La contraseña debe tener al menos 8 caracteres.";
     }
     
     if (errorMessage.includes('signup is disabled')) {
@@ -93,20 +116,56 @@ export const InitialSetup = () => {
     }
     
     if (errorMessage.includes('weak password')) {
-      return "La contraseña es muy débil. Debe tener al menos 6 caracteres.";
+      return "La contraseña es muy débil. Debe cumplir con los requisitos de seguridad.";
     }
     
     return error.message || "Error durante el registro. Intenta nuevamente.";
   };
 
+  const getStrengthColor = (strength: number) => {
+    if (strength < 40) return 'bg-red-500';
+    if (strength < 60) return 'bg-yellow-500';
+    if (strength < 80) return 'bg-blue-500';
+    return 'bg-green-500';
+  };
+
+  const getStrengthText = (strength: number) => {
+    if (strength < 40) return 'Débil';
+    if (strength < 60) return 'Regular';
+    if (strength < 80) return 'Buena';
+    return 'Excelente';
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validaciones básicas
+    // Enhanced client-side validation
     if (!firstName.trim() || !lastName.trim() || !email.trim() || !password.trim()) {
       toast({
         title: "Error",
         description: "Todos los campos son obligatorios",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate email format
+    const emailValidation = validateSecureEmail(email);
+    if (!emailValidation.isValid) {
+      toast({
+        title: "Error de validación",
+        description: emailValidation.error,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate password strength
+    const passwordValidation = validateSecurePassword(password);
+    if (!passwordValidation.isValid) {
+      toast({
+        title: "Error de validación",
+        description: passwordValidation.error,
         variant: "destructive",
       });
       return;
@@ -121,10 +180,10 @@ export const InitialSetup = () => {
       return;
     }
 
-    if (password.length < 6) {
+    if (passwordStrength < 80) {
       toast({
         title: "Error",
-        description: "La contraseña debe tener al menos 6 caracteres",
+        description: "La contraseña debe tener una fortaleza mínima de 80%",
         variant: "destructive",
       });
       return;
@@ -132,11 +191,9 @@ export const InitialSetup = () => {
 
     setLoading(true);
     try {
-      // Limpiar cualquier sesión existente antes de crear el nuevo usuario
       await signOut();
 
-      // Crear el nuevo usuario administrador
-      const { error } = await signUp(email, password, firstName, lastName, 'admin');
+      const { error } = await secureSignUp(email, password, firstName, lastName);
       
       if (error) {
         toast({
@@ -147,16 +204,14 @@ export const InitialSetup = () => {
       } else {
         toast({
           title: "¡Cuenta creada exitosamente!",
-          description: "Tu cuenta de administrador ha sido creada. Ahora puedes iniciar sesión.",
+          description: "Tu cuenta de administrador ha sido creada con medidas de seguridad mejoradas.",
         });
         
-        // Activar estado de redirección
         setRedirecting(true);
         
-        // Cerrar la sesión automáticamente para que aparezca el login
         setTimeout(async () => {
           await signOut();
-          checkHasUsers(); // Esto actualizará el estado y mostrará el login
+          checkHasUsers();
         }, 2000);
       }
     } catch (error: any) {
@@ -179,11 +234,20 @@ export const InitialSetup = () => {
           </div>
           <CardTitle className="text-2xl">Configuración Inicial</CardTitle>
           <CardDescription>
-            Bienvenido! Crea tu cuenta de administrador para comenzar a usar la aplicación.
+            Bienvenido! Crea tu cuenta de administrador con seguridad mejorada.
           </CardDescription>
         </CardHeader>
         <CardContent>
+          <Alert className="mb-4 border-blue-200 bg-blue-50">
+            <Shield className="h-4 w-4 text-blue-600" />
+            <AlertDescription className="text-blue-800">
+              <strong>Seguridad mejorada:</strong> Esta cuenta será creada con medidas de seguridad avanzadas y logging de actividades.
+            </AlertDescription>
+          </Alert>
+
           <form onSubmit={handleSubmit} className="space-y-4">
+            <input type="hidden" name="csrf_token" value={csrfToken} />
+            
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="firstName">Nombre *</Label>
@@ -229,13 +293,27 @@ export const InitialSetup = () => {
               <Input
                 id="password"
                 type="password"
-                placeholder="Mínimo 6 caracteres"
+                placeholder="Mínimo 8 caracteres"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                minLength={6}
+                minLength={8}
                 disabled={loading || redirecting}
               />
+              {password && (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Progress 
+                      value={passwordStrength} 
+                      className="flex-1 h-2"
+                    />
+                    <span className="text-xs font-medium">
+                      {getStrengthText(passwordStrength)}
+                    </span>
+                  </div>
+                  <div className={`h-1 rounded-full ${getStrengthColor(passwordStrength)}`} />
+                </div>
+              )}
             </div>
             
             <div className="space-y-2">
@@ -247,12 +325,30 @@ export const InitialSetup = () => {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
-                minLength={6}
+                minLength={8}
                 disabled={loading || redirecting}
               />
             </div>
+
+            <Alert className="border-amber-200 bg-amber-50">
+              <AlertTriangle className="h-4 w-4 text-amber-600" />
+              <AlertDescription className="text-amber-800">
+                <strong>Requisitos de contraseña:</strong>
+                <ul className="list-disc list-inside mt-2 space-y-1 text-xs">
+                  <li>Mínimo 8 caracteres</li>
+                  <li>Al menos una mayúscula y una minúscula</li>
+                  <li>Al menos un número</li>
+                  <li>Al menos un carácter especial</li>
+                  <li>Fortaleza mínima del 80%</li>
+                </ul>
+              </AlertDescription>
+            </Alert>
             
-            <Button type="submit" className="w-full" disabled={loading || redirecting}>
+            <Button 
+              type="submit" 
+              className="w-full" 
+              disabled={loading || redirecting || passwordStrength < 80}
+            >
               {loading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
