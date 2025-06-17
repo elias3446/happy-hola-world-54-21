@@ -7,6 +7,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { MainNavigation } from "@/components/navigation/MainNavigation";
+import { FloatingAssistant } from "@/components/assistant/FloatingAssistant";
 import Index from "./pages/Index";
 import Home from "./pages/Home";
 import NotFound from "./pages/NotFound";
@@ -21,7 +22,6 @@ import AdminCategorias from "./pages/admin/AdminCategorias";
 import AdminEstados from "./pages/admin/AdminEstados";
 import Dashboard from "./pages/Dashboard";
 import MiPerfil from "./pages/MiPerfil";
-import AsistenteVirtual from "./pages/AsistenteVirtual";
 import { Dashboard as AdminDashboard } from "./components/Dashboard";
 
 const queryClient = new QueryClient();
@@ -46,6 +46,7 @@ const AppContent = () => {
   
   // Solo mostrar navegación si el usuario está autenticado y tiene perfil
   const shouldShowNavigation = user && hasProfile === true;
+  const shouldShowAssistant = user && hasProfile === true;
   
   // Si estamos cargando, no mostrar navegación
   if (loading) {
@@ -83,12 +84,6 @@ const AppContent = () => {
           <Route path="/mi-perfil" element={
             <ProtectedRoute>
               <MiPerfil />
-            </ProtectedRoute>
-          } />
-
-          <Route path="/asistente" element={
-            <ProtectedRoute>
-              <AsistenteVirtual />
             </ProtectedRoute>
           } />
 
@@ -157,6 +152,9 @@ const AppContent = () => {
           <Route path="*" element={<NotFound />} />
         </Routes>
       </main>
+      
+      {/* Asistente Virtual Flotante - Solo mostrar si el usuario está autenticado */}
+      {shouldShowAssistant && <FloatingAssistant />}
     </div>
   );
 };
