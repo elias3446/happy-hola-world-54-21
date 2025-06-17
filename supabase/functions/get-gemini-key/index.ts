@@ -1,4 +1,5 @@
 
+
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const corsHeaders = {
@@ -13,8 +14,25 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // La API key está configurada como secreto en Supabase
-    const geminiApiKey = Deno.env.get('GEMINI_API_KEY') || 'AIzaSyBENPv2PQo6TaDe8Mplg1WhF3n70DDm2Wc';
+    // Obtener la API key solo desde el secreto de Supabase
+    const geminiApiKey = Deno.env.get('GEMINI_API_KEY');
+    
+    if (!geminiApiKey) {
+      console.error('GEMINI_API_KEY not found in Supabase secrets');
+      return new Response(
+        JSON.stringify({ 
+          error: 'API key no configurada en Supabase',
+          status: 'error' 
+        }),
+        { 
+          status: 500,
+          headers: { 
+            ...corsHeaders, 
+            'Content-Type': 'application/json' 
+          } 
+        }
+      );
+    }
     
     console.log('Returning Gemini API key for chat functionality');
     
@@ -49,3 +67,4 @@ Deno.serve(async (req) => {
     );
   }
 });
+
