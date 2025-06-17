@@ -6,7 +6,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useNotifications } from '@/hooks/useNotifications';
+import { useBulkNotifications } from '@/hooks/useBulkNotifications';
 import type { Notification, NotificationType } from '@/types/notifications';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -62,6 +64,9 @@ interface NotificationItemProps {
   onNavigateToReporte: (notification: Notification) => void;
   isMarkingAsRead: boolean;
   isDeleting: boolean;
+  isSelected: boolean;
+  onSelect: (id: string) => void;
+  showCheckbox: boolean;
 }
 
 const NotificationItem: React.FC<NotificationItemProps> = ({
@@ -71,6 +76,9 @@ const NotificationItem: React.FC<NotificationItemProps> = ({
   onNavigateToReporte,
   isMarkingAsRead,
   isDeleting,
+  isSelected,
+  onSelect,
+  showCheckbox,
 }) => {
   const timeAgo = formatDistanceToNow(new Date(notification.created_at), {
     addSuffix: true,
@@ -85,8 +93,17 @@ const NotificationItem: React.FC<NotificationItemProps> = ({
       notification.read 
         ? 'bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-700' 
         : 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 shadow-sm'
-    }`}>
+    } ${isSelected ? 'ring-2 ring-primary' : ''}`}>
       <div className="flex items-start gap-3">
+        {showCheckbox && (
+          <div className="flex-shrink-0 pt-1">
+            <Checkbox
+              checked={isSelected}
+              onCheckedChange={() => onSelect(notification.id)}
+            />
+          </div>
+        )}
+        
         <div className="flex-shrink-0 text-lg">
           {getNotificationIcon(notification.type)}
         </div>
@@ -172,6 +189,8 @@ export const NotificationsPanel: React.FC = () => {
     isDeleting,
   } = useNotifications();
 
+  const bulkNotifications = useBulkNotifications(notifications);
+
   if (isLoading) {
     return (
       <Card>
@@ -191,6 +210,11 @@ export const NotificationsPanel: React.FC = () => {
     );
   }
 
+  const hasNotifications = notifications.length > 0;
+  const hasSelectedItems = bulkNotifications.selectedCount > 0;
+  const hasUnreadSelected = hasSelectedItems && 
+    bulkNotifications.getSelectedData().some(n => !n.read);
+
   return (
     <Card>
       <CardHeader>
@@ -205,23 +229,85 @@ export const NotificationsPanel: React.FC = () => {
             )}
           </CardTitle>
           
-          {unreadCount > 0 && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => markAllAsRead()}
-              disabled={isMarkingAllAsRead}
-              className="flex items-center gap-2"
-            >
-              <CheckCheck className="h-4 w-4" />
-              Marcar todas como leídas
-            </Button>
-          )}
+          <div className="flex items-center gap-2">
+            {unreadCount > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => markAllAsRead()}
+                disabled={isMarkingAllAsRead}
+                className="flex items-center gap-2"
+              >
+                <CheckCheck className="h-4 w-4" />
+                Marcar todas como leídas
+              </Button>
+            )}
+          </div>
         </div>
+
+        {/* Controles de selección masiva */}
+        {hasNotifications && (
+          <>
+            <Separator />
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  checked={bulkNotifications.isAllSelected}
+                  onCheckedChange={bulkNotifications.handleSelectAll}
+                  className="mr-2"
+                />
+                <span className="text-sm text-muted-foreground">
+                  {hasSelectedItems 
+                    ? `${bulkNotifications.selectedCount} seleccionadas`
+                    : 'Seleccionar todas'
+                  }
+                </span>
+              </div>
+
+              {hasSelectedItems && (
+                <div className="flex items-center gap-2">
+                  {hasUnreadSelected && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={bulkNotifications.markBulkAsRead}
+                      disabled={bulkNotifications.isMarkingAsRead}
+                      className="flex items-center gap-2"
+                    >
+                      <Check className="h-4 w-4" />
+                      Marcar como leídas
+                    </Button>
+                  )}
+                  
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={bulkNotifications.deleteBulkNotifications}
+                    disabled={bulkNotifications.isDeleting}
+                    className="flex items-center gap-2"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    Eliminar seleccionadas
+                  </Button>
+
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={bulkNotifications.clearSelection}
+                    className="flex items-center gap-2"
+                  >
+                    <X className="h-4 w-4" />
+                    Cancelar
+                  </Button>
+                </div>
+              )}
+            </div>
+          </>
+        )}
       </CardHeader>
       
       <CardContent>
-        {notifications.length === 0 ? (
+        {!hasNotifications ? (
           <div className="text-center py-8">
             <Bell className="h-12 w-12 text-gray-300 mx-auto mb-4" />
             <p className="text-sm text-gray-500">No tienes notificaciones</p>
@@ -238,6 +324,9 @@ export const NotificationsPanel: React.FC = () => {
                     onNavigateToReporte={navigateToReporte}
                     isMarkingAsRead={isMarkingAsRead}
                     isDeleting={isDeleting}
+                    isSelected={bulkNotifications.selectedItems.has(notification.id)}
+                    onSelect={bulkNotifications.handleSelectItem}
+                    showCheckbox={hasNotifications}
                   />
                   {index < notifications.length - 1 && <Separator />}
                 </React.Fragment>
