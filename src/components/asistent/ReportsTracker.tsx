@@ -25,8 +25,7 @@ interface ReportsTrackerProps {
 
 const ReportsTracker: React.FC<ReportsTrackerProps> = ({ onReportClick }) => {
   const { hasPermission } = useSecurity();
-  const { getAllReportes } = useReportes();
-  const { data: reportes = [], isLoading } = getAllReportes();
+  const { reportes = [], isLoading } = useReportes();
   const [filter, setFilter] = useState<'all' | 'pending' | 'urgent' | 'assigned'>('all');
 
   if (!hasPermission('ver_reporte')) {

@@ -89,7 +89,7 @@ const AssistantDashboard: React.FC<AssistantDashboardProps> = ({ onActionSuggest
               <FileText className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats?.totalReportes || 0}</div>
+              <div className="text-2xl font-bold">{stats?.reportes?.total || 0}</div>
               <p className="text-xs text-muted-foreground">
                 +12% desde el mes pasado
               </p>
@@ -102,7 +102,9 @@ const AssistantDashboard: React.FC<AssistantDashboardProps> = ({ onActionSuggest
               <Clock className="h-4 w-4 text-yellow-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats?.reportesPendientes || 0}</div>
+              <div className="text-2xl font-bold">
+                {stats?.reportes?.porEstado?.find(e => e.estado.toLowerCase().includes('pendiente'))?.count || 0}
+              </div>
               <p className="text-xs text-muted-foreground">
                 Requieren atención
               </p>
@@ -115,7 +117,9 @@ const AssistantDashboard: React.FC<AssistantDashboardProps> = ({ onActionSuggest
               <CheckCircle className="h-4 w-4 text-green-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats?.reportesCompletados || 0}</div>
+              <div className="text-2xl font-bold">
+                {stats?.reportes?.porEstado?.find(e => e.estado.toLowerCase().includes('completado'))?.count || 0}
+              </div>
               <p className="text-xs text-muted-foreground">
                 Esta semana
               </p>
@@ -128,7 +132,9 @@ const AssistantDashboard: React.FC<AssistantDashboardProps> = ({ onActionSuggest
               <AlertTriangle className="h-4 w-4 text-red-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats?.reportesUrgentes || 0}</div>
+              <div className="text-2xl font-bold">
+                {stats?.reportes?.porPrioridad?.find(p => p.priority === 'urgente')?.count || 0}
+              </div>
               <p className="text-xs text-muted-foreground">
                 Prioridad alta
               </p>
@@ -237,15 +243,15 @@ const AssistantDashboard: React.FC<AssistantDashboardProps> = ({ onActionSuggest
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="text-center">
-                <div className="text-2xl font-bold">{stats?.totalUsuarios || 0}</div>
+                <div className="text-2xl font-bold">{stats?.usuarios?.total || 0}</div>
                 <p className="text-sm text-muted-foreground">Total Usuarios</p>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold">{stats?.usuariosActivos || 0}</div>
+                <div className="text-2xl font-bold">{stats?.usuarios?.activos || 0}</div>
                 <p className="text-sm text-muted-foreground">Activos</p>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold">{stats?.usuariosNuevos || 0}</div>
+                <div className="text-2xl font-bold">{stats?.usuarios?.recientes || 0}</div>
                 <p className="text-sm text-muted-foreground">Nuevos (30 días)</p>
               </div>
             </div>
