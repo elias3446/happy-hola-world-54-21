@@ -1,4 +1,5 @@
 
+
 -- Security Fix: Comprehensive RLS Policy Cleanup and Hardening
 -- This migration removes conflicting policies and implements secure, permission-based access
 
@@ -305,7 +306,7 @@ BEGIN
   -- Log file upload attempt
   PERFORM public.log_security_event(
     'FILE_UPLOAD_ATTEMPT',
-    format('File: %s, Size: %s, Type: %s', p_filename, p_file_size, p_content_type),
+    format('File: %s,Size: %s, Type: %s', p_filename, p_file_size, p_content_type),
     auth.uid(),
     jsonb_build_object(
       'filename', p_filename,
@@ -350,3 +351,4 @@ BEGIN
   RETURN TRUE;
 END;
 $$;
+

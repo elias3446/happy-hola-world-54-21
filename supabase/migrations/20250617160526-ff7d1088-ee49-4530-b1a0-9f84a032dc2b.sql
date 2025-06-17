@@ -1,4 +1,5 @@
 
+
 -- Create security logging function
 CREATE OR REPLACE FUNCTION public.log_security_event(
   p_event_type TEXT,
@@ -67,3 +68,4 @@ BEGIN
   RETURN TRUE;
 END;
 $$;
+
