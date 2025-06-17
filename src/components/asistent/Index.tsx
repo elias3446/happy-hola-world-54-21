@@ -2,7 +2,7 @@
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { IntelligentChat } from './IntelligentChat';
+import IntelligentChat from './IntelligentChat';
 import { Brain, MessageCircle } from 'lucide-react';
 
 export const AssistantIndex: React.FC = () => {
