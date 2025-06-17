@@ -79,9 +79,13 @@ export const useIntelligentAssistant = () => {
       );
 
       // Verificar permisos antes de ejecutar la acción si es necesaria
-      let permissionCheck = { canExecute: true, reason: undefined };
+      let permissionCheck: { canExecute: boolean; reason: string } = { canExecute: true, reason: '' };
       if (parsed.action !== 'provide_help' && parsed.action !== 'welcome') {
-        permissionCheck = await assistantPermissionService.canExecuteAction(parsed.action);
+        const permissionResult = await assistantPermissionService.canExecuteAction(parsed.action);
+        permissionCheck = {
+          canExecute: permissionResult.canExecute,
+          reason: permissionResult.reason || ''
+        };
         
         // Registrar la verificación de permisos
         await assistantPermissionService.logPermissionCheck(
