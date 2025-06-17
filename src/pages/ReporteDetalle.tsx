@@ -217,7 +217,7 @@ export const ReporteDetalle = () => {
                         latitud: reporte.latitud,
                         longitud: reporte.longitud,
                         direccion: reporte.direccion,
-                        referencia: reporte.referencia
+                        referencia: reporte.referencia_direccion
                       }}
                       variant="outline"
                       size="sm"
@@ -323,7 +323,7 @@ export const ReporteDetalle = () => {
                           latitud: reporte.latitud,
                           longitud: reporte.longitud,
                           direccion: reporte.direccion,
-                          referencia: reporte.referencia
+                          referencia: reporte.referencia_direccion
                         }}
                         variant="outline"
                         size="sm"
