@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import { useReportes } from '@/hooks/useReportes';
 import MapaReportesMultiples from '@/components/MapaBase/MapaReportesMultiples';
+import { GoogleMapsButton } from '@/components/ui/google-maps-button';
 import { MapPin, Calendar, User, AlertTriangle, X, Eye, Images, ExternalLink } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -211,6 +212,22 @@ export const MapaReportes = () => {
                     <p className="text-xs sm:text-sm mt-1 break-all text-foreground">
                       {selectedReporte.direccion || `${selectedReporte.latitud?.toFixed(6)}, ${selectedReporte.longitud?.toFixed(6)}`}
                     </p>
+                    {/* Google Maps Button */}
+                    {selectedReporte.latitud && selectedReporte.longitud && (
+                      <div className="mt-2">
+                        <GoogleMapsButton
+                          location={{
+                            latitud: selectedReporte.latitud,
+                            longitud: selectedReporte.longitud,
+                            direccion: selectedReporte.direccion,
+                            referencia: selectedReporte.referencia
+                          }}
+                          variant="outline"
+                          size="sm"
+                          className="w-full"
+                        />
+                      </div>
+                    )}
                   </div>
 
                   {/* Fecha de creación */}

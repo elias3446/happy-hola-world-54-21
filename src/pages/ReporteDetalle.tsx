@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,6 +12,7 @@ import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious
 import { useReportes } from '@/hooks/useReportes';
 import { useReporteHistorial } from '@/hooks/useReporteHistorial';
 import { MapaReporteEspecifico } from '@/components/MapaBase';
+import { GoogleMapsButton } from '@/components/ui/google-maps-button';
 import { 
   ArrowLeft, 
   Calendar, 
@@ -53,13 +55,6 @@ export const ReporteDetalle = () => {
 
   const closeImageCarousel = () => {
     setSelectedImageIndex(null);
-  };
-
-  const openInGoogleMaps = () => {
-    if (reporte?.latitud && reporte?.longitud) {
-      const url = `https://www.google.com/maps?q=${reporte.latitud},${reporte.longitud}`;
-      window.open(url, '_blank');
-    }
   };
 
   if (isLoading) {
@@ -217,15 +212,17 @@ export const ReporteDetalle = () => {
                     <div className="text-sm text-muted-foreground break-all">
                       Lat: {reporte.latitud}, Lng: {reporte.longitud}
                     </div>
-                    <Button
-                      onClick={openInGoogleMaps}
+                    <GoogleMapsButton
+                      location={{
+                        latitud: reporte.latitud,
+                        longitud: reporte.longitud,
+                        direccion: reporte.direccion,
+                        referencia: reporte.referencia
+                      }}
                       variant="outline"
                       size="sm"
-                      className="w-full flex items-center gap-2 mt-2"
-                    >
-                      <ExternalLink className="h-4 w-4" />
-                      Ver en Google Maps
-                    </Button>
+                      className="w-full"
+                    />
                   </div>
                 </>
               )}
@@ -321,15 +318,17 @@ export const ReporteDetalle = () => {
                         <MapPin className="h-5 w-5 text-red-600 dark:text-red-400 flex-shrink-0" />
                         <span>Ubicación del Reporte</span>
                       </CardTitle>
-                      <Button
-                        onClick={openInGoogleMaps}
+                      <GoogleMapsButton
+                        location={{
+                          latitud: reporte.latitud,
+                          longitud: reporte.longitud,
+                          direccion: reporte.direccion,
+                          referencia: reporte.referencia
+                        }}
                         variant="outline"
                         size="sm"
-                        className="flex items-center gap-2"
-                      >
-                        <ExternalLink className="h-4 w-4" />
-                        Ver en Google Maps
-                      </Button>
+                        showIcon={false}
+                      />
                     </div>
                   </CardHeader>
                   <CardContent>
