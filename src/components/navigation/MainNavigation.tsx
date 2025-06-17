@@ -1,342 +1,214 @@
-import React, { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import {
-  NavigationMenu,
-  NavigationMenuContent,
-  NavigationMenuItem,
-  NavigationMenuLink,
-  NavigationMenuList,
-  NavigationMenuTrigger,
-  navigationMenuTriggerStyle,
-} from '@/components/ui/navigation-menu';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { useAuth } from '@/hooks/useAuth';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { cn } from '@/lib/utils';
-import {
-  Menu,
-  Home,
-  Map,
-  FileText,
-  LayoutDashboard,
-  Settings,
-  Users,
+
+import React, { useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { 
+  Home, 
+  FileText, 
+  Map, 
+  User, 
+  Settings, 
+  Menu, 
+  Users, 
   Shield,
-  FolderOpen,
-  Circle,
   LogOut,
-  User,
-  UserCircle
+  Bot
 } from 'lucide-react';
-import { QuickReporteButton } from '@/components/reportes/QuickReporteButton';
+import { useAuth } from '@/hooks/useAuth';
+import { useSecurity } from '@/hooks/useSecurity';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
+import { cn } from '@/lib/utils';
 
-export const MainNavigation = () => {
-  const { user, signOut, isAdmin } = useAuth();
+const MainNavigation = () => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, logout } = useAuth();
+  const { hasPermission, isAdmin } = useSecurity();
   const [isOpen, setIsOpen] = useState(false);
-  const [userDropdownOpen, setUserDropdownOpen] = useState(false);
 
-  // Obtener datos del perfil del usuario para mostrar el avatar
-  const { data: perfilUsuario } = useQuery({
-    queryKey: ['perfil-usuario-nav', user?.id],
-    queryFn: async () => {
-      if (!user?.id) return null;
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate('/');
+    } catch (error) {
+      console.error('Error during logout:', error);
+    }
+  };
 
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('first_name, last_name, avatar')
-        .eq('id', user.id)
-        .single();
-
-      if (error) {
-        console.error('Error fetching user profile for nav:', error);
-        return null;
-      }
-
-      return data;
+  const navigationItems = [
+    {
+      label: 'Inicio',
+      href: '/home',
+      icon: Home,
+      permission: null
     },
-    enabled: !!user?.id,
-  });
-
-  const isActive = (path: string) => location.pathname === path;
-
-  const handleSignOut = async () => {
-    await signOut();
-  };
-
-  // Función para obtener iniciales
-  const getInitials = (firstName?: string, lastName?: string, email?: string) => {
-    if (firstName && lastName) {
-      return (firstName.charAt(0) + lastName.charAt(0)).toUpperCase();
-    }
-    if (email) {
-      return email.charAt(0).toUpperCase();
-    }
-    return 'U';
-  };
-
-  // Hook to detect screen size changes and close dropdowns
-  useEffect(() => {
-    const handleResize = () => {
-      // Close user dropdown when screen size changes
-      setUserDropdownOpen(false);
-    };
-
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  const publicNavItems = [
-    { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { href: '/reportes-publicos', label: 'Ver Reportes', icon: FileText },
-    { href: '/mapa-reportes', label: 'Mapa de Reportes', icon: Map },
+    {
+      label: 'Reportes Públicos',
+      href: '/reportes-publicos',
+      icon: FileText,
+      permission: null
+    },
+    {
+      label: 'Mapa',
+      href: '/mapa-reportes', 
+      icon: Map,
+      permission: null
+    },
+    {
+      label: 'Asistente Virtual',
+      href: '/asistente',
+      icon: Bot,
+      permission: null
+    },
+    {
+      label: 'Administración',
+      href: '/admin',
+      icon: Settings,
+      permission: 'ver_usuario',
+      adminOnly: true
+    },
   ];
 
-  const MobileNavigation = () => (
-    <Sheet open={isOpen} onOpenChange={setIsOpen}>
-      <SheetTrigger asChild>
-        <Button variant="ghost" size="icon" className="lg:hidden">
-          <Menu className="h-5 w-5" />
-          <span className="sr-only">Abrir menú</span>
-        </Button>
-      </SheetTrigger>
-      <SheetContent side="left" className="w-64">
-        <div className="flex flex-col space-y-4 mt-4">
-          <div className="text-lg font-semibold">GeoReport</div>
-          
-          {/* Quick Actions - Solo mostrar si no es admin */}
-          {user && !isAdmin() && (
-            <div className="space-y-2 pb-2 border-b border-border">
-              <QuickReporteButton />
-            </div>
-          )}
-          
-          {/* Navigation Links */}
-          <div className="space-y-2">
-            {publicNavItems.map((item) => {
-              const Icon = item.icon;
-              return (
-                <Link
-                  key={item.href}
-                  to={item.href}
-                  onClick={() => setIsOpen(false)}
-                  className={cn(
-                    "flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
-                    isActive(item.href)
-                      ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground hover:text-foreground hover:bg-accent"
-                  )}
-                >
-                  <Icon className="h-4 w-4" />
-                  <span>{item.label}</span>
-                </Link>
-              );
-            })}
-          </div>
+  const filteredItems = navigationItems.filter(item => {
+    if (item.adminOnly && !isAdmin()) return false;
+    if (item.permission && !hasPermission(item.permission as any)) return false;
+    return true;
+  });
 
-          {user && (
-            <>
-              <hr className="border-border" />
-              
-              {/* Admin Link - Solo mostrar si es admin */}
-              {isAdmin() && (
-                <div className="space-y-2">
-                  <Link
-                    to="/admin"
-                    onClick={() => setIsOpen(false)}
-                    className={cn(
-                      "flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
-                      location.pathname === '/admin'
-                        ? "bg-primary text-primary-foreground"
-                        : "text-muted-foreground hover:text-foreground hover:bg-accent"
-                    )}
-                  >
-                    <Settings className="h-4 w-4" />
-                    <span>Administración</span>
-                  </Link>
-                </div>
-              )}
+  const isActive = (href: string) => {
+    if (href === '/home') {
+      return location.pathname === '/home' || location.pathname === '/';
+    }
+    return location.pathname.startsWith(href);
+  };
 
-              <hr className="border-border" />
-              
-              {/* Theme Toggle */}
-              <div className="flex items-center justify-between px-3">
-                <span className="text-sm text-muted-foreground">Tema</span>
-                <ThemeToggle />
-              </div>
-
-              <hr className="border-border" />
-              
-              {/* User Menu */}
-              <div className="space-y-2">
-                <div className="flex items-center space-x-2 px-3">
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage 
-                      src={perfilUsuario?.avatar || undefined} 
-                      alt="Foto de perfil" 
-                    />
-                    <AvatarFallback>
-                      {getInitials(perfilUsuario?.first_name, perfilUsuario?.last_name, user.email)}
-                    </AvatarFallback>
-                  </Avatar>
-                </div>
-                <Link
-                  to="/mi-perfil"
-                  onClick={() => setIsOpen(false)}
-                  className="flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors text-muted-foreground hover:text-foreground hover:bg-accent"
-                >
-                  <UserCircle className="h-4 w-4" />
-                  <span>Mi Perfil</span>
-                </Link>
-                <Button
-                  variant="ghost"
-                  onClick={handleSignOut}
-                  className="w-full justify-start text-muted-foreground hover:text-foreground"
-                >
-                  <LogOut className="h-4 w-4 mr-2" />
-                  Cerrar Sesión
-                </Button>
-              </div>
-            </>
-          )}
-
-          {/* Theme toggle para usuarios no autenticados */}
-          {!user && (
-            <>
-              <hr className="border-border" />
-              <div className="flex items-center justify-between px-3">
-                <span className="text-sm text-muted-foreground">Tema</span>
-                <ThemeToggle />
-              </div>
-            </>
-          )}
-        </div>
-      </SheetContent>
-    </Sheet>
+  const NavItems = ({ mobile = false }) => (
+    <>
+      {filteredItems.map((item) => {
+        const Icon = item.icon;
+        return (
+          <Link
+            key={item.href}
+            to={item.href}
+            onClick={mobile ? () => setIsOpen(false) : undefined}
+            className={cn(
+              "flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+              isActive(item.href)
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground hover:text-foreground hover:bg-accent",
+              mobile && "w-full"
+            )}
+          >
+            <Icon className="h-4 w-4" />
+            <span>{item.label}</span>
+          </Link>
+        );
+      })}
+    </>
   );
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-14 items-center max-w-full px-4">
-        {/* Logo */}
-        <div className="mr-4 hidden lg:flex shrink-0">
+    <nav className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="container mx-auto px-4">
+        <div className="flex h-16 items-center justify-between">
+          {/* Logo */}
           <Link to="/home" className="flex items-center space-x-2">
-            <Map className="h-6 w-6" />
-            <span className="font-bold">GeoReport</span>
+            <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center">
+              <span className="text-primary-foreground font-bold text-sm">R</span>
+            </div>
+            <span className="font-bold text-xl">Reportes</span>
           </Link>
-        </div>
 
-        {/* Mobile Logo */}
-        <div className="mr-4 lg:hidden shrink-0">
-          <Link to="/home" className="flex items-center space-x-2">
-            <Map className="h-6 w-6" />
-            <span className="font-bold">GeoReport</span>
-          </Link>
-        </div>
+          {/* Desktop Navigation */}
+          <div className="hidden md:flex items-center space-x-1">
+            <NavItems />
+          </div>
 
-        {/* Mobile Navigation */}
-        <MobileNavigation />
-
-        {/* Desktop Navigation */}
-        <div className="hidden lg:flex flex-1 items-center justify-between min-w-0">
-          <NavigationMenu className="max-w-none">
-            <NavigationMenuList className="flex-wrap">
-              {publicNavItems.map((item) => {
-                const Icon = item.icon;
-                return (
-                  <NavigationMenuItem key={item.href}>
-                    <NavigationMenuLink asChild>
-                      <Link
-                        to={item.href}
-                        className={cn(
-                          navigationMenuTriggerStyle(),
-                          "flex items-center space-x-2 text-sm",
-                          isActive(item.href) && "bg-accent"
-                        )}
-                      >
-                        <Icon className="h-4 w-4" />
-                        <span className="hidden xl:inline">{item.label}</span>
-                      </Link>
-                    </NavigationMenuLink>
-                  </NavigationMenuItem>
-                );
-              })}
-              
-              {/* Administración Link - Solo mostrar si es admin */}
-              {user && isAdmin() && (
-                <NavigationMenuItem>
-                  <NavigationMenuLink asChild>
-                    <Link
-                      to="/admin"
-                      className={cn(
-                        navigationMenuTriggerStyle(),
-                        "flex items-center space-x-2 text-sm",
-                        location.pathname === '/admin' && "bg-accent"
-                      )}
-                    >
-                      <Settings className="h-4 w-4" />
-                      <span className="hidden xl:inline">Administración</span>
-                    </Link>
-                  </NavigationMenuLink>
-                </NavigationMenuItem>
-              )}
-            </NavigationMenuList>
-          </NavigationMenu>
-
-          {/* Right side actions */}
-          <div className="flex items-center space-x-2 shrink-0 ml-4">
-            {/* Nuevo Reporte - Solo mostrar si no es admin */}
-            {user && !isAdmin() && <QuickReporteButton />}
+          {/* Right side - User menu and theme toggle */}
+          <div className="flex items-center space-x-2">
             <ThemeToggle />
             
-            {user ? (
-              <DropdownMenu open={userDropdownOpen} onOpenChange={setUserDropdownOpen}>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" className="h-auto p-1">
-                    <Avatar className="h-8 w-8">
-                      <AvatarImage 
-                        src={perfilUsuario?.avatar || undefined} 
-                        alt="Foto de perfil" 
-                      />
-                      <AvatarFallback className="text-sm">
-                        {getInitials(perfilUsuario?.first_name, perfilUsuario?.last_name, user.email)}
-                      </AvatarFallback>
-                    </Avatar>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
-                  <DropdownMenuItem asChild>
-                    <Link to="/mi-perfil">
-                      <UserCircle className="h-4 w-4 mr-2" />
-                      Mi Perfil
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleSignOut}>
-                    <LogOut className="h-4 w-4 mr-2" />
-                    Cerrar Sesión
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            ) : (
-              <Button asChild size="sm">
-                <Link to="/login">Iniciar Sesión</Link>
+            {/* User menu */}
+            <div className="hidden md:flex items-center space-x-2">
+              <Link
+                to="/mi-perfil"
+                className={cn(
+                  "flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                  location.pathname === '/mi-perfil'
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                )}
+              >
+                <User className="h-4 w-4" />
+                <span>{user?.email}</span>
+              </Link>
+              
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleLogout}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                <LogOut className="h-4 w-4 mr-2" />
+                Salir
               </Button>
-            )}
+            </div>
+
+            {/* Mobile menu */}
+            <div className="md:hidden">
+              <Sheet open={isOpen} onOpenChange={setIsOpen}>
+                <SheetTrigger asChild>
+                  <Button variant="ghost" size="sm">
+                    <Menu className="h-5 w-5" />
+                    <span className="sr-only">Abrir menú</span>
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="right" className="w-64">
+                  <div className="flex flex-col space-y-4 mt-4">
+                    <div className="text-lg font-semibold">Navegación</div>
+                    
+                    <div className="space-y-2">
+                      <NavItems mobile />
+                      
+                      <div className="border-t pt-2 mt-4">
+                        <Link
+                          to="/mi-perfil"
+                          onClick={() => setIsOpen(false)}
+                          className={cn(
+                            "flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors w-full",
+                            location.pathname === '/mi-perfil'
+                              ? "bg-primary text-primary-foreground"
+                              : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                          )}
+                        >
+                          <User className="h-4 w-4" />
+                          <span>Mi Perfil</span>
+                        </Link>
+                        
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setIsOpen(false);
+                            handleLogout();
+                          }}
+                          className="w-full justify-start text-muted-foreground hover:text-foreground mt-2"
+                        >
+                          <LogOut className="h-4 w-4 mr-2" />
+                          Salir
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </SheetContent>
+              </Sheet>
+            </div>
           </div>
         </div>
       </div>
-    </header>
+    </nav>
   );
 };
+
+export default MainNavigation;

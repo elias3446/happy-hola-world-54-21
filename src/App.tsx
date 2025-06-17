@@ -1,171 +1,66 @@
 
-import React from 'react';
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { AuthProvider, useAuth } from "@/hooks/useAuth";
-import { MainNavigation } from "@/components/navigation/MainNavigation";
-import Index from "./pages/Index";
-import Home from "./pages/Home";
-import NotFound from "./pages/NotFound";
-import ReportesPublicos from "./pages/ReportesPublicos";
-import MapaReportes from "./pages/MapaReportes";
-import ReporteDetalle from "./pages/ReporteDetalle";
-import NuevoReporte from "./pages/NuevoReporte";
-import AdminReportes from "./pages/admin/AdminReportes";
-import AdminUsuarios from "./pages/admin/AdminUsuarios";
-import AdminRoles from "./pages/admin/AdminRoles";
-import AdminCategorias from "./pages/admin/AdminCategorias";
-import AdminEstados from "./pages/admin/AdminEstados";
-import Dashboard from "./pages/Dashboard";
-import MiPerfil from "./pages/MiPerfil";
-import { Dashboard as AdminDashboard } from "./components/Dashboard";
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { Toaster } from '@/components/ui/toaster';
+import { ThemeProvider } from 'next-themes';
+import Index from '@/pages/Index';
+import Home from '@/pages/Home';
+import { Dashboard } from '@/components/Dashboard';
+import NuevoReporte from '@/pages/NuevoReporte';
+import ReporteDetalle from '@/pages/ReporteDetalle';
+import ReportesPublicos from '@/pages/ReportesPublicos';
+import MapaReportes from '@/pages/MapaReportes';
+import MiPerfil from '@/pages/MiPerfil';
+import AsistenteVirtual from '@/pages/AsistenteVirtual';
+import NotFound from '@/pages/NotFound';
 
-const queryClient = new QueryClient();
+// Admin pages
+import AdminUsuarios from '@/pages/admin/AdminUsuarios';
+import AdminRoles from '@/pages/admin/AdminRoles';
+import AdminCategorias from '@/pages/admin/AdminCategorias';
+import AdminEstados from '@/pages/admin/AdminEstados';
+import AdminReportes from '@/pages/admin/AdminReportes';
 
-// Componente para proteger rutas que requieren autenticación
-const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { user, loading, hasProfile } = useAuth();
-  
-  if (loading) {
-    return <div>Cargando...</div>;
-  }
-  
-  if (!user || hasProfile === false) {
-    return <Navigate to="/" replace />;
-  }
-  
-  return <>{children}</>;
-};
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      retry: 1,
+    },
+  },
+});
 
-const AppContent = () => {
-  const { user, hasProfile, loading } = useAuth();
-  
-  // Solo mostrar navegación si el usuario está autenticado y tiene perfil
-  const shouldShowNavigation = user && hasProfile === true;
-  
-  // Si estamos cargando, no mostrar navegación
-  if (loading) {
-    return (
-      <div className="min-h-screen flex flex-col w-full">
-        <main className="flex-1">
-          <Routes>
-            <Route path="/*" element={<Index />} />
-          </Routes>
-        </main>
-      </div>
-    );
-  }
-
+function App() {
   return (
-    <div className="min-h-screen flex flex-col w-full">
-      {shouldShowNavigation && <MainNavigation />}
-      <main className="flex-1">
-        <Routes>
-          <Route path="/" element={<Index />} />
-          
-          {/* Rutas protegidas que requieren autenticación */}
-          <Route path="/home" element={
-            <ProtectedRoute>
-              <Home />
-            </ProtectedRoute>
-          } />
-
-          <Route path="/dashboard" element={
-            <ProtectedRoute>
-              <Dashboard />
-            </ProtectedRoute>
-          } />
-
-          <Route path="/mi-perfil" element={
-            <ProtectedRoute>
-              <MiPerfil />
-            </ProtectedRoute>
-          } />
-
-          <Route path="/nuevo-reporte" element={
-            <ProtectedRoute>
-              <NuevoReporte />
-            </ProtectedRoute>
-          } />
-          
-          <Route path="/admin" element={
-            <ProtectedRoute>
-              <AdminDashboard />
-            </ProtectedRoute>
-          } />
-          
-          <Route path="/reportes-publicos" element={
-            <ProtectedRoute>
-              <ReportesPublicos />
-            </ProtectedRoute>
-          } />
-          
-          <Route path="/mapa-reportes" element={
-            <ProtectedRoute>
-              <MapaReportes />
-            </ProtectedRoute>
-          } />
-          
-          <Route path="/reporte/:id" element={
-            <ProtectedRoute>
-              <ReporteDetalle />
-            </ProtectedRoute>
-          } />
-          
-          {/* Admin Routes - también protegidas */}
-          <Route path="/admin/reportes" element={
-            <ProtectedRoute>
-              <AdminReportes />
-            </ProtectedRoute>
-          } />
-          
-          <Route path="/admin/usuarios" element={
-            <ProtectedRoute>
-              <AdminUsuarios />
-            </ProtectedRoute>
-          } />
-          
-          <Route path="/admin/roles" element={
-            <ProtectedRoute>
-              <AdminRoles />
-            </ProtectedRoute>
-          } />
-          
-          <Route path="/admin/categorias" element={
-            <ProtectedRoute>
-              <AdminCategorias />
-            </ProtectedRoute>
-          } />
-          
-          <Route path="/admin/estados" element={
-            <ProtectedRoute>
-              <AdminEstados />
-            </ProtectedRoute>
-          } />
-          
-          {/* Catch-all route */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </main>
-    </div>
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+        <Router>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/home" element={<Home />} />
+            <Route path="/admin" element={<Dashboard />} />
+            <Route path="/nuevo-reporte" element={<NuevoReporte />} />
+            <Route path="/reportes/:id" element={<ReporteDetalle />} />
+            <Route path="/reportes-publicos" element={<ReportesPublicos />} />
+            <Route path="/mapa-reportes" element={<MapaReportes />} />
+            <Route path="/mi-perfil" element={<MiPerfil />} />
+            <Route path="/asistente" element={<AsistenteVirtual />} />
+            
+            {/* Admin routes */}
+            <Route path="/admin/usuarios" element={<AdminUsuarios />} />
+            <Route path="/admin/roles" element={<AdminRoles />} />
+            <Route path="/admin/categorias" element={<AdminCategorias />} />
+            <Route path="/admin/estados" element={<AdminEstados />} />
+            <Route path="/admin/reportes" element={<AdminReportes />} />
+            
+            {/* 404 route */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </Router>
+        <Toaster />
+      </ThemeProvider>
+    </QueryClientProvider>
   );
-};
-
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <AuthProvider>
-          <AppContent />
-        </AuthProvider>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+}
 
 export default App;
