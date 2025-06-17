@@ -7,6 +7,8 @@ import { Separator } from "@/components/ui/separator";
 import { useSecurity } from '@/hooks/useSecurity';
 import { useAuth } from '@/hooks/useAuth';
 import { useDashboardStats } from '@/hooks/useDashboardStats';
+import { useUsers } from '@/hooks/useUsers';
+import { useRoles } from '@/hooks/useRoles';
 import { 
   Zap, 
   BarChart3, 
@@ -18,7 +20,8 @@ import {
   Bell,
   Plus,
   Eye,
-  TrendingUp
+  TrendingUp,
+  User
 } from 'lucide-react';
 
 interface IntelligentActionsPanelProps {
@@ -29,6 +32,8 @@ export const IntelligentActionsPanel: React.FC<IntelligentActionsPanelProps> = (
   const { hasPermission, isAdmin } = useSecurity();
   const { user } = useAuth();
   const { data: stats } = useDashboardStats();
+  const { users } = useUsers();
+  const { roles } = useRoles();
 
   // Calculate missing statistics from available data
   const reportesPendientes = stats?.reportes?.porEstado?.find(estado => 
@@ -38,6 +43,15 @@ export const IntelligentActionsPanel: React.FC<IntelligentActionsPanelProps> = (
   )?.count || 0;
 
   const quickActions = [
+    {
+      id: 'show-user-info',
+      title: 'Mi Información',
+      description: 'Ver mis datos y permisos',
+      icon: User,
+      permission: null,
+      action: () => onActionExecute('show-user-info'),
+      color: 'bg-indigo-500'
+    },
     {
       id: 'create-report',
       title: 'Nuevo Reporte',
@@ -79,6 +93,12 @@ export const IntelligentActionsPanel: React.FC<IntelligentActionsPanelProps> = (
 
   const systemInsights = [
     {
+      title: 'Usuario Actual',
+      value: user?.email?.split('@')[0] || 'Usuario',
+      color: 'text-blue-600',
+      icon: User
+    },
+    {
       title: 'Estado del Sistema',
       value: 'Óptimo',
       color: 'text-green-600',
@@ -97,8 +117,14 @@ export const IntelligentActionsPanel: React.FC<IntelligentActionsPanelProps> = (
       icon: Users
     },
     {
-      title: 'Tu Rol',
-      value: isAdmin() ? 'Administrador' : 'Usuario',
+      title: 'Total Usuarios',
+      value: users?.length || 0,
+      color: 'text-gray-600',
+      icon: Users
+    },
+    {
+      title: 'Roles Disponibles',
+      value: roles?.length || 0,
       color: 'text-purple-600',
       icon: Shield
     }
@@ -134,6 +160,16 @@ export const IntelligentActionsPanel: React.FC<IntelligentActionsPanelProps> = (
       });
     }
 
+    // Sugerencia personalizada basada en el usuario
+    if (user?.email) {
+      suggestions.push({
+        title: 'Análisis del Sistema',
+        description: `Obtener análisis completo personalizado para ${user.email.split('@')[0]}`,
+        action: () => onActionExecute('analyze-system'),
+        priority: 'medium'
+      });
+    }
+
     return suggestions;
   };
 
@@ -147,6 +183,37 @@ export const IntelligentActionsPanel: React.FC<IntelligentActionsPanelProps> = (
 
   return (
     <div className="space-y-6">
+      {/* Información del Usuario Actual */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <User className="h-4 w-4" />
+            Información del Usuario
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">Email:</span>
+              <span className="text-sm font-medium">{user?.email}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">Rol:</span>
+              <Badge variant={isAdmin() ? 'destructive' : 'secondary'}>
+                {isAdmin() ? 'Administrador' : 'Usuario'}
+              </Badge>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">Permisos:</span>
+              <span className="text-xs text-muted-foreground">
+                {hasPermission('ver_reporte') ? 'Reportes ✓' : 'Reportes ✗'} |
+                {hasPermission('crear_usuario') ? ' Usuarios ✓' : ' Usuarios ✗'}
+              </span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Insights del Sistema */}
       <Card>
         <CardHeader>

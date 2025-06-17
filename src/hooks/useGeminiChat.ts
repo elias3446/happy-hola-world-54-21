@@ -335,16 +335,24 @@ export const useGeminiChat = () => {
       // Detectamos si es una solicitud de acción
       const actionRequested = isActionRequest(userMessageText);
 
-      // Sistema prompt especializado para asistente de gestión
+      // Sistema prompt especializado para asistente de gestión con información del usuario
       const systemPrompt: GeminiMessageContent = {
         role: 'model',
         parts: [{ text: `Eres un ASISTENTE INTELIGENTE DE GESTIÓN DE SISTEMAS especializado en ayudar con la administración completa de una plataforma de reportes y gestión de usuarios.
 
-        CONTEXTO DEL SISTEMA:
+        INFORMACIÓN DEL USUARIO ACTUAL (DATOS REALES DEL SISTEMA):
+        - Email: ${conversationMemory.email || 'usuario@sistema.com'}
+        - Nombre preferido: ${nombrePreferido}
+        - Es administrador: ${conversationMemory.isAdmin || 'No definido'}
+        - Permisos disponibles: ${conversationMemory.permissions || 'Consultando...'}
+        - ID de usuario: ${conversationMemory.userId || 'Sistema'}
+        
+        CONTEXTO DEL SISTEMA ACTUAL:
         - Sistema de gestión con reportes, usuarios, roles, categorías, estados y auditoría
-        - Usuario actual puede tener diferentes permisos según su rol
-        - Tienes acceso a datos en tiempo real del sistema
-        - Puedes ejecutar acciones reales del sistema, no solo dar consejos
+        - Usuario actual conectado y autenticado en el sistema
+        - Tienes acceso a datos en tiempo real del sistema y del usuario
+        - Puedes ejecutar acciones reales del sistema según los permisos del usuario
+        - Conoces el estado actual de reportes, usuarios y configuraciones
         
         ${conversationContext ? `CONTEXTO DE LA CONVERSACIÓN:\n${conversationContext}\n\n` : ''}
         ${memoryContext ? `${memoryContext}\n\n` : ''}
@@ -359,51 +367,55 @@ export const useGeminiChat = () => {
         ` : ''}
         
         CAPACIDADES COMO ASISTENTE INTELIGENTE:
-        1. EJECUTAR ACCIONES REALES:
-           - Crear/editar/eliminar reportes, usuarios, roles
-           - Generar gráficos y análisis dinámicos
+        1. EJECUTAR ACCIONES REALES DEL SISTEMA:
+           - Crear/editar/eliminar reportes, usuarios, roles (según permisos del usuario)
+           - Generar gráficos y análisis dinámicos personalizados
            - Navegar a secciones específicas del sistema
-           - Exportar datos y generar reportes
+           - Exportar datos y generar reportes con información del usuario
+           - Mostrar información personalizada del usuario actual
            
-        2. ANÁLISIS INTELIGENTE:
-           - Analizar métricas del sistema en tiempo real
-           - Generar insights y recomendaciones contextuales
-           - Crear visualizaciones dinámicas
-           - Detectar patrones y tendencias
+        2. ANÁLISIS INTELIGENTE PERSONALIZADO:
+           - Analizar métricas del sistema según el rol del usuario
+           - Generar insights y recomendaciones contextuales para ${nombrePreferido}
+           - Crear visualizaciones dinámicas basadas en permisos
+           - Detectar patrones y tendencias relevantes para el usuario actual
            
-        3. GESTIÓN PROACTIVA:
-           - Sugerir acciones basadas en el estado del sistema
-           - Recordatorios y alertas personalizadas
-           - Optimizaciones de flujo de trabajo
-           - Resolución de problemas común
+        3. GESTIÓN PROACTIVA PERSONALIZADA:
+           - Sugerir acciones basadas en el estado del sistema y rol del usuario
+           - Recordatorios y alertas personalizadas para ${nombrePreferido}
+           - Optimizaciones de flujo de trabajo según permisos
+           - Resolución de problemas específicos del usuario
 
         INSTRUCCIONES CRÍTICAS:
-        1. SIEMPRE actúa como un asistente que PUEDE y DEBE ejecutar acciones reales
-        2. Cuando el usuario pida algo, HAZLO inmediatamente si tienes permisos
-        3. Ofrece opciones concretas y ejecutables, no solo consejos teóricos
-        4. Personaliza tus respuestas según el rol y permisos del usuario (${nombrePreferido})
-        5. Proporciona análisis basados en datos reales del sistema
-        6. Sugiere mejoras y optimizaciones específicas
+        1. SIEMPRE actúa como un asistente que CONOCE al usuario actual y sus permisos
+        2. Cuando el usuario pida algo, HAZLO inmediatamente si tiene permisos
+        3. Personaliza TODAS las respuestas usando el nombre del usuario (${nombrePreferido})
+        4. Ofrece opciones concretas y ejecutables según los permisos del usuario
+        5. Proporciona análisis basados en datos reales del sistema y usuario
+        6. Sugiere mejoras específicas para el rol y permisos del usuario actual
+        7. SIEMPRE menciona información específica del usuario cuando sea relevante
+        8. Utiliza los datos reales del sistema para dar respuestas precisas
 
         ${actionRequested ? `
         FORMATO DE RESPUESTA PARA ACCIONES (OBLIGATORIO):
-        1. EJECUTA la acción inmediatamente
-        2. CONFIRMA qué has hecho específicamente
+        1. EJECUTA la acción inmediatamente (si ${nombrePreferido} tiene permisos)
+        2. CONFIRMA qué has hecho específicamente para ${nombrePreferido}
         3. INCLUYE "PREGUNTAS ADICIONALES:" para información que mejoraría el resultado
-        4. INCLUYE "RECOMENDACIONES:" con sugerencias relacionadas y próximos pasos
-        5. SÉ ESPECÍFICO sobre qué datos o métricas has usado
+        4. INCLUYE "RECOMENDACIONES:" con sugerencias relacionadas y próximos pasos personalizados
+        5. SÉ ESPECÍFICO sobre qué datos o métricas del usuario has usado
         ` : `
         RESPUESTA NORMAL:
-        - Proporciona información útil y específica del sistema
-        - Ofrece acciones concretas que puedes ejecutar
-        - Menciona métricas relevantes si están disponibles
+        - Proporciona información útil y específica del sistema para ${nombrePreferido}
+        - Ofrece acciones concretas que puede ejecutar según sus permisos
+        - Menciona métricas relevantes del sistema y del usuario
+        - Personaliza la respuesta con información del usuario actual
         `}
 
-        IMPORTANTE: Eres un asistente ACTIVO que ejecuta tareas, no solo un chatbot que da consejos.` }]
+        IMPORTANTE: Eres un asistente PERSONAL que conoce a ${nombrePreferido}, sus permisos, y puede ejecutar tareas reales del sistema.` }]
       };
       
-      console.log("Construyendo mensaje para Gemini con documentos:", hasRelevantDocs);
-      console.log(hasRelevantDocs ? "IDs de documentos relevantes: " + relevantDocs.map(d => d.id).join(", ") : "No hay documentos relevantes");
+      console.log("Construyendo mensaje para Gemini con información del usuario:", nombrePreferido);
+      console.log("Permisos del usuario:", conversationMemory.permissions);
       
       const currentMessageContent: GeminiMessageContent[] = [
         systemPrompt,
@@ -489,7 +501,7 @@ export const useGeminiChat = () => {
         const safetyRatingsInfo = data.promptFeedback.safetyRatings?.map(r => `${r.category}: ${r.probability}`).join(', ') || 'No safety ratings details';
         const errorMessage = `Respuesta bloqueada por Gemini. Razón: ${reason}. Detalles: ${safetyRatingsInfo}`;
         console.warn(errorMessage, data.promptFeedback);
-        addMessage(`Lo siento, no puedo generar una respuesta para eso debido a las políticas de contenido. (${reason})`, "bot");
+        addMessage(`Lo siento ${nombrePreferido}, no puedo generar una respuesta para eso debido a las políticas de contenido. (${reason})`, "bot");
         toast({ title: "Respuesta Bloqueada", description: `Razón: ${reason}`, variant: "destructive" });
       }
       else {
@@ -500,7 +512,7 @@ export const useGeminiChat = () => {
     } catch (error) {
       console.error("Error al enviar mensaje a Gemini:", error);
       const errorMessage = error instanceof Error ? error.message : "Error desconocido al contactar a Gemini.";
-      addMessage(`Error: ${errorMessage}`, "bot");
+      addMessage(`Error para ${nombrePreferido}: ${errorMessage}`, "bot");
       toast({ title: "Error de API", description: errorMessage, variant: "destructive" });
     } finally {
       setIsLoading(false);

@@ -22,6 +22,7 @@ export const SystemActionsHandler: React.FC<SystemActionsHandlerProps> = ({ onAc
 
   const executeAction = async (action: string, params?: any) => {
     console.log('Ejecutando acción del sistema:', action, params);
+    console.log('Usuario actual:', user?.email, 'Es admin:', isAdmin());
 
     switch (action) {
       case 'navigate':
@@ -36,29 +37,34 @@ export const SystemActionsHandler: React.FC<SystemActionsHandlerProps> = ({ onAc
         onActionComplete({ 
           action, 
           success: true, 
-          message: 'Mostrando panel analítico completo',
+          message: `Hola ${user?.email?.split('@')[0] || 'Usuario'}, mostrando panel analítico completo`,
           data: stats
         });
         break;
 
       case 'export-data':
         if (hasPermission('ver_reporte')) {
-          // Simulación de exportación
+          // Simulación de exportación con datos reales del usuario
           toast({
             title: "Exportación iniciada",
-            description: "Preparando datos para descarga...",
+            description: `${user?.email?.split('@')[0]}, preparando datos para descarga...`,
           });
           onActionComplete({ 
             action, 
             success: true, 
-            message: 'Datos exportados exitosamente',
-            data: { format: 'excel', records: stats?.reportes?.total || 0 }
+            message: `Datos exportados exitosamente para ${user?.email}`,
+            data: { 
+              format: 'excel', 
+              records: stats?.reportes?.total || 0,
+              exportedBy: user?.email,
+              timestamp: new Date().toISOString()
+            }
           });
         } else {
           onActionComplete({ 
             action, 
             success: false, 
-            message: 'No tienes permisos para exportar datos' 
+            message: `${user?.email}, no tienes permisos para exportar datos` 
           });
         }
         break;
@@ -68,9 +74,10 @@ export const SystemActionsHandler: React.FC<SystemActionsHandlerProps> = ({ onAc
           onActionComplete({
             action,
             success: true,
-            message: `Gráfico ${params.type} generado exitosamente`,
+            message: `Gráfico ${params.type} generado exitosamente para ${user?.email?.split('@')[0]}`,
             chartData: params.data,
-            chartType: params.type
+            chartType: params.type,
+            generatedBy: user?.email
           });
         }
         break;
@@ -82,7 +89,7 @@ export const SystemActionsHandler: React.FC<SystemActionsHandlerProps> = ({ onAc
             onActionComplete({
               action,
               success: true,
-              message: `Rol "${params.nombre}" creado exitosamente`
+              message: `Rol "${params.nombre}" creado exitosamente por ${user?.email?.split('@')[0]}`
             });
           } catch (error) {
             onActionComplete({
@@ -95,7 +102,7 @@ export const SystemActionsHandler: React.FC<SystemActionsHandlerProps> = ({ onAc
           onActionComplete({
             action,
             success: false,
-            message: 'No tienes permisos para crear roles'
+            message: `${user?.email?.split('@')[0]}, no tienes permisos para crear roles`
           });
         }
         break;
@@ -115,10 +122,15 @@ export const SystemActionsHandler: React.FC<SystemActionsHandlerProps> = ({ onAc
           activeUsers: stats?.usuarios?.activos || 0,
           totalReports: stats?.reportes?.total || 0,
           pendingReports: reportesPendientes,
+          currentUser: {
+            email: user?.email,
+            isAdmin: isAdmin(),
+            permissions: hasPermission('ver_reporte') ? 'Con permisos de reportes' : 'Permisos limitados'
+          },
           systemHealth: 'Óptimo',
           recommendations: [
-            'El sistema está funcionando correctamente',
-            'Se recomienda revisar reportes pendientes',
+            `Sistema funcionando correctamente para ${user?.email?.split('@')[0]}`,
+            reportesPendientes > 0 ? `Tienes ${reportesPendientes} reportes pendientes de revisar` : 'No hay reportes pendientes',
             'Actividad de usuarios normal'
           ]
         };
@@ -126,7 +138,7 @@ export const SystemActionsHandler: React.FC<SystemActionsHandlerProps> = ({ onAc
         onActionComplete({
           action,
           success: true,
-          message: 'Análisis del sistema completado',
+          message: `Análisis del sistema completado para ${user?.email?.split('@')[0]}`,
           data: analysis
         });
         break;
@@ -135,7 +147,7 @@ export const SystemActionsHandler: React.FC<SystemActionsHandlerProps> = ({ onAc
         onActionComplete({
           action,
           success: true,
-          message: 'Configuración de notificaciones actualizada'
+          message: `Configuración de notificaciones actualizada para ${user?.email?.split('@')[0]}`
         });
         break;
 
@@ -148,11 +160,38 @@ export const SystemActionsHandler: React.FC<SystemActionsHandlerProps> = ({ onAc
         onActionComplete({
           action,
           success: true,
-          message: 'Resumen de reportes generado',
+          message: `Resumen de reportes generado para ${user?.email?.split('@')[0]}`,
           data: {
             total: stats?.reportes?.total || 0,
             recent: stats?.reportes?.recientes || 0,
-            priority: reportesUrgentes
+            priority: reportesUrgentes,
+            userInfo: {
+              email: user?.email,
+              canViewReports: hasPermission('ver_reporte'),
+              isAdmin: isAdmin()
+            }
+          }
+        });
+        break;
+
+      case 'show-user-info':
+        onActionComplete({
+          action,
+          success: true,
+          message: `Información del usuario actual`,
+          data: {
+            email: user?.email,
+            id: user?.id,
+            isAdmin: isAdmin(),
+            totalUsersInSystem: users?.length || 0,
+            totalRolesInSystem: roles?.length || 0,
+            permissions: {
+              canViewReports: hasPermission('ver_reporte'),
+              canCreateReports: hasPermission('crear_reporte'),
+              canViewUsers: hasPermission('ver_usuario'),
+              canCreateUsers: hasPermission('crear_usuario'),
+              canManageRoles: hasPermission('crear_rol')
+            }
           }
         });
         break;
@@ -161,7 +200,7 @@ export const SystemActionsHandler: React.FC<SystemActionsHandlerProps> = ({ onAc
         onActionComplete({
           action,
           success: false,
-          message: `Acción "${action}" no reconocida`
+          message: `Acción "${action}" no reconocida para ${user?.email?.split('@')[0]}`
         });
     }
   };
