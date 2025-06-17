@@ -512,7 +512,7 @@ export const useGeminiChat = () => {
     } catch (error) {
       console.error("Error al enviar mensaje a Gemini:", error);
       const errorMessage = error instanceof Error ? error.message : "Error desconocido al contactar a Gemini.";
-      addMessage(`Error para ${nombrePreferido}: ${errorMessage}`, "bot");
+      addMessage(`Error para ${conversationMemory.nombrePreferido || conversationMemory.nombre || 'el usuario'}: ${errorMessage}`, "bot");
       toast({ title: "Error de API", description: errorMessage, variant: "destructive" });
     } finally {
       setIsLoading(false);
