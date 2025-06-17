@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useSecurity } from '@/hooks/useSecurity';
@@ -52,14 +51,17 @@ export const useIntelligentAssistant = () => {
         userPermissions
       );
 
+      // Determinar si se ejecutó una acción basado en el tipo de acción
+      const actionExecuted = parsed.action !== 'provide_help' && 
+                            parsed.action !== 'permission_denied' && 
+                            parsed.action !== 'welcome';
+
       // Crear respuesta con el estilo conversacional de JARVIS
       const response: IntelligentResponse = {
         id: Date.now().toString(),
         query,
         response: parsed.naturalResponse,
-        actionExecuted: parsed.action !== 'provide_help' && 
-                        parsed.action !== 'permission_denied' && 
-                        parsed.action !== 'welcome',
+        actionExecuted,
         actionResult: parsed.result,
         data: parsed.result?.data,
         timestamp: new Date()
@@ -68,12 +70,12 @@ export const useIntelligentAssistant = () => {
       setResponses(prev => [response, ...prev]);
 
       // Notificaciones con estilo JARVIS
-      if (parsed.result?.success && parsed.actionExecuted) {
+      if (parsed.result?.success && actionExecuted) {
         toast({
           title: "✅ Acción completada",
           description: "JARVIS ha ejecutado tu solicitud exitosamente",
         });
-      } else if (parsed.result && !parsed.result.success && parsed.actionExecuted) {
+      } else if (parsed.result && !parsed.result.success && actionExecuted) {
         toast({
           title: "⚠️ Problema detectado",
           description: parsed.result.message || parsed.result.error,
