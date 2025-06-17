@@ -39,11 +39,28 @@ export const SmartAnalyticsGenerator: React.FC<SmartAnalyticsGeneratorProps> = (
   };
 
   const generateReportsAnalytics = () => {
+    // Calculate from available data
+    const reportesPendientes = stats?.reportes?.porEstado?.find(estado => 
+      estado.estado.toLowerCase().includes('pendiente') || 
+      estado.estado.toLowerCase().includes('nuevo') ||
+      estado.estado.toLowerCase().includes('sin estado')
+    )?.count || 0;
+
+    const reportesCompletados = stats?.reportes?.porEstado?.find(estado => 
+      estado.estado.toLowerCase().includes('completado') || 
+      estado.estado.toLowerCase().includes('cerrado') ||
+      estado.estado.toLowerCase().includes('finalizado')
+    )?.count || 0;
+
+    const reportesUrgentes = stats?.reportes?.porPrioridad?.find(prioridad => 
+      prioridad.priority === 'urgente'
+    )?.count || 0;
+
     const reportsData = [
       { name: 'Total', value: stats?.reportes?.total || 0, color: '#8B5CF6' },
-      { name: 'Pendientes', value: stats?.reportes?.pendientes || 0, color: '#F59E0B' },
-      { name: 'Completados', value: stats?.reportes?.completados || 0, color: '#10B981' },
-      { name: 'Urgentes', value: stats?.reportes?.urgentes || 0, color: '#EF4444' },
+      { name: 'Pendientes', value: reportesPendientes, color: '#F59E0B' },
+      { name: 'Completados', value: reportesCompletados, color: '#10B981' },
+      { name: 'Urgentes', value: reportesUrgentes, color: '#EF4444' },
     ];
 
     const newChart = {

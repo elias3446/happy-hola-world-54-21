@@ -102,11 +102,19 @@ export const SystemActionsHandler: React.FC<SystemActionsHandlerProps> = ({ onAc
 
       case 'analyze-system':
         await refetchStats();
+        
+        // Calculate missing statistics from available data
+        const reportesPendientes = stats?.reportes?.porEstado?.find(estado => 
+          estado.estado.toLowerCase().includes('pendiente') || 
+          estado.estado.toLowerCase().includes('nuevo') ||
+          estado.estado.toLowerCase().includes('sin estado')
+        )?.count || 0;
+
         const analysis = {
           totalUsers: stats?.usuarios?.total || 0,
           activeUsers: stats?.usuarios?.activos || 0,
           totalReports: stats?.reportes?.total || 0,
-          pendingReports: stats?.reportes?.pendientes || 0,
+          pendingReports: reportesPendientes,
           systemHealth: 'Óptimo',
           recommendations: [
             'El sistema está funcionando correctamente',
@@ -132,6 +140,11 @@ export const SystemActionsHandler: React.FC<SystemActionsHandlerProps> = ({ onAc
         break;
 
       case 'quick-report-summary':
+        // Calculate from available data
+        const reportesUrgentes = stats?.reportes?.porPrioridad?.find(prioridad => 
+          prioridad.priority === 'urgente'
+        )?.count || 0;
+
         onActionComplete({
           action,
           success: true,
@@ -139,7 +152,7 @@ export const SystemActionsHandler: React.FC<SystemActionsHandlerProps> = ({ onAc
           data: {
             total: stats?.reportes?.total || 0,
             recent: stats?.reportes?.recientes || 0,
-            priority: stats?.reportes?.urgentes || 0
+            priority: reportesUrgentes
           }
         });
         break;

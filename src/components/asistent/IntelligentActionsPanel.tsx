@@ -30,6 +30,13 @@ export const IntelligentActionsPanel: React.FC<IntelligentActionsPanelProps> = (
   const { user } = useAuth();
   const { data: stats } = useDashboardStats();
 
+  // Calculate missing statistics from available data
+  const reportesPendientes = stats?.reportes?.porEstado?.find(estado => 
+    estado.estado.toLowerCase().includes('pendiente') || 
+    estado.estado.toLowerCase().includes('nuevo') ||
+    estado.estado.toLowerCase().includes('sin estado')
+  )?.count || 0;
+
   const quickActions = [
     {
       id: 'create-report',
@@ -79,7 +86,7 @@ export const IntelligentActionsPanel: React.FC<IntelligentActionsPanelProps> = (
     },
     {
       title: 'Reportes Pendientes',
-      value: stats?.reportes?.pendientes || 0,
+      value: reportesPendientes,
       color: 'text-yellow-600',
       icon: FileText
     },
@@ -100,10 +107,10 @@ export const IntelligentActionsPanel: React.FC<IntelligentActionsPanelProps> = (
   const contextualSuggestions = () => {
     const suggestions = [];
     
-    if ((stats?.reportes?.pendientes || 0) > 5) {
+    if (reportesPendientes > 5) {
       suggestions.push({
         title: 'Revisar Reportes Pendientes',
-        description: `Tienes ${stats?.reportes?.pendientes} reportes pendientes de revisión`,
+        description: `Tienes ${reportesPendientes} reportes pendientes de revisión`,
         action: () => onActionExecute('navigate', '/admin/reportes?filter=pendientes'),
         priority: 'high'
       });
