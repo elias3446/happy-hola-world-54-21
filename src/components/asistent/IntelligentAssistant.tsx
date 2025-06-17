@@ -1,60 +1,84 @@
 
 import React from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { useSecurity } from '@/hooks/useSecurity';
-import { Badge } from "@/components/ui/badge";
-import { Brain, Zap } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { MoreVertical, Search, Phone, Video } from 'lucide-react';
 import AssistantIndex from './Index';
 
 const IntelligentAssistant: React.FC = () => {
   const { user } = useAuth();
-  const { isAdmin, userPermissions } = useSecurity();
 
-  const getWelcomeMessage = () => {
-    const hour = new Date().getHours();
-    let greeting;
-    
-    if (hour < 12) greeting = "Buenos días";
-    else if (hour < 18) greeting = "Buenas tardes";
-    else greeting = "Buenas noches";
-
-    const userName = user?.email?.split('@')[0] || 'Usuario';
-    return `${greeting}, ${userName}`;
+  const getUserInitials = () => {
+    if (user?.email) {
+      return user.email.substring(0, 2).toUpperCase();
+    }
+    return 'TU';
   };
 
   return (
-    <div className="flex flex-col h-screen w-full bg-background">
-      {/* Header minimalista */}
-      <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-3 flex-shrink-0">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-white/20 rounded-lg">
-                <Brain className="h-5 w-5" />
-              </div>
-              <div>
-                <h1 className="text-lg font-bold">Asistente Inteligente</h1>
-                <p className="text-white/80 text-sm">{getWelcomeMessage()}</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              {isAdmin() && (
-                <Badge variant="secondary" className="bg-white/20 text-white border-white/30">
-                  Admin
-                </Badge>
-              )}
-              <Badge variant="outline" className="bg-white/10 text-white border-white/30">
-                <Zap className="h-3 w-3 mr-1" />
-                IA Completa
-              </Badge>
-            </div>
+    <div className="flex flex-col h-screen w-full bg-white">
+      {/* Header estilo WhatsApp */}
+      <div className="bg-[#075e54] text-white px-4 py-3 flex items-center justify-between shadow-sm">
+        <div className="flex items-center gap-3">
+          <Avatar className="w-10 h-10">
+            <AvatarFallback className="bg-green-600 text-white font-medium">
+              JA
+            </AvatarFallback>
+          </Avatar>
+          <div className="flex flex-col">
+            <h1 className="font-medium text-base">JARVIS</h1>
+            <p className="text-xs text-green-200">Asistente Virtual • En línea</p>
           </div>
+        </div>
+        
+        <div className="flex items-center gap-2">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="h-10 w-10 text-white hover:bg-white/10 rounded-full"
+          >
+            <Search className="h-5 w-5" />
+          </Button>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="h-10 w-10 text-white hover:bg-white/10 rounded-full"
+          >
+            <Phone className="h-5 w-5" />
+          </Button>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="h-10 w-10 text-white hover:bg-white/10 rounded-full"
+          >
+            <Video className="h-5 w-5" />
+          </Button>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="h-10 w-10 text-white hover:bg-white/10 rounded-full"
+          >
+            <MoreVertical className="h-5 w-5" />
+          </Button>
         </div>
       </div>
 
       {/* Chat que ocupa todo el espacio disponible */}
       <div className="flex-1 overflow-hidden">
         <AssistantIndex />
+      </div>
+
+      {/* Barra inferior con información del usuario */}
+      <div className="bg-[#f0f2f5] px-4 py-2 border-t border-gray-200">
+        <div className="flex items-center justify-center gap-2 text-xs text-gray-500">
+          <Avatar className="w-4 h-4">
+            <AvatarFallback className="bg-blue-600 text-white text-xs">
+              {getUserInitials()}
+            </AvatarFallback>
+          </Avatar>
+          <span>Conectado como {user?.email}</span>
+        </div>
       </div>
     </div>
   );
