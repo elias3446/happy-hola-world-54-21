@@ -1,4 +1,3 @@
-
 import { useState, useEffect, createContext, useContext } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -13,6 +12,7 @@ interface AuthContextType {
   resendConfirmation: (email: string) => Promise<{ error: any }>;
   hasUsers: boolean | null;
   hasProfile: boolean | null;
+  profile: any | null;
   checkHasUsers: () => Promise<void>;
   checkUserProfile: () => Promise<void>;
   isAdmin: () => boolean;
@@ -279,6 +279,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       resendConfirmation,
       hasUsers,
       hasProfile,
+      profile: userProfile,
       checkHasUsers,
       checkUserProfile,
       isAdmin
