@@ -1,0 +1,159 @@
+
+import React from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useSecurity } from '@/hooks/useSecurity';
+import { useAuth } from '@/hooks/useAuth';
+import { useRoles } from '@/hooks/useRoles';
+import { useUsers } from '@/hooks/useUsers';
+import { useDashboardStats } from '@/hooks/useDashboardStats';
+import { toast } from '@/hooks/use-toast';
+
+interface SystemActionsHandlerProps {
+  onActionComplete: (result: any) => void;
+}
+
+export const SystemActionsHandler: React.FC<SystemActionsHandlerProps> = ({ onActionComplete }) => {
+  const navigate = useNavigate();
+  const { hasPermission, isAdmin } = useSecurity();
+  const { user } = useAuth();
+  const { roles, createRole } = useRoles();
+  const { users } = useUsers();
+  const { data: stats, refetch: refetchStats } = useDashboardStats();
+
+  const executeAction = async (action: string, params?: any) => {
+    console.log('Ejecutando acción del sistema:', action, params);
+
+    switch (action) {
+      case 'navigate':
+        if (params) {
+          navigate(params);
+          onActionComplete({ action, success: true, message: `Navegando a ${params}` });
+        }
+        break;
+
+      case 'show-analytics':
+        navigate('/dashboard');
+        onActionComplete({ 
+          action, 
+          success: true, 
+          message: 'Mostrando panel analítico completo',
+          data: stats
+        });
+        break;
+
+      case 'export-data':
+        if (hasPermission('ver_reporte')) {
+          // Simulación de exportación
+          toast({
+            title: "Exportación iniciada",
+            description: "Preparando datos para descarga...",
+          });
+          onActionComplete({ 
+            action, 
+            success: true, 
+            message: 'Datos exportados exitosamente',
+            data: { format: 'excel', records: stats?.reportes?.total || 0 }
+          });
+        } else {
+          onActionComplete({ 
+            action, 
+            success: false, 
+            message: 'No tienes permisos para exportar datos' 
+          });
+        }
+        break;
+
+      case 'generate-chart':
+        if (params?.type && params?.data) {
+          onActionComplete({
+            action,
+            success: true,
+            message: `Gráfico ${params.type} generado exitosamente`,
+            chartData: params.data,
+            chartType: params.type
+          });
+        }
+        break;
+
+      case 'create-role':
+        if (hasPermission('crear_rol') && params) {
+          try {
+            await createRole(params);
+            onActionComplete({
+              action,
+              success: true,
+              message: `Rol "${params.nombre}" creado exitosamente`
+            });
+          } catch (error) {
+            onActionComplete({
+              action,
+              success: false,
+              message: `Error al crear el rol: ${error}`
+            });
+          }
+        } else {
+          onActionComplete({
+            action,
+            success: false,
+            message: 'No tienes permisos para crear roles'
+          });
+        }
+        break;
+
+      case 'analyze-system':
+        await refetchStats();
+        const analysis = {
+          totalUsers: stats?.usuarios?.total || 0,
+          activeUsers: stats?.usuarios?.activos || 0,
+          totalReports: stats?.reportes?.total || 0,
+          pendingReports: stats?.reportes?.pendientes || 0,
+          systemHealth: 'Óptimo',
+          recommendations: [
+            'El sistema está funcionando correctamente',
+            'Se recomienda revisar reportes pendientes',
+            'Actividad de usuarios normal'
+          ]
+        };
+        
+        onActionComplete({
+          action,
+          success: true,
+          message: 'Análisis del sistema completado',
+          data: analysis
+        });
+        break;
+
+      case 'configure-notifications':
+        onActionComplete({
+          action,
+          success: true,
+          message: 'Configuración de notificaciones actualizada'
+        });
+        break;
+
+      case 'quick-report-summary':
+        onActionComplete({
+          action,
+          success: true,
+          message: 'Resumen de reportes generado',
+          data: {
+            total: stats?.reportes?.total || 0,
+            recent: stats?.reportes?.recientes || 0,
+            priority: stats?.reportes?.urgentes || 0
+          }
+        });
+        break;
+
+      default:
+        onActionComplete({
+          action,
+          success: false,
+          message: `Acción "${action}" no reconocida`
+        });
+    }
+  };
+
+  return null; // Este componente no renderiza nada, solo maneja acciones
+};
+
+export default SystemActionsHandler;

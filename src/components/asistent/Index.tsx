@@ -3,11 +3,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Bot, User, Send, Trash, Database, FileText, Brain } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Bot, User, Send, Trash, Database, FileText, Brain, Zap, BarChart3 } from 'lucide-react';
 import { useGeminiChat } from '@/hooks/useGeminiChat';
 import { useSecurity } from '@/hooks/useSecurity';
 import MemoryViewer from '@/components/asistent/MemoryViewer';
 import DocumentUploader from '@/components/asistent/DocumentUploader';
+import SystemActionsHandler from '@/components/asistent/SystemActionsHandler';
+import SmartAnalyticsGenerator from '@/components/asistent/SmartAnalyticsGenerator';
+import IntelligentActionsPanel from '@/components/asistent/IntelligentActionsPanel';
 import { Message } from '@/types/chat';
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from 'react-router-dom';
@@ -31,6 +35,8 @@ const Index = () => {
   
   const [inputValue, setInputValue] = useState('');
   const [isMemoryViewerOpen, setIsMemoryViewerOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState('chat');
+  const [actionResults, setActionResults] = useState<any[]>([]);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -62,6 +68,47 @@ const Index = () => {
       sendMessage(inputValue.trim());
       setInputValue('');
     }
+  };
+
+  const handleActionExecute = (action: string, params?: any) => {
+    const result = {
+      id: Date.now(),
+      action,
+      params,
+      timestamp: new Date(),
+      success: true
+    };
+    
+    setActionResults(prev => [result, ...prev.slice(0, 9)]);
+    
+    // Notificar al chat principal sobre la acción
+    const actionMessage = `He ejecutado la acción: ${action}${params ? ` con parámetros: ${JSON.stringify(params)}` : ''}`;
+    setTimeout(() => {
+      sendMessage(`ACCIÓN_EJECUTADA: ${actionMessage}`);
+    }, 500);
+  };
+
+  const handleActionComplete = (result: any) => {
+    setActionResults(prev => [result, ...prev.slice(0, 9)]);
+    
+    if (result.success) {
+      toast({
+        title: "Acción completada",
+        description: result.message,
+      });
+    } else {
+      toast({
+        title: "Error en la acción",
+        description: result.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleChartGenerated = (chartData: any) => {
+    const message = `He generado un gráfico ${chartData.type}: ${chartData.title}`;
+    sendMessage(`GRÁFICO_GENERADO: ${message}`);
+    setActiveTab('chat');
   };
 
   const formatTimestamp = (date: Date) => {
@@ -99,20 +146,21 @@ const Index = () => {
       return (
         <div className="text-center py-8 text-muted-foreground">
           <Brain className="h-12 w-12 mx-auto mb-4 text-blue-500" />
-          <h3 className="text-lg font-semibold mb-2">¡Bienvenido al Asistente Inteligente!</h3>
+          <h3 className="text-lg font-semibold mb-2">¡Asistente Inteligente de Gestión!</h3>
           <p className="text-sm max-w-md mx-auto mb-4">
-            Puedo ayudarte con la gestión completa del sistema: reportes, usuarios, roles, categorías, estados y auditoría.
+            Soy tu asistente personal para la gestión completa del sistema. Puedo ayudarte con análisis, 
+            reportes, gestión de usuarios, roles, y mucho más según tus permisos.
           </p>
           <div className="flex flex-wrap justify-center gap-2 text-xs">
-            <Badge variant="outline">📊 Análisis de reportes</Badge>
-            <Badge variant="outline">👥 Gestión de usuarios</Badge>
-            <Badge variant="outline">🔐 Control de roles</Badge>
-            <Badge variant="outline">📁 Organización de categorías</Badge>
-            <Badge variant="outline">⚡ Estados de flujo</Badge>
-            <Badge variant="outline">🔍 Auditoría completa</Badge>
+            <Badge variant="outline">🔄 Acciones del Sistema</Badge>
+            <Badge variant="outline">📊 Análisis Dinámicos</Badge>
+            <Badge variant="outline">🎯 Sugerencias Contextuales</Badge>
+            <Badge variant="outline">📈 Gráficos Interactivos</Badge>
+            <Badge variant="outline">⚡ Gestión Inteligente</Badge>
+            <Badge variant="outline">🔍 Auditoría Avanzada</Badge>
           </div>
           <p className="text-xs mt-4 text-muted-foreground">
-            Escribe tu consulta para comenzar...
+            Usa las pestañas para acceder a diferentes funcionalidades o escribe tu consulta...
           </p>
         </div>
       );
@@ -122,127 +170,175 @@ const Index = () => {
 
   return (
     <div className="flex flex-col h-full bg-background">
-      {/* Header de herramientas compacto */}
-      <div className="bg-muted/50 border-b p-2 flex justify-between items-center flex-shrink-0">
-        <div className="flex items-center gap-2">
-          <h3 className="text-sm font-semibold">Herramientas:</h3>
-        </div>
-        <div className="flex gap-1">
-          <Button onClick={openDocumentUploader} variant="outline" size="sm" className="h-8 text-xs">
-            <FileText className="mr-1 h-3 w-3" /> Docs
-          </Button>
-          <Button onClick={() => setIsMemoryViewerOpen(true)} variant="outline" size="sm" className="h-8 text-xs">
-            <Database className="mr-1 h-3 w-3" /> Memoria
-          </Button>
-          <Button onClick={clearMemory} variant="outline" size="sm" className="h-8 text-xs">
-            <Trash className="mr-1 h-3 w-3" /> Limpiar
-          </Button>
-        </div>
-      </div>
+      {/* Header compacto con pestañas */}
+      <div className="bg-muted/50 border-b p-2 flex-shrink-0">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <div className="flex justify-between items-center mb-2">
+            <TabsList className="grid w-full grid-cols-4">
+              <TabsTrigger value="chat" className="text-xs">
+                <Brain className="h-3 w-3 mr-1" />
+                Chat IA
+              </TabsTrigger>
+              <TabsTrigger value="actions" className="text-xs">
+                <Zap className="h-3 w-3 mr-1" />
+                Acciones
+              </TabsTrigger>
+              <TabsTrigger value="analytics" className="text-xs">
+                <BarChart3 className="h-3 w-3 mr-1" />
+                Análisis
+              </TabsTrigger>
+              <TabsTrigger value="tools" className="text-xs">
+                <FileText className="h-3 w-3 mr-1" />
+                Herramientas
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
-      {/* Área de chat principal */}
-      <div className="flex-1 overflow-hidden flex flex-col">
-        <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
-          {getWelcomeMessage()}
-          
-          <div className="space-y-6">
-            {messages.map((msg: Message) => {
-              const messageVariant = msg.sender === 'bot' ? getMessageVariant(msg.text) : 'normal';
-              
-              return (
-                <div
-                  key={msg.id}
-                  className={`flex items-end space-x-2 ${
-                    msg.sender === 'user' ? 'justify-end' : 'justify-start'
-                  }`}
-                >
-                  {msg.sender === 'bot' && (
-                    <Avatar className="h-8 w-8">
-                      <AvatarFallback><Bot size={20} /></AvatarFallback>
-                    </Avatar>
-                  )}
-                  <div
-                    className={`max-w-[80%] p-3 rounded-lg ${
-                      msg.sender === 'user'
-                        ? 'bg-primary text-primary-foreground rounded-br-none'
-                        : messageVariant === 'question'
-                          ? 'bg-blue-100 text-blue-800 rounded-bl-none dark:bg-blue-900 dark:text-blue-100'
-                          : messageVariant === 'recommendation'
-                            ? 'bg-green-100 text-green-800 rounded-bl-none dark:bg-green-900 dark:text-green-100'
-                            : 'bg-muted text-muted-foreground rounded-bl-none'
-                    }`}
-                  >
-                    <p className="text-sm whitespace-pre-wrap">
-                      {messageVariant === 'question' 
-                        ? msg.text.replace('PREGUNTAS ADICIONALES:', '').trim() 
-                        : messageVariant === 'recommendation'
-                          ? msg.text.replace('RECOMENDACIONES:', '').trim()
-                          : msg.text}
-                    </p>
-                    {msg.sender === 'bot' && getDocumentTitles(msg.retrievedDocuments)}
-                    <p className={`text-xs mt-1 ${msg.sender === 'user' ? 'text-blue-200 text-right' : 'text-gray-400 text-left'}`}>
-                      {formatTimestamp(msg.timestamp)}
-                    </p>
+          {/* Contenido de las pestañas */}
+          <div className="flex-1 overflow-hidden">
+            <TabsContent value="chat" className="h-full m-0">
+              {/* Chat principal */}
+              <div className="flex flex-col h-full">
+                <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
+                  {getWelcomeMessage()}
+                  
+                  <div className="space-y-6">
+                    {messages.map((msg: Message) => {
+                      const messageVariant = msg.sender === 'bot' ? getMessageVariant(msg.text) : 'normal';
+                      
+                      return (
+                        <div
+                          key={msg.id}
+                          className={`flex items-end space-x-2 ${
+                            msg.sender === 'user' ? 'justify-end' : 'justify-start'
+                          }`}
+                        >
+                          {msg.sender === 'bot' && (
+                            <Avatar className="h-8 w-8">
+                              <AvatarFallback><Bot size={20} /></AvatarFallback>
+                            </Avatar>
+                          )}
+                          <div
+                            className={`max-w-[80%] p-3 rounded-lg ${
+                              msg.sender === 'user'
+                                ? 'bg-primary text-primary-foreground rounded-br-none'
+                                : messageVariant === 'question'
+                                  ? 'bg-blue-100 text-blue-800 rounded-bl-none dark:bg-blue-900 dark:text-blue-100'
+                                  : messageVariant === 'recommendation'
+                                    ? 'bg-green-100 text-green-800 rounded-bl-none dark:bg-green-900 dark:text-green-100'
+                                    : 'bg-muted text-muted-foreground rounded-bl-none'
+                            }`}
+                          >
+                            <p className="text-sm whitespace-pre-wrap">
+                              {messageVariant === 'question' 
+                                ? msg.text.replace('PREGUNTAS ADICIONALES:', '').trim() 
+                                : messageVariant === 'recommendation'
+                                  ? msg.text.replace('RECOMENDACIONES:', '').trim()
+                                  : msg.text}
+                            </p>
+                            {msg.sender === 'bot' && getDocumentTitles(msg.retrievedDocuments)}
+                            <p className={`text-xs mt-1 ${msg.sender === 'user' ? 'text-blue-200 text-right' : 'text-gray-400 text-left'}`}>
+                              {formatTimestamp(msg.timestamp)}
+                            </p>
+                          </div>
+                          {msg.sender === 'user' && (
+                            <Avatar className="h-8 w-8">
+                              <AvatarFallback><User size={20} /></AvatarFallback>
+                            </Avatar>
+                          )}
+                        </div>
+                      );
+                    })}
+                    
+                    {isLoading && messages.length > 0 && messages[messages.length - 1].sender === 'user' && (
+                      <div className="flex items-end space-x-2 justify-start">
+                        <Avatar className="h-8 w-8">
+                          <AvatarFallback><Bot size={20} /></AvatarFallback>
+                        </Avatar>
+                        <div className="max-w-[80%] p-3 rounded-lg bg-muted text-muted-foreground rounded-bl-none">
+                          <p className="text-sm italic">Analizando y procesando tu solicitud...</p>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                  {msg.sender === 'user' && (
-                    <Avatar className="h-8 w-8">
-                      <AvatarFallback><User size={20} /></AvatarFallback>
-                    </Avatar>
-                  )}
-                </div>
-              );
-            })}
-            
-            {isLoading && messages.length > 0 && messages[messages.length - 1].sender === 'user' && (
-              <div className="flex items-end space-x-2 justify-start">
-                <Avatar className="h-8 w-8">
-                  <AvatarFallback><Bot size={20} /></AvatarFallback>
-                </Avatar>
-                <div className="max-w-[80%] p-3 rounded-lg bg-muted text-muted-foreground rounded-bl-none">
-                  <p className="text-sm italic">Analizando y procesando tu solicitud...</p>
+                </ScrollArea>
+
+                {/* Input de chat */}
+                <div className="border-t bg-background p-4 flex-shrink-0">
+                  <form onSubmit={handleSendMessage} className="flex items-center space-x-2">
+                    <Input
+                      type="text"
+                      placeholder="Dime qué necesitas hacer en el sistema..."
+                      value={inputValue}
+                      onChange={(e) => setInputValue(e.target.value)}
+                      className="flex-grow"
+                      disabled={isLoading}
+                      ref={inputRef}
+                      autoFocus
+                    />
+                    <Button type="submit" disabled={isLoading || !inputValue.trim()}>
+                      <Send className="h-4 w-4" />
+                    </Button>
+                  </form>
+                  
+                  {/* Estado del asistente */}
+                  <div className="flex justify-between items-center mt-2 text-xs text-muted-foreground">
+                    <div className="flex items-center gap-2">
+                      {apiKey ? (
+                        <Badge variant="outline" className="text-xs">🤖 Asistente Inteligente</Badge>
+                      ) : (
+                        <Badge variant="secondary" className="text-xs">🔄 Conectando...</Badge>
+                      )}
+                      {isAdmin() && <Badge variant="secondary" className="text-xs">👑 Admin</Badge>}
+                    </div>
+                    <div>
+                      {actionResults.length > 0 && (
+                        <span>⚡ {actionResults.length} acciones recientes</span>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
-            )}
-          </div>
-        </ScrollArea>
+            </TabsContent>
 
-        {/* Input de chat en la parte inferior */}
-        <div className="border-t bg-background p-4 flex-shrink-0">
-          <form onSubmit={handleSendMessage} className="flex items-center space-x-2">
-            <Input
-              type="text"
-              placeholder="Pregúntame sobre reportes, usuarios, roles, categorías, estados o auditoría..."
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              className="flex-grow"
-              disabled={isLoading}
-              ref={inputRef}
-              autoFocus
-            />
-            <Button type="submit" disabled={isLoading || !inputValue.trim()}>
-              <Send className="h-4 w-4" />
-              <span className="sr-only">Enviar</span>
-            </Button>
-          </form>
-          
-          {/* Indicador de estado */}
-          <div className="flex justify-between items-center mt-2 text-xs text-muted-foreground">
-            <div className="flex items-center gap-2">
-              {apiKey ? (
-                <Badge variant="outline" className="text-xs">🟢 IA Conectada</Badge>
-              ) : (
-                <Badge variant="secondary" className="text-xs">🔄 Conectando...</Badge>
-              )}
-              {isAdmin() && <Badge variant="secondary" className="text-xs">Admin</Badge>}
-            </div>
-            <div>
-              {conversationContext && (
-                <span>💾 Contexto guardado</span>
-              )}
-            </div>
+            <TabsContent value="actions" className="h-full m-0">
+              <ScrollArea className="h-full p-4">
+                <IntelligentActionsPanel onActionExecute={handleActionExecute} />
+              </ScrollArea>
+            </TabsContent>
+
+            <TabsContent value="analytics" className="h-full m-0">
+              <ScrollArea className="h-full p-4">
+                <SmartAnalyticsGenerator onChartGenerated={handleChartGenerated} />
+              </ScrollArea>
+            </TabsContent>
+
+            <TabsContent value="tools" className="h-full m-0">
+              <ScrollArea className="h-full p-4">
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button onClick={openDocumentUploader} variant="outline" size="sm">
+                      <FileText className="mr-1 h-3 w-3" /> Documentos
+                    </Button>
+                    <Button onClick={() => setIsMemoryViewerOpen(true)} variant="outline" size="sm">
+                      <Database className="mr-1 h-3 w-3" /> Memoria
+                    </Button>
+                    <Button onClick={clearMemory} variant="outline" size="sm">
+                      <Trash className="mr-1 h-3 w-3" /> Limpiar
+                    </Button>
+                    <Button onClick={() => setActiveTab('chat')} variant="outline" size="sm">
+                      <Brain className="mr-1 h-3 w-3" /> Chat
+                    </Button>
+                  </div>
+                </div>
+              </ScrollArea>
+            </TabsContent>
           </div>
-        </div>
+        </Tabs>
       </div>
+
+      {/* Componentes ocultos para manejo de acciones */}
+      <SystemActionsHandler onActionComplete={handleActionComplete} />
 
       {/* Modales */}
       <MemoryViewer
