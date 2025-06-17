@@ -1,15 +1,23 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import type { Notification, UpdateNotificationData } from '@/types/notifications';
 
+// Global subscription manager to prevent multiple subscriptions
+const subscriptionManager = {
+  channel: null as any,
+  subscriberCount: 0,
+  currentUserId: null as string | null,
+};
+
 export const useNotifications = () => {
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const [unreadCount, setUnreadCount] = useState(0);
+  const isSubscribed = useRef(false);
 
   const {
     data: notifications = [],
@@ -37,49 +45,76 @@ export const useNotifications = () => {
     setUnreadCount(count);
   }, [notifications]);
 
-  // Suscribirse a notificaciones en tiempo real
+  // Suscribirse a notificaciones en tiempo real usando singleton pattern
   useEffect(() => {
-    if (!user) return;
+    if (!user || isSubscribed.current) return;
 
-    // Crear un nombre de canal único para evitar conflictos
-    const channelName = `notifications-${user.id}`;
-    
-    console.log('Setting up notifications subscription for user:', user.id);
-    
-    const channel = supabase
-      .channel(channelName)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'notifications',
-          filter: `user_id=eq.${user.id}`,
-        },
-        (payload) => {
-          console.log('Notification change:', payload);
-          queryClient.invalidateQueries({ queryKey: ['notifications'] });
-          
-          // Mostrar toast para nuevas notificaciones
-          if (payload.eventType === 'INSERT') {
-            const newNotification = payload.new as Notification;
-            toast({
-              title: newNotification.title,
-              description: newNotification.message,
-              variant: 'default',
-            });
-          }
-        }
-      )
-      .subscribe((status) => {
-        console.log('Subscription status:', status);
-      });
+    // Increment subscriber count
+    subscriptionManager.subscriberCount++;
+    isSubscribed.current = true;
+
+    // If this is the first subscriber or user changed, create/recreate subscription
+    if (subscriptionManager.subscriberCount === 1 || subscriptionManager.currentUserId !== user.id) {
+      // Clean up existing subscription if user changed
+      if (subscriptionManager.channel && subscriptionManager.currentUserId !== user.id) {
+        console.log('User changed, cleaning up old subscription');
+        supabase.removeChannel(subscriptionManager.channel);
+        subscriptionManager.channel = null;
+      }
+
+      // Create new subscription
+      if (!subscriptionManager.channel) {
+        const channelName = `notifications-${user.id}-${Date.now()}`;
+        subscriptionManager.currentUserId = user.id;
+        
+        console.log('Creating new notifications subscription for user:', user.id);
+        
+        subscriptionManager.channel = supabase
+          .channel(channelName)
+          .on(
+            'postgres_changes',
+            {
+              event: '*',
+              schema: 'public',
+              table: 'notifications',
+              filter: `user_id=eq.${user.id}`,
+            },
+            (payload) => {
+              console.log('Notification change:', payload);
+              queryClient.invalidateQueries({ queryKey: ['notifications'] });
+              
+              // Mostrar toast para nuevas notificaciones
+              if (payload.eventType === 'INSERT') {
+                const newNotification = payload.new as Notification;
+                toast({
+                  title: newNotification.title,
+                  description: newNotification.message,
+                  variant: 'default',
+                });
+              }
+            }
+          )
+          .subscribe((status) => {
+            console.log('Subscription status:', status);
+          });
+      }
+    }
 
     return () => {
-      console.log('Cleaning up notifications subscription');
-      supabase.removeChannel(channel);
+      isSubscribed.current = false;
+      subscriptionManager.subscriberCount--;
+      
+      console.log('Cleaning up notifications subscription, remaining subscribers:', subscriptionManager.subscriberCount);
+      
+      // Only remove channel when no more subscribers
+      if (subscriptionManager.subscriberCount === 0 && subscriptionManager.channel) {
+        console.log('Removing notifications channel - no more subscribers');
+        supabase.removeChannel(subscriptionManager.channel);
+        subscriptionManager.channel = null;
+        subscriptionManager.currentUserId = null;
+      }
     };
-  }, [user?.id, queryClient]); // Only depend on user.id to avoid recreating unnecessarily
+  }, [user?.id, queryClient]);
 
   const markAsReadMutation = useMutation({
     mutationFn: async (notificationId: string) => {
