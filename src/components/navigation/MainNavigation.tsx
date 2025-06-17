@@ -77,7 +77,7 @@ export const MainNavigation = () => {
             </Link>
 
             {/* Desktop navigation */}
-            <div className="hidden md:flex items-center space-x-4 ml-8">
+            <div className="hidden lg:flex items-center space-x-4 ml-8">
               {navigationItems.map((item) => {
                 const Icon = item.icon;
                 const isActive = location.pathname === item.href;
@@ -114,8 +114,8 @@ export const MainNavigation = () => {
             </div>
           </div>
 
-          {/* Right side - User menu, notifications, theme toggle */}
-          <div className="flex items-center space-x-2">
+          {/* Right side - Notifications, theme toggle, user menu (desktop only) */}
+          <div className="hidden lg:flex items-center space-x-2">
             {/* Notifications */}
             <NotificationsBell />
             
@@ -127,7 +127,7 @@ export const MainNavigation = () => {
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="flex items-center space-x-2">
                   <User className="h-4 w-4" />
-                  <span className="hidden sm:inline">
+                  <span className="hidden xl:inline">
                     {profile?.first_name || user?.email?.split('@')[0] || 'Usuario'}
                   </span>
                   <ChevronDown className="h-3 w-3" />
@@ -155,28 +155,32 @@ export const MainNavigation = () => {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+          </div>
 
-            {/* Mobile menu button */}
-            <div className="md:hidden">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setIsOpen(!isOpen)}
-              >
-                {isOpen ? (
-                  <X className="h-6 w-6" />
-                ) : (
-                  <Menu className="h-6 w-6" />
-                )}
-              </Button>
-            </div>
+          {/* Mobile: Notifications, theme toggle and menu button */}
+          <div className="lg:hidden flex items-center space-x-2">
+            <NotificationsBell />
+            <ThemeToggle />
+            
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsOpen(!isOpen)}
+            >
+              {isOpen ? (
+                <X className="h-6 w-6" />
+              ) : (
+                <Menu className="h-6 w-6" />
+              )}
+            </Button>
           </div>
         </div>
 
         {/* Mobile navigation menu */}
         {isOpen && (
-          <div className="md:hidden">
+          <div className="lg:hidden">
             <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 border-t border-gray-200 dark:border-gray-700">
+              {/* Navigation links */}
               {navigationItems.map((item) => {
                 const Icon = item.icon;
                 const isActive = location.pathname === item.href;
@@ -212,6 +216,47 @@ export const MainNavigation = () => {
                   <span>Admin</span>
                 </Link>
               )}
+
+              {/* User section in mobile menu */}
+              <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+                <div className="px-3 py-2">
+                  <p className="text-sm font-medium text-gray-900 dark:text-white">
+                    {profile?.first_name || user?.email?.split('@')[0] || 'Usuario'}
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    {user?.email}
+                  </p>
+                </div>
+                
+                <Link
+                  to="/mi-perfil"
+                  className="flex items-center space-x-2 px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                  onClick={() => setIsOpen(false)}
+                >
+                  <User className="h-5 w-5" />
+                  <span>Mi Perfil</span>
+                </Link>
+                
+                <Link
+                  to="/dashboard"
+                  className="flex items-center space-x-2 px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                  onClick={() => setIsOpen(false)}
+                >
+                  <Home className="h-5 w-5" />
+                  <span>Dashboard</span>
+                </Link>
+                
+                <button
+                  onClick={() => {
+                    handleSignOut();
+                    setIsOpen(false);
+                  }}
+                  className="w-full flex items-center space-x-2 px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                >
+                  <LogOut className="h-5 w-5" />
+                  <span>Cerrar Sesión</span>
+                </button>
+              </div>
             </div>
           </div>
         )}

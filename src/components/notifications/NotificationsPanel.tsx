@@ -212,8 +212,6 @@ export const NotificationsPanel: React.FC = () => {
 
   const hasNotifications = notifications.length > 0;
   const hasSelectedItems = bulkNotifications.selectedCount > 0;
-  const hasUnreadSelected = hasSelectedItems && 
-    bulkNotifications.getSelectedData().some(n => !n.read);
 
   return (
     <Card className="h-full max-h-[600px] flex flex-col">
@@ -245,7 +243,7 @@ export const NotificationsPanel: React.FC = () => {
           </div>
         </div>
 
-        {/* Controles de selección masiva */}
+        {/* Controles de selección masiva simplificados */}
         {hasNotifications && (
           <>
             <Separator />
@@ -266,19 +264,6 @@ export const NotificationsPanel: React.FC = () => {
 
               {hasSelectedItems && (
                 <div className="flex items-center gap-2">
-                  {hasUnreadSelected && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={bulkNotifications.markBulkAsRead}
-                      disabled={bulkNotifications.isMarkingAsRead}
-                      className="flex items-center gap-2"
-                    >
-                      <Check className="h-4 w-4" />
-                      Marcar como leídas
-                    </Button>
-                  )}
-                  
                   <Button
                     variant="destructive"
                     size="sm"
@@ -288,16 +273,6 @@ export const NotificationsPanel: React.FC = () => {
                   >
                     <Trash2 className="h-4 w-4" />
                     Eliminar seleccionadas
-                  </Button>
-
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={bulkNotifications.clearSelection}
-                    className="flex items-center gap-2"
-                  >
-                    <X className="h-4 w-4" />
-                    Cancelar
                   </Button>
                 </div>
               )}
