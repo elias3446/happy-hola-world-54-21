@@ -1,17 +1,20 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Bot, User, Send, Trash, Database, FileText, Brain, Zap, BarChart3 } from 'lucide-react';
+import { Bot, User, Send, Trash, Database, FileText, Brain, Zap, BarChart3, Sparkles } from 'lucide-react';
 import { useGeminiChat } from '@/hooks/useGeminiChat';
+import { useIntelligentAssistant } from '@/hooks/useIntelligentAssistant';
 import { useSecurity } from '@/hooks/useSecurity';
 import MemoryViewer from '@/components/asistent/MemoryViewer';
 import DocumentUploader from '@/components/asistent/DocumentUploader';
 import SystemActionsHandler from '@/components/asistent/SystemActionsHandler';
 import SmartAnalyticsGenerator from '@/components/asistent/SmartAnalyticsGenerator';
 import IntelligentActionsPanel from '@/components/asistent/IntelligentActionsPanel';
+import IntelligentActions from '@/components/asistent/IntelligentActions';
 import { Message } from '@/types/chat';
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from 'react-router-dom';
@@ -33,9 +36,15 @@ const Index = () => {
     closeDocumentUploader
   } = useGeminiChat();
   
+  const {
+    processIntelligentQuery,
+    responses: intelligentResponses,
+    isProcessing
+  } = useIntelligentAssistant();
+  
   const [inputValue, setInputValue] = useState('');
   const [isMemoryViewerOpen, setIsMemoryViewerOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState('chat');
+  const [activeTab, setActiveTab] = useState('intelligent');
   const [actionResults, setActionResults] = useState<any[]>([]);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -51,21 +60,27 @@ const Index = () => {
         rootElement.scrollTo({ top: rootElement.scrollHeight, behavior: 'smooth' });
       }
     }
-  }, [messages]);
+  }, [messages, intelligentResponses]);
 
   // Auto-focus input field when bot finishes loading
   useEffect(() => {
-    if (!isLoading && messages.length > 0 && messages[messages.length - 1].sender === 'bot') {
+    if (!isLoading && !isProcessing && inputRef.current) {
       setTimeout(() => {
         inputRef.current?.focus();
       }, 100);
     }
-  }, [isLoading, messages]);
+  }, [isLoading, isProcessing]);
 
   const handleSendMessage = (e?: React.FormEvent<HTMLFormElement>) => {
     e?.preventDefault();
-    if (inputValue.trim() && !isLoading) {
-      sendMessage(inputValue.trim());
+    if (inputValue.trim() && !isLoading && !isProcessing) {
+      if (activeTab === 'intelligent') {
+        // Usar el asistente inteligente
+        processIntelligentQuery(inputValue.trim());
+      } else {
+        // Usar el chat tradicional con Gemini
+        sendMessage(inputValue.trim());
+      }
       setInputValue('');
     }
   };
@@ -142,25 +157,52 @@ const Index = () => {
 
   // Mensaje de bienvenida personalizado
   const getWelcomeMessage = () => {
-    if (messages.length === 0) {
+    const isIntelligentTab = activeTab === 'intelligent';
+    const hasContent = isIntelligentTab ? intelligentResponses.length > 0 : messages.length > 0;
+    
+    if (!hasContent) {
       return (
         <div className="text-center py-8 text-muted-foreground">
-          <Brain className="h-12 w-12 mx-auto mb-4 text-blue-500" />
-          <h3 className="text-lg font-semibold mb-2">¡Asistente Inteligente de Gestión!</h3>
+          <div className="flex justify-center mb-4">
+            {isIntelligentTab ? (
+              <Sparkles className="h-12 w-12 text-purple-500" />
+            ) : (
+              <Brain className="h-12 w-12 text-blue-500" />
+            )}
+          </div>
+          <h3 className="text-lg font-semibold mb-2">
+            {isIntelligentTab ? '🤖 Asistente Inteligente' : '💬 Chat con Gemini'}
+          </h3>
           <p className="text-sm max-w-md mx-auto mb-4">
-            Soy tu asistente personal para la gestión completa del sistema. Puedo ayudarte con análisis, 
-            reportes, gestión de usuarios, roles, y mucho más según tus permisos.
+            {isIntelligentTab 
+              ? 'Escribe en lenguaje natural lo que necesitas hacer. Puedo ejecutar acciones reales del sistema, crear reportes, mostrar estadísticas y mucho más.'
+              : 'Conversa con Gemini AI sobre cualquier tema. Tengo acceso a la información del sistema y tu historial de conversación.'
+            }
           </p>
           <div className="flex flex-wrap justify-center gap-2 text-xs">
-            <Badge variant="outline">🔄 Acciones del Sistema</Badge>
-            <Badge variant="outline">📊 Análisis Dinámicos</Badge>
-            <Badge variant="outline">🎯 Sugerencias Contextuales</Badge>
-            <Badge variant="outline">📈 Gráficos Interactivos</Badge>
-            <Badge variant="outline">⚡ Gestión Inteligente</Badge>
-            <Badge variant="outline">🔍 Auditoría Avanzada</Badge>
+            {isIntelligentTab ? (
+              <>
+                <Badge variant="outline">🎯 Acciones Directas</Badge>
+                <Badge variant="outline">📊 Análisis en Tiempo Real</Badge>
+                <Badge variant="outline">🗺️ Integración con Mapas</Badge>
+                <Badge variant="outline">📋 Gestión de Reportes</Badge>
+                <Badge variant="outline">👥 Administración de Usuarios</Badge>
+              </>
+            ) : (
+              <>
+                <Badge variant="outline">🔄 Acciones del Sistema</Badge>
+                <Badge variant="outline">📊 Análisis Dinámicos</Badge>
+                <Badge variant="outline">🎯 Sugerencias Contextuales</Badge>
+                <Badge variant="outline">📈 Gráficos Interactivos</Badge>
+                <Badge variant="outline">⚡ Gestión Inteligente</Badge>
+              </>
+            )}
           </div>
           <p className="text-xs mt-4 text-muted-foreground">
-            Usa las pestañas para acceder a diferentes funcionalidades o escribe tu consulta...
+            {isIntelligentTab 
+              ? 'Ejemplos: "crear reporte urgente", "mostrar estadísticas", "buscar reportes de agua"'
+              : 'Usa las pestañas para acceder a diferentes funcionalidades o escribe tu consulta...'
+            }
           </p>
         </div>
       );
@@ -174,10 +216,14 @@ const Index = () => {
       <div className="bg-muted/50 border-b p-2 flex-shrink-0">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <div className="flex justify-between items-center mb-2">
-            <TabsList className="grid w-full grid-cols-4">
+            <TabsList className="grid w-full grid-cols-5">
+              <TabsTrigger value="intelligent" className="text-xs">
+                <Sparkles className="h-3 w-3 mr-1" />
+                IA Directa
+              </TabsTrigger>
               <TabsTrigger value="chat" className="text-xs">
                 <Brain className="h-3 w-3 mr-1" />
-                Chat IA
+                Chat
               </TabsTrigger>
               <TabsTrigger value="actions" className="text-xs">
                 <Zap className="h-3 w-3 mr-1" />
@@ -196,6 +242,10 @@ const Index = () => {
 
           {/* Contenido de las pestañas */}
           <div className="flex-1 overflow-hidden">
+            <TabsContent value="intelligent" className="h-full m-0">
+              <IntelligentActions />
+            </TabsContent>
+
             <TabsContent value="chat" className="h-full m-0">
               {/* Chat principal */}
               <div className="flex flex-col h-full">
@@ -268,15 +318,18 @@ const Index = () => {
                   <form onSubmit={handleSendMessage} className="flex items-center space-x-2">
                     <Input
                       type="text"
-                      placeholder="Dime qué necesitas hacer en el sistema..."
+                      placeholder={activeTab === 'intelligent' 
+                        ? "Escribe lo que necesitas hacer en el sistema..." 
+                        : "Conversa con Gemini sobre cualquier tema..."
+                      }
                       value={inputValue}
                       onChange={(e) => setInputValue(e.target.value)}
                       className="flex-grow"
-                      disabled={isLoading}
+                      disabled={isLoading || isProcessing}
                       ref={inputRef}
                       autoFocus
                     />
-                    <Button type="submit" disabled={isLoading || !inputValue.trim()}>
+                    <Button type="submit" disabled={isLoading || isProcessing || !inputValue.trim()}>
                       <Send className="h-4 w-4" />
                     </Button>
                   </form>
@@ -285,7 +338,9 @@ const Index = () => {
                   <div className="flex justify-between items-center mt-2 text-xs text-muted-foreground">
                     <div className="flex items-center gap-2">
                       {apiKey ? (
-                        <Badge variant="outline" className="text-xs">🤖 Asistente Inteligente</Badge>
+                        <Badge variant="outline" className="text-xs">
+                          {activeTab === 'intelligent' ? '🤖 IA Directa' : '🧠 Gemini Chat'}
+                        </Badge>
                       ) : (
                         <Badge variant="secondary" className="text-xs">🔄 Conectando...</Badge>
                       )}
@@ -326,8 +381,8 @@ const Index = () => {
                     <Button onClick={clearMemory} variant="outline" size="sm">
                       <Trash className="mr-1 h-3 w-3" /> Limpiar
                     </Button>
-                    <Button onClick={() => setActiveTab('chat')} variant="outline" size="sm">
-                      <Brain className="mr-1 h-3 w-3" /> Chat
+                    <Button onClick={() => setActiveTab('intelligent')} variant="outline" size="sm">
+                      <Sparkles className="mr-1 h-3 w-3" /> IA Directa
                     </Button>
                   </div>
                 </div>
