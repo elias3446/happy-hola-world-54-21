@@ -23,13 +23,13 @@ import { cn } from '@/lib/utils';
 const MainNavigation = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, logout } = useAuth();
+  const { user, signOut } = useAuth();
   const { hasPermission, isAdmin } = useSecurity();
   const [isOpen, setIsOpen] = useState(false);
 
   const handleLogout = async () => {
     try {
-      await logout();
+      await signOut();
       navigate('/');
     } catch (error) {
       console.error('Error during logout:', error);
