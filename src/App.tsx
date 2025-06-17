@@ -7,7 +7,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { MainNavigation } from "@/components/navigation/MainNavigation";
-import { FloatingAssistant } from "@/components/assistant/FloatingAssistant";
 import Index from "./pages/Index";
 import Home from "./pages/Home";
 import NotFound from "./pages/NotFound";
@@ -153,8 +152,6 @@ const AppContent = () => {
         </Routes>
       </main>
       
-      {/* Asistente Virtual Flotante - Solo mostrar si el usuario está autenticado */}
-      {shouldShowAssistant && <FloatingAssistant />}
     </div>
   );
 };
