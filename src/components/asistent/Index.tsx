@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Bot, User, Send, KeyRound, Trash, Database, FileText } from 'lucide-react';
+import { Bot, User, Send, KeyRound, Trash, Database, FileText, Brain } from 'lucide-react';
 import { useGeminiChat } from '@/hooks/useGeminiChat';
 import { useSecurity } from '@/hooks/useSecurity';
 import ApiKeyModal from '@/components/asistent/ApiKeyModal';
