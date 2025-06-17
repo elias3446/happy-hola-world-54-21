@@ -21,6 +21,7 @@ import AdminCategorias from "./pages/admin/AdminCategorias";
 import AdminEstados from "./pages/admin/AdminEstados";
 import Dashboard from "./pages/Dashboard";
 import MiPerfil from "./pages/MiPerfil";
+import AsistenteVirtual from "./pages/AsistenteVirtual";
 import { Dashboard as AdminDashboard } from "./components/Dashboard";
 
 const queryClient = new QueryClient();
@@ -82,6 +83,12 @@ const AppContent = () => {
           <Route path="/mi-perfil" element={
             <ProtectedRoute>
               <MiPerfil />
+            </ProtectedRoute>
+          } />
+
+          <Route path="/asistente" element={
+            <ProtectedRoute>
+              <AsistenteVirtual />
             </ProtectedRoute>
           } />
 

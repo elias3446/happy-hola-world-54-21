@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -36,7 +37,8 @@ import {
   Circle,
   LogOut,
   User,
-  UserCircle
+  UserCircle,
+  Bot
 } from 'lucide-react';
 import { QuickReporteButton } from '@/components/reportes/QuickReporteButton';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
@@ -101,6 +103,7 @@ export const MainNavigation = () => {
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/reportes-publicos', label: 'Ver Reportes', icon: FileText },
     { href: '/mapa-reportes', label: 'Mapa de Reportes', icon: Map },
+    { href: '/asistente', label: 'Asistente Virtual', icon: Bot },
   ];
 
   const MobileNavigation = () => (
