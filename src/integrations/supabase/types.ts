@@ -565,11 +565,9 @@ export type Database = {
         Returns: boolean
       }
       validate_file_upload: {
-        Args: {
-          p_filename: string
-          p_file_size: number
-          p_content_type: string
-        }
+        Args:
+          | { p_filename: string; p_file_size: number; p_content_type: string }
+          | { p_filename: string; p_file_size: number; p_content_type: string }
         Returns: boolean
       }
     }
