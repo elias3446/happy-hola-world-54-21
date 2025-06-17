@@ -24,25 +24,42 @@ export const useIntelligentAssistant = () => {
   const [responses, setResponses] = useState<IntelligentResponse[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
 
+  // Mensaje de bienvenida inicial como JARVIS
+  const getWelcomeMessage = (): IntelligentResponse => {
+    const now = new Date();
+    const hour = now.getHours();
+    let greeting = hour < 12 ? "Buenos días" : hour < 18 ? "Buenas tardes" : "Buenas noches";
+    
+    return {
+      id: 'welcome-jarvis',
+      query: 'Inicialización',
+      response: `${greeting}! 👋\n\nSoy JARVIS, tu asistente virtual para la gestión inteligente de reportes.\n\n🚀 Estoy aquí para ayudarte con:\n• 📝 Crear y gestionar reportes\n• 👥 Administrar usuarios y roles\n• 📊 Generar análisis y estadísticas\n• 🗺️ Visualizar datos en mapas\n• 🔍 Búsquedas y filtros avanzados\n\n¡Simplemente dime qué necesitas en lenguaje natural!`,
+      actionExecuted: false,
+      timestamp: now
+    };
+  };
+
   const processIntelligentQuery = useCallback(async (query: string) => {
     if (!user || !query.trim()) return;
 
     setIsProcessing(true);
     
     try {
-      // Primero intentar procesamiento local inteligente
+      // Procesamiento con el contexto de JARVIS
       const parsed = await intelligentQueryParser.parseQuery(
         query, 
         user.id, 
         userPermissions
       );
 
-      // Crear respuesta inicial
+      // Crear respuesta con el estilo conversacional de JARVIS
       const response: IntelligentResponse = {
         id: Date.now().toString(),
         query,
         response: parsed.naturalResponse,
-        actionExecuted: parsed.action !== 'provide_help' && parsed.action !== 'permission_denied',
+        actionExecuted: parsed.action !== 'provide_help' && 
+                        parsed.action !== 'permission_denied' && 
+                        parsed.action !== 'welcome',
         actionResult: parsed.result,
         data: parsed.result?.data,
         timestamp: new Date()
@@ -50,35 +67,35 @@ export const useIntelligentAssistant = () => {
 
       setResponses(prev => [response, ...prev]);
 
-      // Si se ejecutó una acción exitosa, mostrar notificación
-      if (parsed.result?.success) {
+      // Notificaciones con estilo JARVIS
+      if (parsed.result?.success && parsed.actionExecuted) {
         toast({
-          title: "Acción completada",
-          description: parsed.result.message,
+          title: "✅ Acción completada",
+          description: "JARVIS ha ejecutado tu solicitud exitosamente",
         });
-      } else if (parsed.result && !parsed.result.success) {
+      } else if (parsed.result && !parsed.result.success && parsed.actionExecuted) {
         toast({
-          title: "Error en la acción",
+          title: "⚠️ Problema detectado",
           description: parsed.result.message || parsed.result.error,
           variant: "destructive",
         });
       }
 
-      // Si la confianza es baja o necesita procesamiento adicional con Gemini
-      if (parsed.confidence < 0.7 || parsed.action === 'provide_help') {
-        // Enviar también a Gemini para obtener una respuesta más contextual
+      // Si la confianza es baja, usar Gemini como respaldo con contexto de JARVIS
+      if (parsed.confidence < 0.6 && parsed.action === 'provide_help') {
         const enhancedQuery = `
-CONSULTA DEL USUARIO: "${query}"
+Como JARVIS, asistente virtual de gestión de reportes, el usuario me pregunta: "${query}"
 
-CONTEXTO DEL SISTEMA:
-- Usuario: ${user.email}
-- Permisos: ${userPermissions.join(', ')}
-- Acción identificada: ${parsed.action}
-- Confianza: ${parsed.confidence}
+CONTEXTO DEL USUARIO:
+- Email: ${user.email}
+- Permisos disponibles: ${userPermissions.join(', ')}
+- Módulos disponibles: Reportes, Usuarios, Roles, Categorías, Estados, Auditoría, Dashboard
 
-${parsed.result?.data ? `DATOS OBTENIDOS: ${JSON.stringify(parsed.result.data, null, 2)}` : ''}
+${parsed.result?.data ? `DATOS DEL SISTEMA: ${JSON.stringify(parsed.result.data, null, 2)}` : ''}
 
-Por favor proporciona una respuesta más detallada y contextual, y sugiere acciones específicas que el usuario puede realizar.
+Responde como JARVIS de manera conversacional, amigable y usando emojis apropiados. 
+Sugiere acciones específicas que el usuario puede realizar en el sistema.
+Mantén el tono como si fuera una conversación de WhatsApp.
         `;
         
         setTimeout(() => {
@@ -88,21 +105,22 @@ Por favor proporciona una respuesta más detallada y contextual, y sugiere accio
 
       return response;
     } catch (error) {
-      console.error('Error procesando consulta inteligente:', error);
+      console.error('Error procesando consulta con JARVIS:', error);
       
       const errorResponse: IntelligentResponse = {
         id: Date.now().toString(),
         query,
-        response: 'Lo siento, ocurrió un error al procesar tu consulta. Intentaré con el asistente general.',
+        response: '😅 Ups, tuve un pequeño problema técnico. Déjame intentar con mi sistema de respaldo...\n\n¿Podrías repetir tu solicitud?',
         actionExecuted: false,
         timestamp: new Date()
       };
 
       setResponses(prev => [errorResponse, ...prev]);
 
-      // Fallback a Gemini
+      // Fallback a Gemini con contexto de JARVIS
       setTimeout(() => {
-        sendGeminiMessage(query);
+        const fallbackQuery = `Como JARVIS, el usuario pregunta: "${query}". Responde de manera conversacional y amigable como un asistente de WhatsApp.`;
+        sendGeminiMessage(fallbackQuery);
       }, 500);
 
       return errorResponse;
@@ -139,28 +157,30 @@ Por favor proporciona una respuesta más detallada y contextual, y sugiere accio
           result = await assistantActionService.generateAnalysisReport();
           break;
         default:
-          result = { success: false, message: `Acción "${actionName}" no reconocida` };
+          result = { success: false, message: `Acción "${actionName}" no reconocida por JARVIS` };
       }
 
-      // Mostrar notificación del resultado
+      // Notificaciones estilo JARVIS
       if (result.success) {
         toast({
-          title: "Acción completada",
+          title: "🎯 JARVIS - Acción completada",
           description: result.message,
         });
       } else {
         toast({
-          title: "Error en la acción",
+          title: "⚠️ JARVIS - Problema detectado",
           description: result.message || result.error,
           variant: "destructive",
         });
       }
 
-      // Crear respuesta para el historial
+      // Crear respuesta conversacional
       const response: IntelligentResponse = {
         id: Date.now().toString(),
         query: `Acción directa: ${actionName}`,
-        response: result.message,
+        response: result.success 
+          ? `✅ ${result.message}` 
+          : `❌ ${result.message || result.error}`,
         actionExecuted: true,
         actionResult: result,
         data: result.data,
@@ -170,16 +190,16 @@ Por favor proporciona una respuesta más detallada y contextual, y sugiere accio
       setResponses(prev => [response, ...prev]);
       return result;
     } catch (error) {
-      console.error('Error ejecutando acción directa:', error);
+      console.error('Error ejecutando acción directa en JARVIS:', error);
       
       const errorResult = {
         success: false,
-        message: 'Error interno al ejecutar la acción',
+        message: 'JARVIS encontró un error interno al ejecutar la acción',
         error: error instanceof Error ? error.message : 'Error desconocido'
       };
 
       toast({
-        title: "Error",
+        title: "🔧 JARVIS - Error técnico",
         description: errorResult.message,
         variant: "destructive",
       });
@@ -190,8 +210,20 @@ Por favor proporciona una respuesta más detallada y contextual, y sugiere accio
     }
   }, [user, hasPermission]);
 
+  const initializeJarvis = useCallback(() => {
+    if (responses.length === 0) {
+      const welcomeMessage = getWelcomeMessage();
+      setResponses([welcomeMessage]);
+    }
+  }, [responses.length]);
+
   const clearHistory = useCallback(() => {
     setResponses([]);
+    // Reinicializar con mensaje de bienvenida
+    setTimeout(() => {
+      const welcomeMessage = getWelcomeMessage();
+      setResponses([welcomeMessage]);
+    }, 100);
   }, []);
 
   return {
@@ -201,6 +233,7 @@ Por favor proporciona una respuesta más detallada y contextual, y sugiere accio
     isProcessing,
     isLoading: isProcessing || geminiLoading,
     clearHistory,
+    initializeJarvis,
     userPermissions,
     hasPermission
   };
