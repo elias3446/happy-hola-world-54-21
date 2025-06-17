@@ -153,7 +153,7 @@ const IntelligentAssistant: React.FC = () => {
       });
     }
 
-    setInsights(newInsights.sort((a, b) => {
+    setInsights(insights.sort((a, b) => {
       const priorityOrder = { critical: 4, high: 3, medium: 2, low: 1 };
       return priorityOrder[b.priority] - priorityOrder[a.priority];
     }));
