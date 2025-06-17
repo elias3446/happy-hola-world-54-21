@@ -1,13 +1,11 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Bot, User, Send, KeyRound, Trash, Database, FileText, Brain } from 'lucide-react';
+import { Bot, User, Send, Trash, Database, FileText, Brain } from 'lucide-react';
 import { useGeminiChat } from '@/hooks/useGeminiChat';
 import { useSecurity } from '@/hooks/useSecurity';
-import ApiKeyModal from '@/components/asistent/ApiKeyModal';
 import MemoryViewer from '@/components/asistent/MemoryViewer';
 import DocumentUploader from '@/components/asistent/DocumentUploader';
 import { Message } from '@/types/chat';
@@ -22,10 +20,6 @@ const Index = () => {
     messages,
     isLoading,
     sendMessage,
-    isApiKeyModalOpen,
-    openApiKeyModal,
-    closeApiKeyModal,
-    saveApiKey,
     apiKey,
     clearMemory,
     conversationContext,
@@ -143,9 +137,6 @@ const Index = () => {
           <Button onClick={clearMemory} variant="outline" size="sm" className="h-8 text-xs">
             <Trash className="mr-1 h-3 w-3" /> Limpiar
           </Button>
-          <Button onClick={openApiKeyModal} variant="outline" size="sm" className="h-8 text-xs">
-            <KeyRound className="mr-1 h-3 w-3" /> API
-          </Button>
         </div>
       </div>
 
@@ -220,15 +211,15 @@ const Index = () => {
           <form onSubmit={handleSendMessage} className="flex items-center space-x-2">
             <Input
               type="text"
-              placeholder={apiKey ? "Pregúntame sobre reportes, usuarios, roles, categorías, estados o auditoría..." : "Configura tu API Key primero..."}
+              placeholder="Pregúntame sobre reportes, usuarios, roles, categorías, estados o auditoría..."
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               className="flex-grow"
-              disabled={isLoading || !apiKey}
+              disabled={isLoading}
               ref={inputRef}
               autoFocus
             />
-            <Button type="submit" disabled={isLoading || !inputValue.trim() || !apiKey}>
+            <Button type="submit" disabled={isLoading || !inputValue.trim()}>
               <Send className="h-4 w-4" />
               <span className="sr-only">Enviar</span>
             </Button>
@@ -240,7 +231,7 @@ const Index = () => {
               {apiKey ? (
                 <Badge variant="outline" className="text-xs">🟢 IA Conectada</Badge>
               ) : (
-                <Badge variant="destructive" className="text-xs">🔴 API Key requerida</Badge>
+                <Badge variant="secondary" className="text-xs">🔄 Conectando...</Badge>
               )}
               {isAdmin() && <Badge variant="secondary" className="text-xs">Admin</Badge>}
             </div>
@@ -254,12 +245,6 @@ const Index = () => {
       </div>
 
       {/* Modales */}
-      <ApiKeyModal
-        isOpen={isApiKeyModalOpen}
-        onClose={closeApiKeyModal}
-        onSave={saveApiKey}
-      />
-      
       <MemoryViewer
         isOpen={isMemoryViewerOpen}
         onClose={() => setIsMemoryViewerOpen(false)}

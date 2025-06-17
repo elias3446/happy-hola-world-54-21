@@ -1,1 +1,5 @@
+
 project_id = "yetjkfmxteupnoibhfmd"
+
+[functions.get-gemini-key]
+verify_jwt = false

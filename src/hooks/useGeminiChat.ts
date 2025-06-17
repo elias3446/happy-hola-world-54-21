@@ -2,8 +2,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { Message, GeminiMessageContent } from '@/types/chat';
 import { toast } from "@/hooks/use-toast";
 import { ragService } from '@/services/ragService';
+import { supabase } from '@/integrations/supabase/client';
 
-const GEMINI_API_KEY_STORAGE_KEY = 'geminiApiKey';
 const CONVERSATION_CONTEXT_KEY = 'conversationContext';
 const CONVERSATION_MEMORY_KEY = 'conversationMemory';
 // Usaremos gemini-1.5-flash-latest que es rápido y potente.
@@ -13,23 +13,33 @@ export const useGeminiChat = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [apiKey, setApiKey] = useState<string | null>(null);
-  const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
   const [conversationContext, setConversationContext] = useState<string>('');
   const [conversationMemory, setConversationMemory] = useState<Record<string, any>>({});
   const [isDocumentUploaderOpen, setIsDocumentUploaderOpen] = useState(false);
 
-  // Recuperar información guardada del localStorage
+  // Recuperar información guardada del localStorage y API key de Supabase
   useEffect(() => {
-    const storedApiKey = localStorage.getItem(GEMINI_API_KEY_STORAGE_KEY);
     const storedContext = localStorage.getItem(CONVERSATION_CONTEXT_KEY);
     const storedMemory = localStorage.getItem(CONVERSATION_MEMORY_KEY);
     
-    if (storedApiKey) {
-      setApiKey(storedApiKey);
-      ragService.setApiKey(storedApiKey);
-    } else {
-      setIsApiKeyModalOpen(true);
-    }
+    // Obtener API key desde Supabase Edge Function
+    const getApiKey = async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke('get-gemini-key');
+        if (error) {
+          console.error('Error obteniendo API key:', error);
+          toast({ title: "Error", description: "No se pudo obtener la API key de Gemini.", variant: "destructive" });
+        } else if (data?.apiKey) {
+          setApiKey(data.apiKey);
+          ragService.setApiKey(data.apiKey);
+        }
+      } catch (error) {
+        console.error('Error al conectar con Supabase:', error);
+        toast({ title: "Error", description: "Error de conexión con el servidor.", variant: "destructive" });
+      }
+    };
+
+    getApiKey();
 
     if (storedContext) {
       setConversationContext(storedContext);
@@ -54,14 +64,6 @@ export const useGeminiChat = () => {
       localStorage.setItem(CONVERSATION_MEMORY_KEY, JSON.stringify(conversationMemory));
     }
   }, [conversationContext, conversationMemory]);
-
-  const saveApiKey = (key: string) => {
-    localStorage.setItem(GEMINI_API_KEY_STORAGE_KEY, key);
-    setApiKey(key);
-    ragService.setApiKey(key);
-    setIsApiKeyModalOpen(false);
-    toast({ title: "API Key guardada." });
-  };
 
   const addMessage = (text: string, sender: "user" | "bot", retrievedDocuments?: string[]) => {
     const newMessage: Message = {
@@ -283,8 +285,7 @@ export const useGeminiChat = () => {
 
   const sendMessageToGemini = useCallback(async (userMessageText: string) => {
     if (!apiKey) {
-      toast({ title: "Error", description: "API Key de Gemini no configurada.", variant: "destructive" });
-      setIsApiKeyModalOpen(true);
+      toast({ title: "Error", description: "API Key de Gemini no disponible.", variant: "destructive" });
       return;
     }
 
@@ -496,10 +497,6 @@ export const useGeminiChat = () => {
     messages,
     isLoading,
     sendMessage: sendMessageToGemini,
-    isApiKeyModalOpen,
-    openApiKeyModal: () => setIsApiKeyModalOpen(true),
-    closeApiKeyModal: () => setIsApiKeyModalOpen(false),
-    saveApiKey,
     apiKey,
     clearMemory,
     conversationContext,
