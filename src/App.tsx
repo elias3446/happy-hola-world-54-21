@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -21,7 +22,6 @@ import AdminEstados from "./pages/admin/AdminEstados";
 import Dashboard from "./pages/Dashboard";
 import MiPerfil from "./pages/MiPerfil";
 import { Dashboard as AdminDashboard } from "./components/Dashboard";
-import { HelmetProvider } from "@/components/providers/HelmetProvider";
 
 const queryClient = new QueryClient();
 
@@ -156,17 +156,15 @@ const AppContent = () => {
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <HelmetProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <AuthProvider>
-            <AppContent />
-          </AuthProvider>
-        </BrowserRouter>
-      </TooltipProvider>
-    </HelmetProvider>
+    <TooltipProvider>
+      <Toaster />
+      <Sonner />
+      <BrowserRouter>
+        <AuthProvider>
+          <AppContent />
+        </AuthProvider>
+      </BrowserRouter>
+    </TooltipProvider>
   </QueryClientProvider>
 );
 

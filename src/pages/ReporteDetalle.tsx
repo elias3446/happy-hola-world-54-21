@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -27,8 +28,6 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { SocialShareButtons } from '@/components/ui/social-share-buttons';
-import { SEOHead } from '@/components/seo/SEOHead';
 
 const priorityConfig = {
   urgente: { color: '#DC2626', label: 'Urgente' },
@@ -94,54 +93,30 @@ export const ReporteDetalle = () => {
     );
   }
 
-  // Generate sharing data
-  const shareUrl = `${window.location.origin}/reporte/${reporte.id}`;
-  const shareTitle = `Reporte: ${reporte.nombre}`;
-  const shareDescription = `${reporte.descripcion} - Categoría: ${reporte.categoria?.nombre || 'Sin categoría'}`;
-  const shareImage = reporte.imagenes?.[0];
-
   return (
-    <>
-      <SEOHead
-        title={shareTitle}
-        description={shareDescription}
-        url={shareUrl}
-        image={shareImage}
-        type="article"
-      />
-      
-      <div className="space-y-4 sm:space-y-6 p-2 sm:p-4">
-        {/* Header - Responsive */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              asChild
-              className="flex items-center gap-2 w-fit"
-            >
-              <Link to="/reportes-publicos">
-                <ArrowLeft className="h-4 w-4" />
-                <span className="hidden sm:inline">Volver</span>
-              </Link>
-            </Button>
-            <div className="min-w-0">
-              <h1 className="text-xl sm:text-2xl font-bold truncate">Detalle del Reporte</h1>
-              <p className="text-sm text-muted-foreground truncate">Información completa del reporte</p>
-            </div>
-          </div>
-          
-          {/* Add social sharing button */}
-          <div className="flex items-center gap-2">
-            <SocialShareButtons
-              url={shareUrl}
-              title={shareTitle}
-              description={shareDescription}
-            />
+    <div className="space-y-4 sm:space-y-6 p-2 sm:p-4">
+      {/* Header - Responsive */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            asChild
+            className="flex items-center gap-2 w-fit"
+          >
+            <Link to="/reportes-publicos">
+              <ArrowLeft className="h-4 w-4" />
+              <span className="hidden sm:inline">Volver</span>
+            </Link>
+          </Button>
+          <div className="min-w-0">
+            <h1 className="text-xl sm:text-2xl font-bold truncate">Detalle del Reporte</h1>
+            <p className="text-sm text-muted-foreground truncate">Información completa del reporte</p>
           </div>
         </div>
+      </div>
 
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 sm:gap-6">
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 sm:gap-6">
         {/* Información Principal - Responsive */}
         <div className="xl:col-span-1">
           <Card>
@@ -472,7 +447,6 @@ export const ReporteDetalle = () => {
         </DialogContent>
       </Dialog>
     </div>
-    </>
   );
 };
 
