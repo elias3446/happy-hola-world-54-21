@@ -182,15 +182,15 @@ export const UsuarioLogueadoDetalle: React.FC<UsuarioLogueadoDetalleProps> = ({ 
         </TabsContent>
 
         <TabsContent value="estadisticas" className="mt-6">
-          <UsuarioEstadisticasActividad />
+          <UsuarioEstadisticasActividad usuarioId={profile.id} usuarioEmail={profile.email} />
         </TabsContent>
 
         <TabsContent value="actividad" className="mt-6">
-          <UsuarioAuditoria />
+          <UsuarioAuditoria usuarioId={profile.id} usuarioEmail={profile.email} />
         </TabsContent>
 
         <TabsContent value="cambios" className="mt-6">
-          <UsuarioCambiosRecibidos />
+          <UsuarioCambiosRecibidos usuarioId={profile.id} usuarioEmail={profile.email} />
         </TabsContent>
 
         <TabsContent value="notificaciones" className="mt-6">
