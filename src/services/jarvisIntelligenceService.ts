@@ -15,12 +15,33 @@ export interface JarvisResponse {
 
 export class JarvisIntelligenceService {
   private static instance: JarvisIntelligenceService;
+  private geminiApiKey: string | null = null;
   
   static getInstance(): JarvisIntelligenceService {
     if (!JarvisIntelligenceService.instance) {
       JarvisIntelligenceService.instance = new JarvisIntelligenceService();
     }
     return JarvisIntelligenceService.instance;
+  }
+
+  private async getGeminiApiKey(): Promise<string | null> {
+    if (this.geminiApiKey) return this.geminiApiKey;
+    
+    try {
+      const { supabase } = await import('@/integrations/supabase/client');
+      const { data, error } = await supabase.functions.invoke('get-gemini-key');
+      
+      if (error || !data?.apiKey) {
+        console.error('Error obteniendo API key de Gemini:', error);
+        return null;
+      }
+      
+      this.geminiApiKey = data.apiKey;
+      return this.geminiApiKey;
+    } catch (error) {
+      console.error('Error conectando con Supabase para obtener API key:', error);
+      return null;
+    }
   }
 
   private getJarvisSystemPrompt(userInfo: UserInfo): string {
@@ -117,17 +138,28 @@ IMPORTANTE: Solo puedes realizar acciones para las cuales el usuario tiene permi
 
     console.log('✅ JARVIS: Usuario identificado:', userInfo.email, 'con', userInfo.allPermissions.length, 'permisos');
 
-    // Paso 2: Construir el prompt para Gemini con el contexto del usuario
-    const systemPrompt = this.getJarvisSystemPrompt(userInfo);
-    const userPrompt = `Usuario pregunta: "${query}"
+    // Paso 2: Obtener API key de Gemini
+    const apiKey = await this.getGeminiApiKey();
+    
+    if (!apiKey) {
+      return {
+        id: Date.now().toString(),
+        userQuery: query,
+        response: '❌ No se pudo conectar con el sistema de inteligencia artificial. Verifica la configuración de API.',
+        actionPerformed: false,
+        timestamp: new Date(),
+        userInfo,
+        confidence: 0
+      };
+    }
 
-Por favor, responde de manera contextual considerando sus permisos y capacidades actuales.`;
+    // Paso 3: Construir el prompt para Gemini con el contexto del usuario
+    const systemPrompt = this.getJarvisSystemPrompt(userInfo);
 
     console.log('🧠 JARVIS: Enviando consulta a Gemini con contexto de permisos...');
 
     try {
-      // Aquí integraremos con Gemini - por ahora simulamos la respuesta
-      const geminiResponse = await this.callGeminiWithContext(systemPrompt, userPrompt);
+      const geminiResponse = await this.callGeminiWithContext(apiKey, systemPrompt, query);
       
       return {
         id: Date.now().toString(),
@@ -142,10 +174,12 @@ Por favor, responde de manera contextual considerando sus permisos y capacidades
     } catch (error) {
       console.error('💥 JARVIS: Error procesando con Gemini:', error);
       
+      const userName = userInfo.firstName || userInfo.email.split('@')[0];
+      
       return {
         id: Date.now().toString(),
         userQuery: query,
-        response: `😅 Disculpa ${userInfo.firstName || userInfo.email.split('@')[0]}, tuve un problema técnico. 
+        response: `😅 Disculpa ${userName}, tuve un problema técnico al procesar tu solicitud.
 
 🔍 Pero puedo decirte que tienes estos permisos disponibles:
 ${userInfo.allPermissions.length > 0 ? userInfo.allPermissions.map(p => `• ${p}`).join('\n') : '• Sin permisos específicos asignados'}
@@ -159,59 +193,70 @@ ${userInfo.allPermissions.length > 0 ? userInfo.allPermissions.map(p => `• ${p
     }
   }
 
-  private async callGeminiWithContext(systemPrompt: string, userPrompt: string): Promise<string> {
-    // Por ahora, retornamos una respuesta simulada
-    // En el siguiente paso integraremos con el hook de Gemini real
-    return `¡Hola! Soy JARVIS y he analizado tus permisos en el sistema. 
+  private async callGeminiWithContext(apiKey: string, systemPrompt: string, userQuery: string): Promise<string> {
+    const GEMINI_MODEL = 'gemini-1.5-flash-latest';
+    
+    console.log('🌟 JARVIS: Llamando a Gemini API...');
+    
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: [
+            {
+              role: 'user',
+              parts: [{ 
+                text: `${systemPrompt}\n\nUsuario pregunta: "${userQuery}"\n\nPor favor, responde de manera contextual considerando sus permisos y capacidades actuales.`
+              }],
+            }
+          ],
+          generationConfig: {
+            temperature: 0.7,
+            maxOutputTokens: 1000,
+            topP: 0.95,
+            topK: 40,
+          }
+        }),
+      }
+    );
 
-Basándome en tu consulta y tus capacidades actuales, puedo ayudarte con las funciones para las que tienes autorización.
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error('Error desde API Gemini:', errorData);
+      throw new Error(errorData.error?.message || `Error ${response.status} de la API de Gemini`);
+    }
 
-¿Qué específicamente te gustaría hacer? 🤖`;
+    const data = await response.json();
+    
+    if (data.candidates && data.candidates.length > 0 && data.candidates[0].content) {
+      const botResponseText = data.candidates[0].content.parts[0].text;
+      console.log('✅ JARVIS: Respuesta recibida de Gemini');
+      return botResponseText;
+    } else if (data.promptFeedback && data.promptFeedback.blockReason) {
+      const reason = data.promptFeedback.blockReason;
+      console.warn('⚠️ JARVIS: Respuesta bloqueada por Gemini:', reason);
+      throw new Error(`Respuesta bloqueada por políticas de contenido: ${reason}`);
+    } else {
+      console.error('Respuesta inesperada de Gemini:', data);
+      throw new Error('Respuesta inesperada de la API de Gemini.');
+    }
   }
 
   async generateWelcomeMessage(): Promise<JarvisResponse> {
+    // Esta función ya no se usa, pero la mantengo por compatibilidad
     const userInfo = await userPermissionService.getCurrentUserInfo();
     
-    if (!userInfo) {
-      return {
-        id: 'welcome-error',
-        userQuery: 'Inicialización',
-        response: '❌ No se pudo cargar la información del usuario. Por favor, verifica tu autenticación.',
-        actionPerformed: false,
-        timestamp: new Date(),
-        userInfo: {} as UserInfo,
-        confidence: 0
-      };
-    }
-
-    const now = new Date();
-    const hour = now.getHours();
-    const greeting = hour < 12 ? "Buenos días" : hour < 18 ? "Buenas tardes" : "Buenas noches";
-    const userName = userInfo.firstName || userInfo.email.split('@')[0];
-
-    const welcomeMessage = `${greeting}, ${userName}! 👋
-
-Soy JARVIS, tu asistente virtual inteligente para gestión de reportes.
-
-📋 **Tu información actual:**
-• Email: ${userInfo.email}
-• Roles: ${userInfo.roles.map(r => r.nombre).join(', ') || 'Sin roles asignados'}
-• Nivel: ${userInfo.isAdmin ? 'Administrador 🔑' : 'Usuario estándar 👤'}
-• Permisos activos: ${userInfo.allPermissions.length} disponibles
-
-🎯 **Capacidades disponibles para ti:**
-${this.generateCapabilitiesText(userInfo)}
-
-💬 **¿Cómo puedo ayudarte hoy?**
-Simplemente dime qué necesitas en lenguaje natural y yo me encargaré del resto, respetando siempre tus permisos de acceso.`;
-
     return {
-      id: 'welcome-message',
+      id: 'welcome-disabled',
       userQuery: 'Inicialización',
-      response: welcomeMessage,
+      response: 'Chat iniciado sin mensaje de bienvenida',
       actionPerformed: false,
       timestamp: new Date(),
-      userInfo,
+      userInfo: userInfo || {} as UserInfo,
       confidence: 1.0
     };
   }

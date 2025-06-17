@@ -11,14 +11,8 @@ import { es } from 'date-fns/locale';
 
 const NewJarvisChat: React.FC = () => {
   const [input, setInput] = useState('');
-  const { conversations, isProcessing, initializeJarvis } = useJarvisAssistant();
+  const { conversations, isProcessing, sendMessage } = useJarvisAssistant();
   const scrollAreaRef = useRef<HTMLDivElement>(null);
-  const { sendMessage } = useJarvisAssistant();
-
-  // Inicializar JARVIS al montar el componente
-  useEffect(() => {
-    initializeJarvis();
-  }, [initializeJarvis]);
 
   // Auto-scroll al final cuando lleguen nuevos mensajes
   useEffect(() => {
@@ -48,15 +42,16 @@ const NewJarvisChat: React.FC = () => {
       {/* Área de mensajes */}
       <ScrollArea ref={scrollAreaRef} className="flex-1 px-4 py-2">
         <div className="space-y-3 max-w-4xl mx-auto">
+          {/* Estado inicial vacío */}
           {conversations.length === 0 && !isProcessing && (
             <div className="text-center py-8">
               <div className="bg-white rounded-lg shadow-sm p-6 max-w-md mx-auto">
                 <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
                   <span className="text-2xl">🤖</span>
                 </div>
-                <p className="text-lg font-medium mb-2 text-gray-900">Inicializando JARVIS...</p>
+                <p className="text-lg font-medium mb-2 text-gray-900">¡Hola! Soy JARVIS</p>
                 <p className="text-sm text-gray-600">
-                  Preparando tu asistente personalizado basado en tus permisos.
+                  Tu asistente virtual para gestión de reportes. ¿En qué puedo ayudarte hoy?
                 </p>
               </div>
             </div>
@@ -138,7 +133,7 @@ const NewJarvisChat: React.FC = () => {
                       <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
                       <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
                     </div>
-                    <span className="text-xs text-gray-500">JARVIS está analizando tus permisos...</span>
+                    <span className="text-xs text-gray-500">JARVIS está procesando...</span>
                   </div>
                 </div>
               </div>
@@ -164,7 +159,7 @@ const NewJarvisChat: React.FC = () => {
               <Input
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder="Pregúntale a JARVIS sobre tus permisos..."
+                placeholder="Pregúntale a JARVIS sobre reportes, usuarios, permisos..."
                 disabled={isProcessing}
                 className="flex-1 border-0 focus-visible:ring-0 focus-visible:ring-offset-0 px-2"
               />

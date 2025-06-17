@@ -6,31 +6,13 @@ import { toast } from '@/hooks/use-toast';
 export const useJarvisAssistant = () => {
   const [conversations, setConversations] = useState<JarvisResponse[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [isInitialized, setIsInitialized] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(true); // Siempre inicializado, sin mensaje de bienvenida
 
+  // Eliminar la función de inicialización automática
   const initializeJarvis = useCallback(async () => {
-    if (isInitialized || conversations.length > 0) return;
-    
-    console.log('🚀 Inicializando JARVIS...');
-    setIsProcessing(true);
-    
-    try {
-      const welcomeMessage = await jarvisIntelligenceService.generateWelcomeMessage();
-      setConversations([welcomeMessage]);
-      setIsInitialized(true);
-      
-      console.log('✅ JARVIS inicializado correctamente');
-    } catch (error) {
-      console.error('💥 Error inicializando JARVIS:', error);
-      toast({
-        title: "Error de inicialización",
-        description: "No se pudo inicializar JARVIS. Verifica tu conexión.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsProcessing(false);
-    }
-  }, [isInitialized, conversations.length]);
+    // No hacer nada - el chat inicia en blanco
+    console.log('🤖 JARVIS listo para interactuar');
+  }, []);
 
   const sendMessage = useCallback(async (message: string) => {
     if (!message.trim() || isProcessing) return;
@@ -68,7 +50,6 @@ export const useJarvisAssistant = () => {
 
   const clearConversation = useCallback(() => {
     setConversations([]);
-    setIsInitialized(false);
     console.log('🗑️ Conversación con JARVIS limpiada');
   }, []);
 
