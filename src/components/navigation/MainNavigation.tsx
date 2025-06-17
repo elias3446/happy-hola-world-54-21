@@ -1,342 +1,221 @@
-import React, { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+
+import React, { useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import {
-  NavigationMenu,
-  NavigationMenuContent,
-  NavigationMenuItem,
-  NavigationMenuLink,
-  NavigationMenuList,
-  NavigationMenuTrigger,
-  navigationMenuTriggerStyle,
-} from '@/components/ui/navigation-menu';
+import { Badge } from '@/components/ui/badge';
+import { ThemeToggle } from '@/components/theme/ThemeToggle';
+import { NotificationsBell } from '@/components/notifications/NotificationsBell';
+import { 
+  Menu, 
+  X, 
+  Home, 
+  FileText, 
+  Map, 
+  PlusCircle, 
+  Settings, 
+  User, 
+  LogOut,
+  ChevronDown
+} from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useAuth } from '@/hooks/useAuth';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { cn } from '@/lib/utils';
-import {
-  Menu,
-  Home,
-  Map,
-  FileText,
-  LayoutDashboard,
-  Settings,
-  Users,
-  Shield,
-  FolderOpen,
-  Circle,
-  LogOut,
-  User,
-  UserCircle
-} from 'lucide-react';
-import { QuickReporteButton } from '@/components/reportes/QuickReporteButton';
-import { ThemeToggle } from '@/components/theme/ThemeToggle';
+import { toast } from '@/hooks/use-toast';
+
+const navigationItems = [
+  { name: 'Inicio', href: '/home', icon: Home },
+  { name: 'Reportes Públicos', href: '/reportes-publicos', icon: FileText },
+  { name: 'Mapa', href: '/mapa-reportes', icon: Map },
+  { name: 'Nuevo Reporte', href: '/nuevo-reporte', icon: PlusCircle },
+];
 
 export const MainNavigation = () => {
-  const { user, signOut, isAdmin } = useAuth();
-  const location = useLocation();
   const [isOpen, setIsOpen] = useState(false);
-  const [userDropdownOpen, setUserDropdownOpen] = useState(false);
-
-  // Obtener datos del perfil del usuario para mostrar el avatar
-  const { data: perfilUsuario } = useQuery({
-    queryKey: ['perfil-usuario-nav', user?.id],
-    queryFn: async () => {
-      if (!user?.id) return null;
-
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('first_name, last_name, avatar')
-        .eq('id', user.id)
-        .single();
-
-      if (error) {
-        console.error('Error fetching user profile for nav:', error);
-        return null;
-      }
-
-      return data;
-    },
-    enabled: !!user?.id,
-  });
-
-  const isActive = (path: string) => location.pathname === path;
+  const location = useLocation();
+  const navigate = useNavigate();
+  const { user, profile, signOut } = useAuth();
 
   const handleSignOut = async () => {
-    await signOut();
+    try {
+      await signOut();
+      navigate('/');
+      toast({
+        title: 'Sesión cerrada',
+        description: 'Has cerrado sesión exitosamente',
+      });
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'No se pudo cerrar la sesión',
+        variant: 'destructive',
+      });
+    }
   };
 
-  // Función para obtener iniciales
-  const getInitials = (firstName?: string, lastName?: string, email?: string) => {
-    if (firstName && lastName) {
-      return (firstName.charAt(0) + lastName.charAt(0)).toUpperCase();
-    }
-    if (email) {
-      return email.charAt(0).toUpperCase();
-    }
-    return 'U';
-  };
-
-  // Hook to detect screen size changes and close dropdowns
-  useEffect(() => {
-    const handleResize = () => {
-      // Close user dropdown when screen size changes
-      setUserDropdownOpen(false);
-    };
-
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  const publicNavItems = [
-    { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { href: '/reportes-publicos', label: 'Ver Reportes', icon: FileText },
-    { href: '/mapa-reportes', label: 'Mapa de Reportes', icon: Map },
-  ];
-
-  const MobileNavigation = () => (
-    <Sheet open={isOpen} onOpenChange={setIsOpen}>
-      <SheetTrigger asChild>
-        <Button variant="ghost" size="icon" className="lg:hidden">
-          <Menu className="h-5 w-5" />
-          <span className="sr-only">Abrir menú</span>
-        </Button>
-      </SheetTrigger>
-      <SheetContent side="left" className="w-64">
-        <div className="flex flex-col space-y-4 mt-4">
-          <div className="text-lg font-semibold">GeoReport</div>
-          
-          {/* Quick Actions - Solo mostrar si no es admin */}
-          {user && !isAdmin() && (
-            <div className="space-y-2 pb-2 border-b border-border">
-              <QuickReporteButton />
-            </div>
-          )}
-          
-          {/* Navigation Links */}
-          <div className="space-y-2">
-            {publicNavItems.map((item) => {
-              const Icon = item.icon;
-              return (
-                <Link
-                  key={item.href}
-                  to={item.href}
-                  onClick={() => setIsOpen(false)}
-                  className={cn(
-                    "flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
-                    isActive(item.href)
-                      ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground hover:text-foreground hover:bg-accent"
-                  )}
-                >
-                  <Icon className="h-4 w-4" />
-                  <span>{item.label}</span>
-                </Link>
-              );
-            })}
-          </div>
-
-          {user && (
-            <>
-              <hr className="border-border" />
-              
-              {/* Admin Link - Solo mostrar si es admin */}
-              {isAdmin() && (
-                <div className="space-y-2">
-                  <Link
-                    to="/admin"
-                    onClick={() => setIsOpen(false)}
-                    className={cn(
-                      "flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
-                      location.pathname === '/admin'
-                        ? "bg-primary text-primary-foreground"
-                        : "text-muted-foreground hover:text-foreground hover:bg-accent"
-                    )}
-                  >
-                    <Settings className="h-4 w-4" />
-                    <span>Administración</span>
-                  </Link>
-                </div>
-              )}
-
-              <hr className="border-border" />
-              
-              {/* Theme Toggle */}
-              <div className="flex items-center justify-between px-3">
-                <span className="text-sm text-muted-foreground">Tema</span>
-                <ThemeToggle />
-              </div>
-
-              <hr className="border-border" />
-              
-              {/* User Menu */}
-              <div className="space-y-2">
-                <div className="flex items-center space-x-2 px-3">
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage 
-                      src={perfilUsuario?.avatar || undefined} 
-                      alt="Foto de perfil" 
-                    />
-                    <AvatarFallback>
-                      {getInitials(perfilUsuario?.first_name, perfilUsuario?.last_name, user.email)}
-                    </AvatarFallback>
-                  </Avatar>
-                </div>
-                <Link
-                  to="/mi-perfil"
-                  onClick={() => setIsOpen(false)}
-                  className="flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors text-muted-foreground hover:text-foreground hover:bg-accent"
-                >
-                  <UserCircle className="h-4 w-4" />
-                  <span>Mi Perfil</span>
-                </Link>
-                <Button
-                  variant="ghost"
-                  onClick={handleSignOut}
-                  className="w-full justify-start text-muted-foreground hover:text-foreground"
-                >
-                  <LogOut className="h-4 w-4 mr-2" />
-                  Cerrar Sesión
-                </Button>
-              </div>
-            </>
-          )}
-
-          {/* Theme toggle para usuarios no autenticados */}
-          {!user && (
-            <>
-              <hr className="border-border" />
-              <div className="flex items-center justify-between px-3">
-                <span className="text-sm text-muted-foreground">Tema</span>
-                <ThemeToggle />
-              </div>
-            </>
-          )}
-        </div>
-      </SheetContent>
-    </Sheet>
-  );
+  // Check if user has admin role
+  const isAdmin = profile?.role?.includes('admin');
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-14 items-center max-w-full px-4">
-        {/* Logo */}
-        <div className="mr-4 hidden lg:flex shrink-0">
-          <Link to="/home" className="flex items-center space-x-2">
-            <Map className="h-6 w-6" />
-            <span className="font-bold">GeoReport</span>
-          </Link>
-        </div>
+    <nav className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between h-16">
+          {/* Logo and main navigation */}
+          <div className="flex items-center">
+            <Link to="/home" className="flex items-center space-x-2">
+              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+                <FileText className="h-5 w-5 text-primary-foreground" />
+              </div>
+              <span className="text-xl font-bold text-gray-900 dark:text-white">
+                GeoReport
+              </span>
+            </Link>
 
-        {/* Mobile Logo */}
-        <div className="mr-4 lg:hidden shrink-0">
-          <Link to="/home" className="flex items-center space-x-2">
-            <Map className="h-6 w-6" />
-            <span className="font-bold">GeoReport</span>
-          </Link>
-        </div>
-
-        {/* Mobile Navigation */}
-        <MobileNavigation />
-
-        {/* Desktop Navigation */}
-        <div className="hidden lg:flex flex-1 items-center justify-between min-w-0">
-          <NavigationMenu className="max-w-none">
-            <NavigationMenuList className="flex-wrap">
-              {publicNavItems.map((item) => {
+            {/* Desktop navigation */}
+            <div className="hidden md:flex items-center space-x-4 ml-8">
+              {navigationItems.map((item) => {
                 const Icon = item.icon;
+                const isActive = location.pathname === item.href;
+                
                 return (
-                  <NavigationMenuItem key={item.href}>
-                    <NavigationMenuLink asChild>
-                      <Link
-                        to={item.href}
-                        className={cn(
-                          navigationMenuTriggerStyle(),
-                          "flex items-center space-x-2 text-sm",
-                          isActive(item.href) && "bg-accent"
-                        )}
-                      >
-                        <Icon className="h-4 w-4" />
-                        <span className="hidden xl:inline">{item.label}</span>
-                      </Link>
-                    </NavigationMenuLink>
-                  </NavigationMenuItem>
+                  <Link
+                    key={item.name}
+                    to={item.href}
+                    className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                      isActive
+                        ? 'bg-primary text-primary-foreground'
+                        : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+                    }`}
+                  >
+                    <Icon className="h-4 w-4" />
+                    <span>{item.name}</span>
+                  </Link>
                 );
               })}
               
-              {/* Administración Link - Solo mostrar si es admin */}
-              {user && isAdmin() && (
-                <NavigationMenuItem>
-                  <NavigationMenuLink asChild>
-                    <Link
-                      to="/admin"
-                      className={cn(
-                        navigationMenuTriggerStyle(),
-                        "flex items-center space-x-2 text-sm",
-                        location.pathname === '/admin' && "bg-accent"
-                      )}
-                    >
-                      <Settings className="h-4 w-4" />
-                      <span className="hidden xl:inline">Administración</span>
-                    </Link>
-                  </NavigationMenuLink>
-                </NavigationMenuItem>
+              {isAdmin && (
+                <Link
+                  to="/admin"
+                  className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                    location.pathname.startsWith('/admin')
+                      ? 'bg-primary text-primary-foreground'
+                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+                  }`}
+                >
+                  <Settings className="h-4 w-4" />
+                  <span>Admin</span>
+                </Link>
               )}
-            </NavigationMenuList>
-          </NavigationMenu>
+            </div>
+          </div>
 
-          {/* Right side actions */}
-          <div className="flex items-center space-x-2 shrink-0 ml-4">
-            {/* Nuevo Reporte - Solo mostrar si no es admin */}
-            {user && !isAdmin() && <QuickReporteButton />}
-            <ThemeToggle />
+          {/* Right side - User menu, notifications, theme toggle */}
+          <div className="flex items-center space-x-2">
+            {/* Notifications */}
+            <NotificationsBell />
             
-            {user ? (
-              <DropdownMenu open={userDropdownOpen} onOpenChange={setUserDropdownOpen}>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" className="h-auto p-1">
-                    <Avatar className="h-8 w-8">
-                      <AvatarImage 
-                        src={perfilUsuario?.avatar || undefined} 
-                        alt="Foto de perfil" 
-                      />
-                      <AvatarFallback className="text-sm">
-                        {getInitials(perfilUsuario?.first_name, perfilUsuario?.last_name, user.email)}
-                      </AvatarFallback>
-                    </Avatar>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
-                  <DropdownMenuItem asChild>
-                    <Link to="/mi-perfil">
-                      <UserCircle className="h-4 w-4 mr-2" />
-                      Mi Perfil
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleSignOut}>
-                    <LogOut className="h-4 w-4 mr-2" />
-                    Cerrar Sesión
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            ) : (
-              <Button asChild size="sm">
-                <Link to="/login">Iniciar Sesión</Link>
+            {/* Theme toggle */}
+            <ThemeToggle />
+
+            {/* User dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="flex items-center space-x-2">
+                  <User className="h-4 w-4" />
+                  <span className="hidden sm:inline">
+                    {profile?.first_name || user?.email?.split('@')[0] || 'Usuario'}
+                  </span>
+                  <ChevronDown className="h-3 w-3" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel>Mi Cuenta</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link to="/mi-perfil" className="flex items-center">
+                    <User className="mr-2 h-4 w-4" />
+                    <span>Mi Perfil</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/dashboard" className="flex items-center">
+                    <Home className="mr-2 h-4 w-4" />
+                    <span>Dashboard</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleSignOut}>
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Cerrar Sesión</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {/* Mobile menu button */}
+            <div className="md:hidden">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsOpen(!isOpen)}
+              >
+                {isOpen ? (
+                  <X className="h-6 w-6" />
+                ) : (
+                  <Menu className="h-6 w-6" />
+                )}
               </Button>
-            )}
+            </div>
           </div>
         </div>
+
+        {/* Mobile navigation menu */}
+        {isOpen && (
+          <div className="md:hidden">
+            <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 border-t border-gray-200 dark:border-gray-700">
+              {navigationItems.map((item) => {
+                const Icon = item.icon;
+                const isActive = location.pathname === item.href;
+                
+                return (
+                  <Link
+                    key={item.name}
+                    to={item.href}
+                    className={`flex items-center space-x-2 px-3 py-2 rounded-md text-base font-medium transition-colors ${
+                      isActive
+                        ? 'bg-primary text-primary-foreground'
+                        : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+                    }`}
+                    onClick={() => setIsOpen(false)}
+                  >
+                    <Icon className="h-5 w-5" />
+                    <span>{item.name}</span>
+                  </Link>
+                );
+              })}
+              
+              {isAdmin && (
+                <Link
+                  to="/admin"
+                  className={`flex items-center space-x-2 px-3 py-2 rounded-md text-base font-medium transition-colors ${
+                    location.pathname.startsWith('/admin')
+                      ? 'bg-primary text-primary-foreground'
+                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+                  }`}
+                  onClick={() => setIsOpen(false)}
+                >
+                  <Settings className="h-5 w-5" />
+                  <span>Admin</span>
+                </Link>
+              )}
+            </div>
+          </div>
+        )}
       </div>
-    </header>
+    </nav>
   );
 };

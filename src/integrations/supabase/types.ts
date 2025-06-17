@@ -207,6 +207,50 @@ export type Database = {
           },
         ]
       }
+      notifications: {
+        Row: {
+          created_at: string
+          data: Json | null
+          id: string
+          message: string
+          read: boolean
+          title: string
+          type: Database["public"]["Enums"]["notification_type"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          data?: Json | null
+          id?: string
+          message: string
+          read?: boolean
+          title: string
+          type: Database["public"]["Enums"]["notification_type"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          data?: Json | null
+          id?: string
+          message?: string
+          read?: boolean
+          title?: string
+          type?: Database["public"]["Enums"]["notification_type"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           asset: boolean | null
@@ -501,6 +545,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      create_notification: {
+        Args: {
+          p_user_id: string
+          p_type: Database["public"]["Enums"]["notification_type"]
+          p_title: string
+          p_message: string
+          p_data?: Json
+        }
+        Returns: string
+      }
       get_change_history: {
         Args: {
           p_tabla_nombre?: string
@@ -548,6 +602,14 @@ export type Database = {
         }
         Returns: string
       }
+      notify_deletion: {
+        Args: {
+          p_table_name: string
+          p_record_name: string
+          p_deleted_by_user_id: string
+        }
+        Returns: undefined
+      }
       registrar_actividad: {
         Args: {
           p_activity_type: Database["public"]["Enums"]["activity_type"]
@@ -586,6 +648,16 @@ export type Database = {
         | "SEARCH"
         | "EXPORT"
         | "IMPORT"
+      notification_type:
+        | "reporte_asignado"
+        | "reporte_reasignado"
+        | "reporte_desasignado"
+        | "perfil_actualizado"
+        | "reporte_eliminado"
+        | "usuario_eliminado"
+        | "rol_eliminado"
+        | "categoria_eliminada"
+        | "estado_eliminado"
       operation_type: "INSERT" | "UPDATE" | "DELETE" | "SELECT"
       permission_enum:
         | "ver_reporte"
@@ -734,6 +806,17 @@ export const Constants = {
         "SEARCH",
         "EXPORT",
         "IMPORT",
+      ],
+      notification_type: [
+        "reporte_asignado",
+        "reporte_reasignado",
+        "reporte_desasignado",
+        "perfil_actualizado",
+        "reporte_eliminado",
+        "usuario_eliminado",
+        "rol_eliminado",
+        "categoria_eliminada",
+        "estado_eliminado",
       ],
       operation_type: ["INSERT", "UPDATE", "DELETE", "SELECT"],
       permission_enum: [
