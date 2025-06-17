@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -169,6 +168,12 @@ const IntelligentAssistant: React.FC = () => {
     return `${greeting}, ${userName}`;
   };
 
+  const handleActionSuggestion = (suggestion: string) => {
+    console.log('Ejecutando sugerencia:', suggestion);
+    // Aquí puedes agregar lógica específica para manejar las sugerencias
+    // Por ejemplo, cambiar de tab, abrir modales, etc.
+  };
+
   const availableTabs = [
     { id: 'overview', label: 'Resumen', icon: Brain },
     { id: 'analytics', label: 'Analytics', icon: BarChart3, permission: 'ver_reporte' },
@@ -313,7 +318,7 @@ const IntelligentAssistant: React.FC = () => {
             </TabsContent>
 
             <TabsContent value="analytics" className="h-full overflow-auto">
-              <AssistantDashboard />
+              <AssistantDashboard onActionSuggestion={handleActionSuggestion} />
             </TabsContent>
 
             <TabsContent value="reports" className="h-full overflow-auto">
