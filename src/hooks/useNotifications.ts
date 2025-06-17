@@ -41,8 +41,13 @@ export const useNotifications = () => {
   useEffect(() => {
     if (!user) return;
 
+    // Crear un nombre de canal único para evitar conflictos
+    const channelName = `notifications-${user.id}`;
+    
+    console.log('Setting up notifications subscription for user:', user.id);
+    
     const channel = supabase
-      .channel('notifications-changes')
+      .channel(channelName)
       .on(
         'postgres_changes',
         {
@@ -66,12 +71,15 @@ export const useNotifications = () => {
           }
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('Subscription status:', status);
+      });
 
     return () => {
+      console.log('Cleaning up notifications subscription');
       supabase.removeChannel(channel);
     };
-  }, [user, queryClient]);
+  }, [user?.id, queryClient]); // Only depend on user.id to avoid recreating unnecessarily
 
   const markAsReadMutation = useMutation({
     mutationFn: async (notificationId: string) => {
