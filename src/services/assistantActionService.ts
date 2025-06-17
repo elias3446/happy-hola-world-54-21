@@ -37,13 +37,42 @@ export class AssistantActionService {
     direccion?: string;
     latitud?: number;
     longitud?: number;
-    priority?: 'baja' | 'media' | 'alta' | 'urgente';
+    priority?: 'urgente' | 'alto' | 'medio' | 'bajo';
   }, userId: string): Promise<ActionResult> {
     try {
+      // Get default category and estado if not provided
+      let categoria_id = data.categoria_id;
+      let estado_id = data.estado_id;
+
+      if (!categoria_id) {
+        const { data: defaultCategory } = await supabase
+          .from('categories')
+          .select('id')
+          .eq('nombre', 'Sin categoría')
+          .single();
+        categoria_id = defaultCategory?.id;
+      }
+
+      if (!estado_id) {
+        const { data: defaultEstado } = await supabase
+          .from('estados')
+          .select('id')
+          .eq('nombre', 'Sin estado')
+          .single();
+        estado_id = defaultEstado?.id;
+      }
+
       const { data: reporte, error } = await supabase
         .from('reportes')
         .insert({
-          ...data,
+          nombre: data.nombre,
+          descripcion: data.descripcion,
+          categoria_id: categoria_id!,
+          estado_id: estado_id!,
+          direccion: data.direccion,
+          latitud: data.latitud,
+          longitud: data.longitud,
+          priority: data.priority || 'urgente',
           created_by: userId
         })
         .select()
@@ -180,7 +209,6 @@ export class AssistantActionService {
     }
   }
 
-  // Actualizar estado de reporte
   async updateReportStatus(reporteId: string, estadoId: string, userId: string): Promise<ActionResult> {
     try {
       const { data, error } = await supabase
@@ -209,7 +237,6 @@ export class AssistantActionService {
     }
   }
 
-  // Asignar reporte a usuario
   async assignReport(reporteId: string, assignedTo: string, userId: string): Promise<ActionResult> {
     try {
       const { data, error } = await supabase
@@ -238,7 +265,6 @@ export class AssistantActionService {
     }
   }
 
-  // Obtener reportes por ubicación (para el mapa)
   async getReportsByLocation(bounds?: {
     north: number;
     south: number;
@@ -281,7 +307,6 @@ export class AssistantActionService {
     }
   }
 
-  // Crear categoría
   async createCategory(data: {
     nombre: string;
     descripcion?: string;
@@ -292,7 +317,10 @@ export class AssistantActionService {
       const { data: categoria, error } = await supabase
         .from('categories')
         .insert({
-          ...data,
+          nombre: data.nombre,
+          descripcion: data.descripcion,
+          color: data.color || '#3B82F6',
+          icono: data.icono || 'Folder',
           created_by: userId
         })
         .select()
@@ -314,7 +342,6 @@ export class AssistantActionService {
     }
   }
 
-  // Generar reporte de análisis
   async generateAnalysisReport(): Promise<ActionResult> {
     try {
       const [reportesPorEstado, reportesPorCategoria, reportesPorPrioridad] = await Promise.all([
@@ -332,7 +359,6 @@ export class AssistantActionService {
           .select('priority')
       ]);
 
-      // Procesar estadísticas
       const estadosStats = this.processGroupedData(reportesPorEstado.data, 'estados', 'nombre');
       const categoriasStats = this.processGroupedData(reportesPorCategoria.data, 'categories', 'nombre');
       const prioridadStats = this.processPriorityData(reportesPorPrioridad.data);
