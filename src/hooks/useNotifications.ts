@@ -1,9 +1,9 @@
-
 import { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
+import { useNavigate } from 'react-router-dom';
 import type { Notification, UpdateNotificationData } from '@/types/notifications';
 
 // Global subscription manager to prevent multiple subscriptions
@@ -16,6 +16,7 @@ const subscriptionManager = {
 export const useNotifications = () => {
   const queryClient = useQueryClient();
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [unreadCount, setUnreadCount] = useState(0);
   const isSubscribed = useRef(false);
 
@@ -116,6 +117,27 @@ export const useNotifications = () => {
     };
   }, [user?.id, queryClient]);
 
+  // Obtener configuración de notificaciones del usuario
+  const { data: notificationConfig } = useQuery({
+    queryKey: ['notification-settings', user?.id],
+    queryFn: async () => {
+      if (!user) return null;
+
+      const { data, error } = await supabase
+        .from('notification_settings')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        throw error;
+      }
+
+      return data || { auto_delete_read: false, retention_days: 30, enabled: true };
+    },
+    enabled: !!user,
+  });
+
   const markAsReadMutation = useMutation({
     mutationFn: async (notificationId: string) => {
       const { error } = await supabase
@@ -124,6 +146,16 @@ export const useNotifications = () => {
         .eq('id', notificationId);
 
       if (error) throw error;
+
+      // Si está configurado para eliminar automáticamente, eliminar la notificación
+      if (notificationConfig?.auto_delete_read) {
+        const { error: deleteError } = await supabase
+          .from('notifications')
+          .delete()
+          .eq('id', notificationId);
+
+        if (deleteError) throw deleteError;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
@@ -139,18 +171,32 @@ export const useNotifications = () => {
 
   const markAllAsReadMutation = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase
-        .from('notifications')
-        .update({ read: true })
-        .eq('read', false);
+      // Si está configurado para eliminar automáticamente, eliminar todas las no leídas
+      if (notificationConfig?.auto_delete_read) {
+        const { error } = await supabase
+          .from('notifications')
+          .delete()
+          .eq('read', false)
+          .eq('user_id', user?.id);
 
-      if (error) throw error;
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('notifications')
+          .update({ read: true })
+          .eq('read', false)
+          .eq('user_id', user?.id);
+
+        if (error) throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
       toast({
         title: 'Éxito',
-        description: 'Todas las notificaciones marcadas como leídas',
+        description: notificationConfig?.auto_delete_read 
+          ? 'Todas las notificaciones no leídas han sido eliminadas'
+          : 'Todas las notificaciones marcadas como leídas',
         variant: 'default',
       });
     },
@@ -189,16 +235,24 @@ export const useNotifications = () => {
     },
   });
 
+  // Función para navegar al detalle del reporte
+  const navigateToReporte = (notification: Notification) => {
+    if (notification.data?.reporte_id) {
+      navigate(`/reporte/${notification.data.reporte_id}`);
+    }
+  };
+
   return {
     notifications,
     unreadCount,
     isLoading,
-    error,
     markAsRead: markAsReadMutation.mutate,
     markAllAsRead: markAllAsReadMutation.mutate,
     deleteNotification: deleteNotificationMutation.mutate,
+    navigateToReporte,
     isMarkingAsRead: markAsReadMutation.isPending,
     isMarkingAllAsRead: markAllAsReadMutation.isPending,
     isDeleting: deleteNotificationMutation.isPending,
+    notificationConfig,
   };
 };

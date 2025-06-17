@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Bell, Check, CheckCheck, Trash2, X } from 'lucide-react';
+import { Bell, Check, CheckCheck, Trash2, X, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -59,6 +59,7 @@ interface NotificationItemProps {
   notification: Notification;
   onMarkAsRead: (id: string) => void;
   onDelete: (id: string) => void;
+  onNavigateToReporte: (notification: Notification) => void;
   isMarkingAsRead: boolean;
   isDeleting: boolean;
 }
@@ -67,6 +68,7 @@ const NotificationItem: React.FC<NotificationItemProps> = ({
   notification,
   onMarkAsRead,
   onDelete,
+  onNavigateToReporte,
   isMarkingAsRead,
   isDeleting,
 }) => {
@@ -74,6 +76,9 @@ const NotificationItem: React.FC<NotificationItemProps> = ({
     addSuffix: true,
     locale: es,
   });
+
+  const isReporteRelated = ['reporte_asignado', 'reporte_reasignado', 'reporte_desasignado'].includes(notification.type);
+  const hasReporteId = notification.data?.reporte_id;
 
   return (
     <div className={`p-3 rounded-lg border transition-colors ${
@@ -110,6 +115,18 @@ const NotificationItem: React.FC<NotificationItemProps> = ({
             <span className="text-xs text-gray-400">{timeAgo}</span>
             
             <div className="flex items-center gap-1">
+              {isReporteRelated && hasReporteId && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 w-6 p-0 text-blue-500 hover:text-blue-700"
+                  onClick={() => onNavigateToReporte(notification)}
+                  title="Ver detalle del reporte"
+                >
+                  <ExternalLink className="h-3 w-3" />
+                </Button>
+              )}
+              
               {!notification.read && (
                 <Button
                   variant="ghost"
@@ -149,6 +166,7 @@ export const NotificationsPanel: React.FC = () => {
     markAsRead,
     markAllAsRead,
     deleteNotification,
+    navigateToReporte,
     isMarkingAsRead,
     isMarkingAllAsRead,
     isDeleting,
@@ -217,6 +235,7 @@ export const NotificationsPanel: React.FC = () => {
                     notification={notification}
                     onMarkAsRead={markAsRead}
                     onDelete={deleteNotification}
+                    onNavigateToReporte={navigateToReporte}
                     isMarkingAsRead={isMarkingAsRead}
                     isDeleting={isDeleting}
                   />

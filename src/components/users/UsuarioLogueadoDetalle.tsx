@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -8,13 +7,14 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { User, Mail, Calendar, Shield, Activity, History, Edit, BarChart3, X } from 'lucide-react';
+import { User, Mail, Calendar, Shield, Activity, History, Edit, BarChart3, X, Settings } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { UsuarioCambiosRecibidos } from './UsuarioCambiosRecibidos';
 import { UsuarioAuditoria } from './UsuarioAuditoria';
 import { UsuarioLogueadoEdit } from './UsuarioLogueadoEdit';
 import { UsuarioEstadisticasActividad } from './UsuarioEstadisticasActividad';
+import { NotificationSettings } from '@/components/notifications/NotificationSettings';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 interface UsuarioLogueadoDetalleProps {
@@ -140,10 +140,14 @@ export const UsuarioLogueadoDetalle: React.FC<UsuarioLogueadoDetalleProps> = ({ 
 
         {/* Tabs de navegación */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 sm:space-y-6">
-          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 h-auto gap-1">
+          <TabsList className="grid w-full grid-cols-3 sm:grid-cols-5 h-auto gap-1">
             <TabsTrigger value="perfil" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm p-2 sm:p-3">
               <User className="h-3 w-3 sm:h-4 sm:w-4" />
               <span className="hidden xs:inline">Perfil</span>
+            </TabsTrigger>
+            <TabsTrigger value="notificaciones" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm p-2 sm:p-3">
+              <Settings className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden xs:inline">Notificaciones</span>
             </TabsTrigger>
             <TabsTrigger value="actividad" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm p-2 sm:p-3">
               <Activity className="h-3 w-3 sm:h-4 sm:w-4" />
@@ -252,6 +256,10 @@ export const UsuarioLogueadoDetalle: React.FC<UsuarioLogueadoDetalleProps> = ({ 
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="notificaciones">
+            <NotificationSettings />
           </TabsContent>
 
           <TabsContent value="actividad">
