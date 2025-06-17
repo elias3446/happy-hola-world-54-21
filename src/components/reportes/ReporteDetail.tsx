@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -9,6 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Switch } from '@/components/ui/switch';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
+import { GoogleMapsButton } from '@/components/ui/google-maps-button';
 import { 
   ArrowLeft, 
   Edit, 
@@ -108,6 +108,18 @@ export const ReporteDetail = ({ reporte, onEdit, onBack }: ReporteDetailProps) =
           </div>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
+          {reporte.latitud && reporte.longitud && (
+            <GoogleMapsButton
+              location={{
+                latitud: reporte.latitud,
+                longitud: reporte.longitud,
+                direccion: reporte.direccion || undefined,
+                referencia: reporte.referencia_direccion || undefined
+              }}
+              variant="outline"
+              size="sm"
+            />
+          )}
           <Button 
             onClick={() => onEdit(reporte)} 
             className="flex items-center gap-2 text-sm"
@@ -275,6 +287,19 @@ export const ReporteDetail = ({ reporte, onEdit, onBack }: ReporteDetailProps) =
                     </h4>
                     <div className="text-sm text-muted-foreground break-all">
                       Lat: {reporte.latitud}, Lng: {reporte.longitud}
+                    </div>
+                    <div className="mt-2">
+                      <GoogleMapsButton
+                        location={{
+                          latitud: reporte.latitud,
+                          longitud: reporte.longitud,
+                          direccion: reporte.direccion || undefined,
+                          referencia: reporte.referencia_direccion || undefined
+                        }}
+                        variant="outline"
+                        size="sm"
+                        className="w-full"
+                      />
                     </div>
                   </div>
                 </>
