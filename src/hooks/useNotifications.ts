@@ -141,21 +141,29 @@ export const useNotifications = () => {
 
   const markAsReadMutation = useMutation({
     mutationFn: async (notificationId: string) => {
-      const { error } = await supabase
-        .from('notifications')
-        .update({ read: true })
-        .eq('id', notificationId);
-
-      if (error) throw error;
+      // Verificar si las notificaciones están habilitadas
+      if (notificationConfig && !notificationConfig.enabled) {
+        throw new Error('Las notificaciones están deshabilitadas');
+      }
 
       // Si está configurado para eliminar automáticamente, eliminar la notificación
       if (notificationConfig?.auto_delete_read) {
-        const { error: deleteError } = await supabase
+        const { error } = await supabase
           .from('notifications')
           .delete()
-          .eq('id', notificationId);
+          .eq('id', notificationId)
+          .eq('user_id', user?.id);
 
-        if (deleteError) throw deleteError;
+        if (error) throw error;
+      } else {
+        // Solo marcar como leída
+        const { error } = await supabase
+          .from('notifications')
+          .update({ read: true })
+          .eq('id', notificationId)
+          .eq('user_id', user?.id);
+
+        if (error) throw error;
       }
     },
     onSuccess: () => {
@@ -172,6 +180,11 @@ export const useNotifications = () => {
 
   const markAllAsReadMutation = useMutation({
     mutationFn: async () => {
+      // Verificar si las notificaciones están habilitadas
+      if (notificationConfig && !notificationConfig.enabled) {
+        throw new Error('Las notificaciones están deshabilitadas');
+      }
+
       // Si está configurado para eliminar automáticamente, eliminar todas las no leídas
       if (notificationConfig?.auto_delete_read) {
         const { error } = await supabase
@@ -215,7 +228,8 @@ export const useNotifications = () => {
       const { error } = await supabase
         .from('notifications')
         .delete()
-        .eq('id', notificationId);
+        .eq('id', notificationId)
+        .eq('user_id', user?.id);
 
       if (error) throw error;
     },
@@ -244,8 +258,8 @@ export const useNotifications = () => {
   };
 
   return {
-    notifications,
-    unreadCount,
+    notifications: notificationConfig?.enabled !== false ? notifications : [],
+    unreadCount: notificationConfig?.enabled !== false ? unreadCount : 0,
     isLoading,
     markAsRead: markAsReadMutation.mutate,
     markAllAsRead: markAllAsReadMutation.mutate,

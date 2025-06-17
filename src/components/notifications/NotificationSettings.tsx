@@ -59,7 +59,7 @@ export const NotificationSettings: React.FC = () => {
     }
   }, [currentConfig]);
 
-  // Guardar configuración
+  // Guardar configuración usando UPSERT
   const saveConfigMutation = useMutation({
     mutationFn: async (newConfig: NotificationConfig) => {
       if (!user) throw new Error('Usuario no autenticado');
@@ -67,11 +67,15 @@ export const NotificationSettings: React.FC = () => {
       const configData = {
         user_id: user.id,
         ...newConfig,
+        updated_at: new Date().toISOString(),
       };
 
+      // Usar UPSERT para actualizar si existe, crear si no existe
       const { error } = await supabase
         .from('notification_settings')
-        .upsert(configData);
+        .upsert(configData, {
+          onConflict: 'user_id'
+        });
 
       if (error) throw error;
     },
