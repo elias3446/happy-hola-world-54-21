@@ -558,6 +558,10 @@ export type Database = {
         }
         Returns: string
       }
+      system_has_users: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
       user_has_role_permission: {
         Args: {
           permission_name: Database["public"]["Enums"]["permission_enum"]
