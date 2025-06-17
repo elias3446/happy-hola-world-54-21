@@ -193,7 +193,7 @@ export const NotificationsPanel: React.FC = () => {
 
   if (isLoading) {
     return (
-      <Card className="h-full max-h-[600px] w-full">
+      <Card className="h-full max-h-[600px]">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Bell className="h-5 w-5" />
@@ -214,14 +214,14 @@ export const NotificationsPanel: React.FC = () => {
   const hasSelectedItems = bulkNotifications.selectedCount > 0;
 
   return (
-    <Card className="h-full max-h-[600px] w-full flex flex-col">
+    <Card className="h-full max-h-[600px] flex flex-col">
       <CardHeader className="flex-shrink-0 pb-3">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2">
             <Bell className="h-5 w-5" />
-            <span className="text-base sm:text-lg">Notificaciones</span>
+            Notificaciones
             {unreadCount > 0 && (
-              <Badge variant="destructive" className="ml-2 text-xs">
+              <Badge variant="destructive" className="ml-2">
                 {unreadCount}
               </Badge>
             )}
@@ -234,28 +234,27 @@ export const NotificationsPanel: React.FC = () => {
                 size="sm"
                 onClick={() => markAllAsRead()}
                 disabled={isMarkingAllAsRead}
-                className="flex items-center gap-2 text-xs sm:text-sm px-2 sm:px-3"
+                className="flex items-center gap-2"
               >
-                <CheckCheck className="h-3 w-3 sm:h-4 sm:w-4" />
-                <span className="hidden sm:inline">Marcar todas como leídas</span>
-                <span className="sm:hidden">Marcar todas</span>
+                <CheckCheck className="h-4 w-4" />
+                Marcar todas como leídas
               </Button>
             )}
           </div>
         </div>
 
-        {/* Controles de selección masiva */}
+        {/* Controles de selección masiva simplificados */}
         {hasNotifications && (
           <>
             <Separator />
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Checkbox
                   checked={bulkNotifications.isAllSelected}
                   onCheckedChange={bulkNotifications.handleSelectAll}
                   className="mr-2"
                 />
-                <span className="text-xs sm:text-sm text-muted-foreground">
+                <span className="text-sm text-muted-foreground">
                   {hasSelectedItems 
                     ? `${bulkNotifications.selectedCount} seleccionadas`
                     : 'Seleccionar todas'
@@ -270,11 +269,10 @@ export const NotificationsPanel: React.FC = () => {
                     size="sm"
                     onClick={bulkNotifications.deleteBulkNotifications}
                     disabled={bulkNotifications.isDeleting}
-                    className="flex items-center gap-2 text-xs sm:text-sm px-2 sm:px-3"
+                    className="flex items-center gap-2"
                   >
-                    <Trash2 className="h-3 w-3 sm:h-4 sm:w-4" />
-                    <span className="hidden sm:inline">Eliminar seleccionadas</span>
-                    <span className="sm:hidden">Eliminar</span>
+                    <Trash2 className="h-4 w-4" />
+                    Eliminar seleccionadas
                   </Button>
                 </div>
               )}
@@ -290,7 +288,7 @@ export const NotificationsPanel: React.FC = () => {
             <p className="text-sm text-gray-500">No tienes notificaciones</p>
           </div>
         ) : (
-          <ScrollArea className="h-full px-3 sm:px-6 pb-6">
+          <ScrollArea className="h-full px-6 pb-6">
             <div className="space-y-3 pt-3">
               {notifications.map((notification, index) => (
                 <React.Fragment key={notification.id}>

@@ -8,14 +8,14 @@ import { NotificationsBell } from '@/components/notifications/NotificationsBell'
 import { 
   Menu, 
   X, 
+  Home, 
   FileText, 
   Map, 
   PlusCircle, 
   Settings, 
   User, 
   LogOut,
-  ChevronDown,
-  Bell
+  ChevronDown
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -29,6 +29,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { toast } from '@/hooks/use-toast';
 
 const navigationItems = [
+  { name: 'Inicio', href: '/home', icon: Home },
   { name: 'Reportes Públicos', href: '/reportes-publicos', icon: FileText },
   { name: 'Mapa', href: '/mapa-reportes', icon: Map },
   { name: 'Nuevo Reporte', href: '/nuevo-reporte', icon: PlusCircle },
@@ -142,9 +143,9 @@ export const MainNavigation = () => {
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link to="/notificaciones" className="flex items-center">
-                    <Bell className="mr-2 h-4 w-4" />
-                    <span>Configuración de Notificaciones</span>
+                  <Link to="/dashboard" className="flex items-center">
+                    <Home className="mr-2 h-4 w-4" />
+                    <span>Dashboard</span>
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
@@ -237,12 +238,12 @@ export const MainNavigation = () => {
                 </Link>
                 
                 <Link
-                  to="/notificaciones"
+                  to="/dashboard"
                   className="flex items-center space-x-2 px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
                   onClick={() => setIsOpen(false)}
                 >
-                  <Bell className="h-5 w-5" />
-                  <span>Configuración de Notificaciones</span>
+                  <Home className="h-5 w-5" />
+                  <span>Dashboard</span>
                 </Link>
                 
                 <button
