@@ -125,7 +125,7 @@ export const useNotifications = () => {
       if (!user) return null;
 
       const { data, error } = await supabase
-        .from('notification_settings' as any)
+        .from('notification_settings')
         .select('*')
         .eq('user_id', user.id)
         .single();

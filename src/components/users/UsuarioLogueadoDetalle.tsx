@@ -53,7 +53,7 @@ export const UsuarioLogueadoDetalle: React.FC<UsuarioLogueadoDetalleProps> = ({ 
   const timeAgo = formatDistanceToNow(userCreatedAt, { addSuffix: true, locale: es });
 
   if (editMode === 'profile') {
-    return <UsuarioLogueadoEdit user={profile} onBack={() => setEditMode('none')} />;
+    return <UsuarioLogueadoEdit onBack={() => setEditMode('none')} onClose={() => setEditMode('none')} />;
   }
 
   if (editMode === 'password') {
@@ -178,19 +178,19 @@ export const UsuarioLogueadoDetalle: React.FC<UsuarioLogueadoDetalleProps> = ({ 
         </TabsList>
 
         <TabsContent value="reportes" className="mt-6">
-          <UserReportesAsignados userId={profile.id} />
+          <UserReportesAsignados userId={profile.id} userName={`${profile.first_name} ${profile.last_name}`} />
         </TabsContent>
 
         <TabsContent value="estadisticas" className="mt-6">
-          <UsuarioEstadisticasActividad userId={profile.id} />
+          <UsuarioEstadisticasActividad />
         </TabsContent>
 
         <TabsContent value="actividad" className="mt-6">
-          <UsuarioAuditoria userId={profile.id} />
+          <UsuarioAuditoria />
         </TabsContent>
 
         <TabsContent value="cambios" className="mt-6">
-          <UsuarioCambiosRecibidos userId={profile.id} />
+          <UsuarioCambiosRecibidos />
         </TabsContent>
 
         <TabsContent value="notificaciones" className="mt-6">
