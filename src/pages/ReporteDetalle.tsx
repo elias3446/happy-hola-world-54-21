@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,6 +10,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import { useReportes } from '@/hooks/useReportes';
 import { useReporteHistorial } from '@/hooks/useReporteHistorial';
+import { useSecurity } from '@/hooks/useSecurity';
+import { PermissionWrapper } from '@/components/security/PermissionWrapper';
 import { MapaReporteEspecifico } from '@/components/MapaBase';
 import { GoogleMapsButton } from '@/components/ui/google-maps-button';
 import { 
@@ -24,7 +25,8 @@ import {
   Clock,
   History,
   X,
-  ExternalLink
+  ExternalLink,
+  Shield
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -40,9 +42,21 @@ export const ReporteDetalle = () => {
   const { id } = useParams<{ id: string }>();
   const { reportes, isLoading } = useReportes();
   const { historial, isLoading: isLoadingHistorial } = useReporteHistorial(id || '');
+  const { hasPermission, logSecurityEvent } = useSecurity();
   const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
   
   const reporte = reportes.find(r => r.id === id);
+
+  // Log access attempt
+  React.useEffect(() => {
+    if (id) {
+      logSecurityEvent(
+        'REPORT_VIEW_ATTEMPT',
+        `User attempted to view report details`,
+        { reportId: id }
+      );
+    }
+  }, [id, logSecurityEvent]);
 
   const getProfileName = (profile: any) => {
     if (!profile) return 'N/A';
@@ -56,6 +70,29 @@ export const ReporteDetalle = () => {
   const closeImageCarousel = () => {
     setSelectedImageIndex(null);
   };
+
+  // Check permissions early
+  if (!hasPermission('ver_reporte')) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <Card>
+          <CardContent className="text-center py-12">
+            <Shield className="h-12 w-12 text-amber-600 mx-auto mb-4" />
+            <h1 className="text-xl font-bold mb-3 text-foreground">Acceso Denegado</h1>
+            <p className="text-muted-foreground mb-4">
+              No tienes permisos para ver los detalles de reportes.
+            </p>
+            <Button asChild>
+              <Link to="/">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Volver al Inicio
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (
@@ -155,12 +192,14 @@ export const ReporteDetalle = () => {
                   </span>
                 </div>
 
-                <div className="flex items-start gap-2">
-                  <User className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-                  <span className="text-sm break-words">
-                    Creado por: {getProfileName(reporte.created_by_profile)}
-                  </span>
-                </div>
+                <PermissionWrapper permission="ver_usuario">
+                  <div className="flex items-start gap-2">
+                    <User className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                    <span className="text-sm break-words">
+                      Creado por: {getProfileName(reporte.created_by_profile)}
+                    </span>
+                  </div>
+                </PermissionWrapper>
               </div>
 
               <Separator />
@@ -188,18 +227,20 @@ export const ReporteDetalle = () => {
 
               <Separator />
 
-              <div>
-                <h4 className="font-medium mb-2 flex items-center gap-2">
-                  <User className="h-4 w-4 flex-shrink-0" />
-                  Asignación
-                </h4>
-                <div className="space-y-2">
-                  <div className="text-sm">
-                    <span className="text-muted-foreground">Asignado a: </span>
-                    <span className="break-words">{reporte.assigned_to_profile ? getProfileName(reporte.assigned_to_profile) : 'Sin asignar'}</span>
+              <PermissionWrapper permission="ver_usuario">
+                <div>
+                  <h4 className="font-medium mb-2 flex items-center gap-2">
+                    <User className="h-4 w-4 flex-shrink-0" />
+                    Asignación
+                  </h4>
+                  <div className="space-y-2">
+                    <div className="text-sm">
+                      <span className="text-muted-foreground">Asignado a: </span>
+                      <span className="break-words">{reporte.assigned_to_profile ? getProfileName(reporte.assigned_to_profile) : 'Sin asignar'}</span>
+                    </div>
                   </div>
                 </div>
-              </div>
+              </PermissionWrapper>
 
               {reporte.latitud && reporte.longitud && (
                 <>
@@ -352,42 +393,52 @@ export const ReporteDetalle = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  {isLoadingHistorial ? (
-                    <p className="text-gray-500 text-sm">Cargando historial...</p>
-                  ) : historial.length === 0 ? (
-                    <div className="text-center py-6">
-                      <Clock className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                      <p className="text-gray-500 text-sm">Sin historial de asignaciones</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-4 max-h-60 overflow-y-auto">
-                      {historial.map((entry) => (
-                        <div key={entry.id} className="border-l-2 border-gray-200 pl-4 pb-4 last:pb-0">
-                          <div className="text-sm font-medium text-gray-900 break-words overflow-hidden">
-                            {entry.comentario}
-                          </div>
-                          <div className="text-xs text-gray-600 mt-1 space-y-1">
-                            <div className="break-words overflow-hidden">Por: {getProfileName(entry.assigned_by_profile)}</div>
-                            {entry.assigned_from_profile && (
-                              <div className="break-words overflow-hidden">De: {getProfileName(entry.assigned_from_profile)}</div>
-                            )}
-                            {entry.assigned_to_profile && (
-                              <div className="break-words overflow-hidden">A: {getProfileName(entry.assigned_to_profile)}</div>
-                            )}
-                            <div className="text-gray-500 break-words">
-                              {new Date(entry.fecha_asignacion).toLocaleDateString('es-ES', {
-                                year: 'numeric',
-                                month: 'short',
-                                day: 'numeric',
-                                hour: '2-digit',
-                                minute: '2-digit'
-                              })}
+                  <PermissionWrapper 
+                    permission="ver_usuario"
+                    fallback={
+                      <div className="text-center py-6">
+                        <Shield className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                        <p className="text-gray-500 text-sm">No tienes permisos para ver el historial de asignaciones</p>
+                      </div>
+                    }
+                  >
+                    {isLoadingHistorial ? (
+                      <p className="text-gray-500 text-sm">Cargando historial...</p>
+                    ) : historial.length === 0 ? (
+                      <div className="text-center py-6">
+                        <Clock className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                        <p className="text-gray-500 text-sm">Sin historial de asignaciones</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-4 max-h-60 overflow-y-auto">
+                        {historial.map((entry) => (
+                          <div key={entry.id} className="border-l-2 border-gray-200 pl-4 pb-4 last:pb-0">
+                            <div className="text-sm font-medium text-gray-900 break-words overflow-hidden">
+                              {entry.comentario}
+                            </div>
+                            <div className="text-xs text-gray-600 mt-1 space-y-1">
+                              <div className="break-words overflow-hidden">Por: {getProfileName(entry.assigned_by_profile)}</div>
+                              {entry.assigned_from_profile && (
+                                <div className="break-words overflow-hidden">De: {getProfileName(entry.assigned_from_profile)}</div>
+                              )}
+                              {entry.assigned_to_profile && (
+                                <div className="break-words overflow-hidden">A: {getProfileName(entry.assigned_to_profile)}</div>
+                              )}
+                              <div className="text-gray-500 break-words">
+                                {new Date(entry.fecha_asignacion).toLocaleDateString('es-ES', {
+                                  year: 'numeric',
+                                  month: 'short',
+                                  day: 'numeric',
+                                  hour: '2-digit',
+                                  minute: '2-digit'
+                                })}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                        ))}
+                      </div>
+                    )}
+                  </PermissionWrapper>
                 </CardContent>
               </Card>
             </TabsContent>
