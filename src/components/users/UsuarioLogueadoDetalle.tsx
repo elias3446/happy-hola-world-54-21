@@ -11,7 +11,6 @@ import {
   Shield,
   Calendar,
   Edit,
-  X,
   FileText,
   BarChart3,
   Activity,
@@ -76,26 +75,6 @@ export const UsuarioLogueadoDetalle: React.FC<UsuarioLogueadoDetalleProps> = ({ 
                 <Edit className="h-4 w-4" />
                 Editar Perfil
               </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setEditMode('password')}
-                className="flex items-center gap-2"
-              >
-                <Shield className="h-4 w-4" />
-                Cambiar Contraseña
-              </Button>
-              {onClose && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={onClose}
-                  className="flex items-center gap-2"
-                >
-                  <X className="h-4 w-4" />
-                  Cerrar
-                </Button>
-              )}
             </div>
           </div>
         </CardHeader>
