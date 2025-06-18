@@ -12,13 +12,10 @@ import {
   Calendar,
   Edit,
   X,
-  Settings,
-  Bell,
   FileText,
   BarChart3,
   Activity,
-  History,
-  Eye
+  History
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { UsuarioLogueadoEdit } from './UsuarioLogueadoEdit';
@@ -27,7 +24,6 @@ import { UserReportesAsignados } from './UserReportesAsignados';
 import { UsuarioEstadisticasActividad } from './UsuarioEstadisticasActividad';
 import { UsuarioAuditoria } from './UsuarioAuditoria';
 import { UsuarioCambiosRecibidos } from './UsuarioCambiosRecibidos';
-import { NotificationSettings } from '@/components/notifications/NotificationSettings';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
 
@@ -79,6 +75,15 @@ export const UsuarioLogueadoDetalle: React.FC<UsuarioLogueadoDetalleProps> = ({ 
               >
                 <Edit className="h-4 w-4" />
                 Editar Perfil
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setEditMode('password')}
+                className="flex items-center gap-2"
+              >
+                <Shield className="h-4 w-4" />
+                Cambiar Contraseña
               </Button>
               {onClose && (
                 <Button
@@ -150,7 +155,7 @@ export const UsuarioLogueadoDetalle: React.FC<UsuarioLogueadoDetalleProps> = ({ 
 
       {/* Tabs con contenido */}
       <Tabs defaultValue="reportes" className="w-full">
-        <TabsList className="grid w-full grid-cols-6">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="reportes" className="flex items-center gap-2">
             <FileText className="h-4 w-4" />
             <span className="hidden sm:inline">Reportes</span>
@@ -166,14 +171,6 @@ export const UsuarioLogueadoDetalle: React.FC<UsuarioLogueadoDetalleProps> = ({ 
           <TabsTrigger value="cambios" className="flex items-center gap-2">
             <History className="h-4 w-4" />
             <span className="hidden sm:inline">Cambios</span>
-          </TabsTrigger>
-          <TabsTrigger value="notificaciones" className="flex items-center gap-2">
-            <Bell className="h-4 w-4" />
-            <span className="hidden sm:inline">Notificaciones</span>
-          </TabsTrigger>
-          <TabsTrigger value="configuracion" className="flex items-center gap-2">
-            <Settings className="h-4 w-4" />
-            <span className="hidden sm:inline">Configuración</span>
           </TabsTrigger>
         </TabsList>
 
@@ -191,45 +188,6 @@ export const UsuarioLogueadoDetalle: React.FC<UsuarioLogueadoDetalleProps> = ({ 
 
         <TabsContent value="cambios" className="mt-6">
           <UsuarioCambiosRecibidos usuarioId={profile.id} usuarioEmail={profile.email} />
-        </TabsContent>
-
-        <TabsContent value="notificaciones" className="mt-6">
-          <NotificationSettings />
-        </TabsContent>
-
-        <TabsContent value="configuracion" className="mt-6">
-          <div className="space-y-6">
-            {/* Configuración de perfil */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <User className="h-5 w-5" />
-                  Configuración de Perfil
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <Button
-                  variant="outline"
-                  onClick={() => setEditMode('profile')}
-                  className="flex items-center gap-2"
-                >
-                  <Edit className="h-4 w-4" />
-                  Editar información personal
-                </Button>
-                
-                <Separator />
-                
-                <Button
-                  variant="outline"
-                  onClick={() => setEditMode('password')}
-                  className="flex items-center gap-2"
-                >
-                  <Shield className="h-4 w-4" />
-                  Cambiar contraseña
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
         </TabsContent>
       </Tabs>
     </div>

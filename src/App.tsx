@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -21,6 +22,7 @@ import AdminEstados from "./pages/admin/AdminEstados";
 import Dashboard from "./pages/Dashboard";
 import MiPerfil from "./pages/MiPerfil";
 import Notifications from "./pages/Notifications";
+import Configuracion from "./pages/Configuracion";
 import { Dashboard as AdminDashboard } from "./components/Dashboard";
 
 const queryClient = new QueryClient();
