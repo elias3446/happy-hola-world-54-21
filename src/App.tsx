@@ -94,6 +94,12 @@ const AppContent = () => {
             </ProtectedRoute>
           } />
 
+          <Route path="/configuracion" element={
+            <ProtectedRoute>
+              <Configuracion />
+            </ProtectedRoute>
+          } />
+
           <Route path="/nuevo-reporte" element={
             <ProtectedRoute>
               <NuevoReporte />
