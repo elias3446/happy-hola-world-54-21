@@ -14,8 +14,7 @@ import {
   Settings, 
   User, 
   LogOut,
-  ChevronDown,
-  Bell
+  ChevronDown
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -148,12 +147,6 @@ export const MainNavigation = () => {
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link to="/notifications" className="flex items-center">
-                    <Bell className="mr-2 h-4 w-4" />
-                    <span>Notificaciones</span>
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
                   <Link to="/configuracion" className="flex items-center">
                     <Settings className="mr-2 h-4 w-4" />
                     <span>Configuración</span>
@@ -255,15 +248,6 @@ export const MainNavigation = () => {
                 >
                   <FileText className="h-5 w-5" />
                   <span>Dashboard</span>
-                </Link>
-
-                <Link
-                  to="/notifications"
-                  className="flex items-center space-x-2 px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
-                  onClick={() => setIsOpen(false)}
-                >
-                  <Bell className="h-5 w-5" />
-                  <span>Notificaciones</span>
                 </Link>
 
                 <Link
