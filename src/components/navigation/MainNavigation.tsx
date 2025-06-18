@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -10,7 +9,6 @@ import {
   X, 
   FileText, 
   Map, 
-  PlusCircle, 
   Settings, 
   User, 
   LogOut,
@@ -30,7 +28,6 @@ import { toast } from '@/hooks/use-toast';
 const navigationItems = [
   { name: 'Reportes Públicos', href: '/reportes-publicos', icon: FileText },
   { name: 'Mapa', href: '/mapa-reportes', icon: Map },
-  { name: 'Nuevo Reporte', href: '/nuevo-reporte', icon: PlusCircle },
 ];
 
 export const MainNavigation = () => {
